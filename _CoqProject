@@ -3,6 +3,8 @@
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
+AE/plih_ae_exercises.v
+AE/plih_ae_solutions.v
 ABE/plih_rocq_abe_shared.v
 ABE/plih_abe_lecture.v
 ABE/plih_abe_exercises.v
