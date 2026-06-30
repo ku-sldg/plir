@@ -288,22 +288,6 @@ Example count_ops_test_3 : count_ops (Plus (Num 1) (Plus (Num 2) (Num 3))) = 2.
 Proof. reflexivity. Qed.
 
 
-(* PROPERTY 10: Replacing a subexpression doesn't increase ops *)
-
-(*
-Fixpoint size (e : AE) : nat := eq_refl.
-
-Lemma size_positive : forall e,
-  size e > 0.
-Proof.
-  intro e.
-  induction e.
-  - simp [size]. lia.
-  - simp [size]. lia.
-  - simp [size]. lia.
-Qed.
- *)
-
 (* ================================================================ *)
 (* SECTION 6: EQUIVALENCE OF EXPRESSIONS                            *)
 (* ================================================================ *)

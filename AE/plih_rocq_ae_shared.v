@@ -53,14 +53,7 @@ Lemma monad_assoc {A B C : Type} (m : M A) (f : A -> M B) (g : B -> M C) :
 Proof. destruct m; reflexivity. Qed.
 
 (* ================================================================ *)
-(* PART 4: Useful Tactics                                           *)
-(* ================================================================ *)
-
-(* Tactic to simplify option/Maybe operations *)
-Ltac simp_option := eq_refl.
-
-(* ================================================================ *)
-(* PART 5: Decidable Equality for Basic Types                      *)
+(* PART 3: Decidable Equality for Basic Types                      *)
 (* ================================================================ *)
 
 Lemma nat_eq_dec : forall (n m : nat), {n = m} + {n <> m}.
@@ -75,7 +68,7 @@ Proof.
 Defined.
 
 (* ================================================================ *)
-(* PART 6: List Utilities                                           *)
+(* PART 4: List Utilities                                           *)
 (* ================================================================ *)
 
 Definition Env A := list (string * A).
@@ -121,7 +114,7 @@ Proof.
 Qed.
 
 (* ================================================================ *)
-(* PART 7: Exported Interface                                       *)
+(* PART 5: Exported Interface                                       *)
 (* ================================================================ *)
 
 (* Make these available to students *)
