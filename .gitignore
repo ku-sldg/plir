@@ -10,3 +10,8 @@
 # Makefile and Makefile.conf are tracked so `make` works on a fresh clone.
 .*.d
 .coqdeps.d
+
+# Editor / assistant local config
+CLAUDE.md
+.claude/
+.vscode/

@@ -1,4 +1,0 @@
-- [Project plir overview](project-plir-overview.md) — Rocq port of the PLIH Haskell PL course; build with `make`
-- [ABE design decisions](plir-abe-design-decisions.md) — ABE constructors, option-Value eval, type-checking caveats
-- [Pending work](plir-pending-work.md) — AE problem-set stubs + TACTICS_CHEATSHEET still need de-Leaning
-- [No Lean tactics](plir-feedback-no-lean-tactics.md) — user requires Rocq tactics only, never Lean 4
