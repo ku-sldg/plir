@@ -1,5 +1,7 @@
 -Q AE ""
 -Q ABE ""
+-Q IDs ""
+-Q Env ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -13,3 +15,15 @@ ABE/plih_abe_exercises.v
 ABE/plih_abe_solutions.v
 ABE/plih_abe_summary.v
 ABE/plih_abe_instructor_guide.v
+IDs/plih_rocq_ids_shared.v
+IDs/plih_ids_lecture.v
+IDs/plih_ids_exercises.v
+IDs/plih_ids_solutions.v
+IDs/plih_ids_summary.v
+IDs/plih_ids_instructor_guide.v
+Env/plih_rocq_env_shared.v
+Env/plih_env_lecture.v
+Env/plih_env_exercises.v
+Env/plih_env_solutions.v
+Env/plih_env_summary.v
+Env/plih_env_instructor_guide.v
