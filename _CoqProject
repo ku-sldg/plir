@@ -4,6 +4,7 @@
 -Q Env ""
 -Q Func ""
 -Q Rec ""
+-Q TFun ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -41,3 +42,9 @@ Rec/plih_rec_exercises.v
 Rec/plih_rec_solutions.v
 Rec/plih_rec_summary.v
 Rec/plih_rec_instructor_guide.v
+TFun/plih_rocq_tfun_shared.v
+TFun/plih_tfun_lecture.v
+TFun/plih_tfun_exercises.v
+TFun/plih_tfun_solutions.v
+TFun/plih_tfun_summary.v
+TFun/plih_tfun_instructor_guide.v
