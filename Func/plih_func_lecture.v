@@ -13,7 +13,12 @@
  *      the "size is enough fuel" theorem of the earlier chapters.
  *   5. STATIC vs DYNAMIC scoping, made precise with a third interpreter
  *      [evalDyn] and a term on which the two disagree.
- *   6. Currying, and strict-vs-lazy binding.
+ *   6. Currying, and strict-vs-lazy binding (a call-by-name [evalL]).
+ *   7. ELABORATION: desugaring [Bind] into [App]/[Lambda], with a
+ *      machine-checked proof that it preserves meaning.
+ *   8. A teaser toward RECURSION: fixpoint combinators are definable from
+ *      [Lambda]/[App], but productive recursion needs a conditional FBAE
+ *      lacks - delivered in the Untyped Recursion chapter (Rec/).
  *
  * This mirrors the "Functions" unit of PLIH:
  *   https://ku-sldg.github.io/plih//funs/1-Adding-Functions.html
@@ -474,7 +479,254 @@ Example curry_full :
 Proof. reflexivity. Qed.
 
 (* ================================================================ *)
-(* SECTION 9: DIVERGENCE, STRICT vs LAZY                           *)
+(* SECTION 9: ELABORATION - DESUGARING [Bind] INTO [App]/[Lambda]   *)
+(* ================================================================ *)
+
+(**
+ * [Bind] is not really primitive.  Once we have first-class functions,
+ * a local binding is just the application of an anonymous function:
+ *
+ *   bind i = v in b     "is sugar for"     app (lambda i in b) v
+ *
+ * ELABORATION (a.k.a. DESUGARING) makes that precise as a
+ * source-to-source translation into a [Bind]-free sublanguage, and -
+ * unlike the informal "is sugar for" of a language manual - we can
+ * PROVE the translation preserves meaning.  Everything other than
+ * [Bind] is elaborated structurally.
+ *)
+Fixpoint elab (e : FBAE) : FBAE :=
+  match e with
+  | Num n      => Num n
+  | Id x       => Id x
+  | Plus  l r  => Plus  (elab l) (elab r)
+  | Minus l r  => Minus (elab l) (elab r)
+  | Lambda i b => Lambda i (elab b)
+  | App f a    => App (elab f) (elab a)
+  | Bind i v b => App (Lambda i (elab b)) (elab v)   (* the one real rule *)
+  end.
+
+(**
+ * The target really is a [Bind]-free sublanguage: [bindFree] tests for
+ * the absence of [Bind], and [elab] always lands in it.
+ *)
+Fixpoint bindFree (e : FBAE) : bool :=
+  match e with
+  | Num _      => true
+  | Id _       => true
+  | Plus  l r  => bindFree l && bindFree r
+  | Minus l r  => bindFree l && bindFree r
+  | Lambda _ b => bindFree b
+  | App f a    => bindFree f && bindFree a
+  | Bind _ _ _ => false
+  end.
+
+Theorem elab_bindFree : forall e, bindFree (elab e) = true.
+Proof.
+  induction e as
+    [ n
+    | l IHl r IHr
+    | l IHl r IHr
+    | i v IHv b IHb
+    | i b IHb
+    | f IHf a IHa
+    | x ]; simpl.
+  - reflexivity.                   (* Num    *)
+  - rewrite IHl, IHr. reflexivity. (* Plus   *)
+  - rewrite IHl, IHr. reflexivity. (* Minus  *)
+  - rewrite IHv, IHb. reflexivity. (* Bind   *)
+  - rewrite IHb. reflexivity.      (* Lambda *)
+  - rewrite IHf, IHa. reflexivity. (* App    *)
+  - reflexivity.                   (* Id     *)
+Qed.
+
+(* On the running example, elaboration eliminates [Bind] ... *)
+Example elab_scopeTest_bindFree : bindFree (elab scopeTest) = true.
+Proof. reflexivity. Qed.
+
+(* ... and preserves the answer - keeping its STATIC reading (4, not 5),
+   because [App]/[Lambda]/closures are themselves statically scoped. *)
+Example elab_scopeTest_eval : eval (elab scopeTest) = eval scopeTest.
+Proof. reflexivity. Qed.
+
+Example elab_bind_fun :
+  eval (elab (Bind "f" incFun (App (Id "f") (App (Id "f") (Num 0)))))
+  = Some (NumV 2).
+Proof. reflexivity. Qed.
+
+(**
+ * PRESERVATION OF MEANING.  We want elaboration to leave a program's
+ * value unchanged.  There is one wrinkle: VALUES embed terms.  A
+ * [ClosureV] carries its function body and captured environment, and
+ * elaboration rewrites bodies - so the closure a program returns is the
+ * ELABORATED closure.  We therefore lift [elab] to values and
+ * environments (a mutual recursion, since a value contains an
+ * environment) and state preservation UP TO that lifting.
+ *)
+Fixpoint elabV (v : FBAEVal) : FBAEVal :=
+  match v with
+  | NumV n         => NumV n
+  | ClosureV i b e =>
+      (* The captured environment is elaborated pointwise.  We need an
+         inner [fix] here because [Env] is a list NESTED inside the value
+         type, which the mutual-[Fixpoint] guard checker rejects. *)
+      ClosureV i (elab b)
+        ((fix eE (env : list (string * FBAEVal)) : list (string * FBAEVal) :=
+            match env with
+            | nil          => nil
+            | (x, w) :: e' => (x, elabV w) :: eE e'
+            end) e)
+  end.
+
+(* The same pointwise elaboration, as a standalone environment operation
+   we can state lemmas about.  [elabV_clos] bridges the two. *)
+Fixpoint elabEnv (env : Env FBAEVal) : Env FBAEVal :=
+  match env with
+  | nil          => nil
+  | (x, w) :: e' => (x, elabV w) :: elabEnv e'
+  end.
+
+Lemma elabV_clos : forall i b e,
+  elabV (ClosureV i b e) = ClosureV i (elab b) (elabEnv e).
+Proof. intros; reflexivity. Qed.
+
+Lemma elabEnv_extend : forall i v env,
+  elabEnv (extend i v env) = extend i (elabV v) (elabEnv env).
+Proof. reflexivity. Qed.
+
+Lemma lookup_elabEnv : forall env x v,
+  lookup x env = Some v -> lookup x (elabEnv env) = Some (elabV v).
+Proof.
+  induction env as [| [y w] e' IH]; intros x v H.
+  - simpl in H. discriminate.
+  - simpl in H. simpl. destruct (String.eqb x y) eqn:E.
+    + injection H as H; subst. reflexivity.
+    + apply IH. exact H.
+Qed.
+
+(* One-step unfolding of [evalM] on an [App], stated as a rewrite so we
+   never have to [simpl] (which would over-eagerly unfold the argument
+   and body evaluations along with it). *)
+Lemma evalM_App : forall k env f a,
+  evalM (S k) env (App f a) =
+    match evalM k env f with
+    | Some (ClosureV i b cenv) =>
+        match evalM k env a with
+        | Some a' => evalM k (extend i a' cenv) b
+        | None => None
+        end
+    | _ => None
+    end.
+Proof. reflexivity. Qed.
+
+(* Applying a value that is already known to be a closure. *)
+Lemma evalM_app_closure : forall k env f a i body cenv av rv,
+  evalM k env f = Some (ClosureV i body cenv) ->
+  evalM k env a = Some av ->
+  evalM k (extend i av cenv) body = Some rv ->
+  evalM (S k) env (App f a) = Some rv.
+Proof.
+  intros k env f a i body cenv av rv Hf Ha Hb.
+  rewrite evalM_App, Hf, Ha. cbv iota. exact Hb.
+Qed.
+
+(* Applying a literal [lambda] - the shape elaboration produces from a
+   [Bind].  The [lambda] evaluates in one step, so [k] must be positive;
+   [Ha] guarantees it (evaluation under zero fuel is [None]). *)
+Lemma evalM_app_lambda : forall k env i body arg av rv,
+  evalM k env arg = Some av ->
+  evalM k (extend i av env) body = Some rv ->
+  evalM (S k) env (App (Lambda i body) arg) = Some rv.
+Proof.
+  intros k env i body arg av rv Ha Hb.
+  destruct k as [| k']; [simpl in Ha; discriminate |].
+  eapply evalM_app_closure.
+  - reflexivity.
+  - exact Ha.
+  - exact Hb.
+Qed.
+
+(**
+ * The elaborated program takes MORE steps than the original (each
+ * [Bind] becomes an extra [App]/[Lambda] layer), so we cannot promise
+ * the SAME fuel works - only that SOME fuel does.  Fuel monotonicity
+ * (Section 6) is exactly what lets us pick a large enough amount by
+ * taking the max of the fuels supplied by the induction hypotheses.
+ *)
+Theorem elab_preserves : forall f env e v,
+  evalM f env e = Some v ->
+  exists f', evalM f' (elabEnv env) (elab e) = Some (elabV v).
+Proof.
+  induction f as [| k IH]; intros env e v H.
+  - simpl in H. discriminate.
+  - destruct e; simpl in H.
+    + (* Num *)
+      injection H as H; subst v. exists 1. reflexivity.
+    + (* Plus *)
+      destruct (evalM k env e1) as [[a | i b ce] |] eqn:E1; try discriminate.
+      destruct (evalM k env e2) as [[b0 | i b ce] |] eqn:E2; try discriminate.
+      injection H as H; subst v.
+      destruct (IH env e1 (NumV a) E1) as [f1 H1]. simpl in H1.
+      destruct (IH env e2 (NumV b0) E2) as [f2 H2]. simpl in H2.
+      assert (L1 : f1 <= Nat.max f1 f2) by lia.
+      assert (L2 : f2 <= Nat.max f1 f2) by lia.
+      exists (S (Nat.max f1 f2)). simpl.
+      rewrite (evalM_mono _ _ _ _ _ L1 H1).
+      rewrite (evalM_mono _ _ _ _ _ L2 H2).
+      reflexivity.
+    + (* Minus *)
+      destruct (evalM k env e1) as [[a | i b ce] |] eqn:E1; try discriminate.
+      destruct (evalM k env e2) as [[b0 | i b ce] |] eqn:E2; try discriminate.
+      injection H as H; subst v.
+      destruct (IH env e1 (NumV a) E1) as [f1 H1]. simpl in H1.
+      destruct (IH env e2 (NumV b0) E2) as [f2 H2]. simpl in H2.
+      assert (L1 : f1 <= Nat.max f1 f2) by lia.
+      assert (L2 : f2 <= Nat.max f1 f2) by lia.
+      exists (S (Nat.max f1 f2)). simpl.
+      rewrite (evalM_mono _ _ _ _ _ L1 H1).
+      rewrite (evalM_mono _ _ _ _ _ L2 H2).
+      reflexivity.
+    + (* Bind -> App (Lambda s (elab e2)) (elab e1) *)
+      destruct (evalM k env e1) as [v' |] eqn:E1; try discriminate.
+      destruct (IH env e1 v' E1) as [f1 H1].
+      destruct (IH (extend s v' env) e2 v H) as [f2 H2].
+      rewrite elabEnv_extend in H2.
+      exists (S (Nat.max f1 f2)).
+      change (elab (Bind s e1 e2))
+        with (App (Lambda s (elab e2)) (elab e1)).
+      eapply evalM_app_lambda.
+      * apply evalM_mono with (f1 := f1); [lia | exact H1].
+      * apply evalM_mono with (f1 := f2); [lia | exact H2].
+    + (* Lambda *)
+      injection H as H; subst v. exists 1.
+      rewrite elabV_clos. reflexivity.
+    + (* App *)
+      destruct (evalM k env e1) as [[a | i b ce] |] eqn:E1; try discriminate.
+      destruct (evalM k env e2) as [a' |] eqn:E2; try discriminate.
+      destruct (IH env e1 (ClosureV i b ce) E1) as [f1 H1].
+      rewrite elabV_clos in H1.
+      destruct (IH env e2 a' E2) as [f2 H2].
+      destruct (IH (extend i a' ce) b v H) as [f3 H3].
+      rewrite elabEnv_extend in H3.
+      exists (S (Nat.max f1 (Nat.max f2 f3))).
+      change (elab (App e1 e2)) with (App (elab e1) (elab e2)).
+      eapply evalM_app_closure.
+      * apply evalM_mono with (f1 := f1); [lia | exact H1].
+      * apply evalM_mono with (f1 := f2); [lia | exact H2].
+      * apply evalM_mono with (f1 := f3); [lia | exact H3].
+    + (* Id *)
+      exists 1. simpl. apply lookup_elabEnv. exact H.
+Qed.
+
+(**
+ * So [Bind] earns no expressive power: it is definable sugar over
+ * [App]/[Lambda], and [elab_preserves] certifies the desugaring.  A
+ * real compiler front-end elaborates a large surface syntax down to a
+ * small core exactly this way - here we have the whole story, proof
+ * included, for one construct.
+ *)
+
+(* ================================================================ *)
+(* SECTION 10: DIVERGENCE, STRICT vs LAZY                          *)
 (* ================================================================ *)
 
 (**
@@ -500,11 +752,121 @@ Example strict_bind : eval (Bind "z" omega (Num 5)) = None.
 Proof. reflexivity. Qed.
 
 (**
- * Under a LAZY (call-by-name / call-by-need) discipline the same term
- * would return [5], because [z] is never forced.  Choosing between
- * strict and lazy binding is exactly choosing whether to evaluate the
- * bound expression eagerly - a design decision explored further in the
- * exercises and the "Strict and Lazy" section of the course.
+ * A LAZY (call-by-name) interpreter makes the alternative precise, and -
+ * just like [evalDyn] for scoping - it DISAGREES with [evalM] on a
+ * witness term.  The idea: a bound name (or a function argument) is not
+ * evaluated eagerly; instead we store an unevaluated THUNK - the
+ * expression paired with the environment it should run in - and force it
+ * only when the name is actually looked up.
+ *
+ * An environment now maps names to thunks, and a thunk carries an
+ * environment of thunks, so [LThunk] is a nested inductive (through
+ * [list]/[prod]), exactly as [ClosureV] was.
+ *)
+Inductive LThunk : Type :=
+| Thk : FBAE -> list (string * LThunk) -> LThunk.
+
+(* Lazy values: numbers and closures, closures capturing a thunk-env. *)
+Inductive LVal : Type :=
+| LNumV : nat -> LVal
+| LCloV : string -> FBAE -> list (string * LThunk) -> LVal.
+
+(**
+ * Compare to [evalM].  The only cases that differ are the ones that
+ * INTRODUCE a binding ([Bind], [App]) - which now thunk instead of
+ * evaluate - and [Id], which now FORCES the thunk it finds.  Arithmetic
+ * is still strict in its operands (you cannot add a thunk), so [Plus]
+ * and [Minus] force by evaluating their subexpressions.  Like every
+ * interpreter in this chapter it is fuel-driven.
+ *)
+Fixpoint evalL (fuel : nat) (env : Env LThunk) (e : FBAE) : option LVal :=
+  match fuel with
+  | 0 => None
+  | S k =>
+      match e with
+      | Num n => Some (LNumV n)
+      | Plus l r =>
+          match evalL k env l, evalL k env r with
+          | Some (LNumV a), Some (LNumV b) => Some (LNumV (a + b))
+          | _, _ => None
+          end
+      | Minus l r =>
+          match evalL k env l, evalL k env r with
+          | Some (LNumV a), Some (LNumV b) => Some (LNumV (a - b))
+          | _, _ => None
+          end
+      | Bind i v b =>
+          (* the bound expression is NOT evaluated - just thunked *)
+          evalL k (extend i (Thk v env) env) b
+      | Lambda i b => Some (LCloV i b env)
+      | App f a =>
+          match evalL k env f with
+          | Some (LCloV i b cenv) =>
+              (* the ARGUMENT is thunked in the CALLER's env, unevaluated *)
+              evalL k (extend i (Thk a env) cenv) b
+          | _ => None
+          end
+      | Id x =>
+          match lookup x env with
+          | Some (Thk e' env') => evalL k env' e'   (* force on demand *)
+          | None => None
+          end
+      end
+  end.
+
+(**
+ * THE DISAGREEMENT.  On [unusedDiverge], the strict [eval] forces the
+ * divergent [omega] before ever reaching the body and loops; the lazy
+ * [evalL] binds [z] to a thunk it never forces, so it returns [5].  This
+ * is the strict/lazy analogue of the 4-vs-5 [scopeTest].
+ *)
+Definition unusedDiverge : FBAE := Bind "z" omega (Num 5).
+
+Example strict_unusedDiverge : eval unusedDiverge = None.
+Proof. reflexivity. Qed.
+
+Example lazy_unusedDiverge : evalL 100 nil unusedDiverge = Some (LNumV 5).
+Proof. reflexivity. Qed.
+
+(* Laziness only DEFERS - it does not discard.  If the body actually
+   USES the bound name, forcing its thunk still diverges. *)
+Example lazy_usedDiverge : evalL 100 nil (Bind "z" omega (Id "z")) = None.
+Proof. reflexivity. Qed.
+
+(* And on terminating programs the lazy interpreter agrees with the
+   strict one: forcing an argument that is genuinely needed. *)
+Example lazy_inc : evalL 100 nil (App incFun (Num 4)) = Some (LNumV 5).
+Proof. reflexivity. Qed.
+
+(**
+ * So strict and lazy are not cosmetic: they disagree on TERMINATION.
+ * Choosing between them is choosing whether [Bind]/[App] evaluate the
+ * bound/argument expression eagerly or defer it in a thunk - the topic
+ * of the course's "Strict and Lazy" section.
+ *)
+
+(* ================================================================ *)
+(* SECTION 11: TOWARD RECURSION (TEASER)                            *)
+(* ================================================================ *)
+
+(**
+ * [omega] was self-application that loops.  RECURSION is the same trick
+ * made useful: self-application PARAMETERISED by the function to iterate.
+ * A FIXPOINT COMBINATOR [fix] is a closed term with [fix F ~> F (fix F)],
+ * so a function receives its own recursive call as an argument - and it
+ * is DEFINABLE from [Lambda]/[App] alone, with NO new language construct.
+ * The Y combinator does this; the Z combinator eta-guards the
+ * self-application so it also survives call-by-value.
+ *
+ * But we cannot make recursion PRODUCTIVE here: FBAE has no CONDITIONAL
+ * (no [if]/[isZero], and [Minus] is truncated but nothing BRANCHES on
+ * it), so a recursion can never test its argument and stop - it can only
+ * diverge.  That missing ingredient, and the Y/Z combinators running real
+ * summation and factorial (Z under strict [evalM], Y under lazy [evalL]),
+ * are the subject of the next chapter:
+ *
+ *   Untyped Recursion  --  Rec/plih_rec_lecture.v
+ *   https://ku-sldg.github.io/plih//funs/7-Untyped-Recursion.html
  *)
 
 (* ================================================================ *)
@@ -525,8 +887,18 @@ Proof. reflexivity. Qed.
  *   5. Distinguished STATIC from DYNAMIC scoping with [evalDyn] and a
  *      term on which they disagree (4 vs 5); [evalS] and [evalM] both
  *      give the static answer.
- *   6. Illustrated currying and the strict-vs-lazy choice ([omega]).
+ *   6. Illustrated currying, and made the strict-vs-lazy choice precise
+ *      with a call-by-name interpreter [evalL] (thunks forced on demand)
+ *      that DISAGREES with strict [evalM] on termination ([omega] bound
+ *      but unused: [None] vs [Some 5]).
+ *   7. Defined ELABORATION [elab] desugaring [Bind] into [App]/[Lambda],
+ *      showed it eliminates every [Bind] ([elab_bindFree]), and proved it
+ *      preserves evaluation ([elab_preserves]).
+ *   8. Previewed RECURSION: fixpoint combinators ([Y]/[Z]) are definable
+ *      from [Lambda]/[App], but productive recursion needs a CONDITIONAL
+ *      FBAE lacks - delivered in the Untyped Recursion chapter (Rec/).
  *
- * Next: TYPED functions rule out the stuck/divergent programs that fuel
- * had to absorb here, restoring a total, structural story.
+ * Next: UNTYPED RECURSION adds a conditional and runs the Y/Z combinators
+ * for real (Rec/).  Then TYPED functions rule out the stuck/divergent
+ * programs that fuel had to absorb here, restoring a total story.
  *)
