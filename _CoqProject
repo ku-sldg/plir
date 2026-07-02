@@ -3,6 +3,7 @@
 -Q IDs ""
 -Q Env ""
 -Q Func ""
+-Q Rec ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -34,3 +35,9 @@ Func/plih_func_exercises.v
 Func/plih_func_solutions.v
 Func/plih_func_summary.v
 Func/plih_func_instructor_guide.v
+Rec/plih_rocq_rec_shared.v
+Rec/plih_rec_lecture.v
+Rec/plih_rec_exercises.v
+Rec/plih_rec_solutions.v
+Rec/plih_rec_summary.v
+Rec/plih_rec_instructor_guide.v
