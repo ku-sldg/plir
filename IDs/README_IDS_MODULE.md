@@ -11,7 +11,7 @@ Source chapter (Haskell):
 BAE ("Bind and Arithmetic Expressions") is AE plus identifiers and a
 local binding form:
 
-```
+```rocq
 Inductive BAE : Type :=
 | Num   : nat -> BAE
 | Plus  : BAE -> BAE -> BAE

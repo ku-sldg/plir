@@ -2,6 +2,7 @@
 -Q ABE ""
 -Q IDs ""
 -Q Env ""
+-Q Func ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -27,3 +28,9 @@ Env/plih_env_exercises.v
 Env/plih_env_solutions.v
 Env/plih_env_summary.v
 Env/plih_env_instructor_guide.v
+Func/plih_rocq_func_shared.v
+Func/plih_func_lecture.v
+Func/plih_func_exercises.v
+Func/plih_func_solutions.v
+Func/plih_func_summary.v
+Func/plih_func_instructor_guide.v
