@@ -11,6 +11,10 @@
 .*.d
 .coqdeps.d
 
+# Generated documentation sites (rebuilt by `make docs` / coqdoc)
+/site/
+/html/
+
 # Editor / assistant local config
 CLAUDE.md
 .claude/

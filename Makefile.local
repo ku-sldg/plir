@@ -1,0 +1,8 @@
+# Included automatically by the coq_makefile-generated Makefile.
+# Convenience target: build the standalone student site into ./site
+# (requires the development to be built first, i.e. `make` for the .glob files).
+
+docs:
+	./scripts/build-docs.sh
+
+.PHONY: docs

@@ -1,0 +1,56 @@
+name: Build and deploy site
+
+# Publishes the standalone student site to GitHub Pages.
+# The whole development is compiled FIRST — a green deploy is a proof that
+# every chapter still builds.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Toolchain — match the local Rocq 9.1 setup.  This compiles Rocq from
+      # opam (slow but faithful); swapping in a prebuilt Rocq Docker image
+      # (`container:`) is the standard way to make this much faster.
+      # Adjust the package/version if your environment differs.
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.2"
+      - name: Install Rocq 9.1
+        run: opam install -y coq.9.1.0
+
+      # Quality gate: if any proof fails to compile, the site does not ship.
+      - name: Build and check all proofs
+        run: opam exec -- make -j2
+
+      - name: Generate the site
+        run: opam exec -- ./scripts/build-docs.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
