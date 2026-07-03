@@ -5,6 +5,7 @@
 -Q Func ""
 -Q Rec ""
 -Q TFun ""
+-Q TRec ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -48,3 +49,9 @@ TFun/plih_tfun_exercises.v
 TFun/plih_tfun_solutions.v
 TFun/plih_tfun_summary.v
 TFun/plih_tfun_instructor_guide.v
+TRec/plih_rocq_trec_shared.v
+TRec/plih_trec_lecture.v
+TRec/plih_trec_exercises.v
+TRec/plih_trec_solutions.v
+TRec/plih_trec_summary.v
+TRec/plih_trec_instructor_guide.v
