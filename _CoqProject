@@ -6,6 +6,8 @@
 -Q Rec ""
 -Q TFun ""
 -Q TRec ""
+-Q RMon ""
+-Q EMon ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -55,3 +57,15 @@ TRec/plih_trec_exercises.v
 TRec/plih_trec_solutions.v
 TRec/plih_trec_summary.v
 TRec/plih_trec_instructor_guide.v
+RMon/plih_rocq_rmon_shared.v
+RMon/plih_rmon_lecture.v
+RMon/plih_rmon_exercises.v
+RMon/plih_rmon_solutions.v
+RMon/plih_rmon_summary.v
+RMon/plih_rmon_instructor_guide.v
+EMon/plih_rocq_emon_shared.v
+EMon/plih_emon_lecture.v
+EMon/plih_emon_exercises.v
+EMon/plih_emon_solutions.v
+EMon/plih_emon_summary.v
+EMon/plih_emon_instructor_guide.v
