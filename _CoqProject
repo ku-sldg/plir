@@ -11,6 +11,7 @@
 -Q State ""
 -Q SMon ""
 -Q RSMon ""
+-Q RSEMon ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -90,3 +91,9 @@ RSMon/plih_rsmon_exercises.v
 RSMon/plih_rsmon_solutions.v
 RSMon/plih_rsmon_summary.v
 RSMon/plih_rsmon_instructor_guide.v
+RSEMon/plih_rocq_rsemon_shared.v
+RSEMon/plih_rsemon_lecture.v
+RSEMon/plih_rsemon_exercises.v
+RSEMon/plih_rsemon_solutions.v
+RSEMon/plih_rsemon_summary.v
+RSEMon/plih_rsemon_instructor_guide.v
