@@ -1,24 +1,24 @@
 (**
- * Programming Languages in Rocq - State Shared Infrastructure
- * Mutable State (an explicit, threaded store)
- *
- * This chapter mirrors the "Mutable State" unit of PLIH:
- *   https://ku-sldg.github.io/plih//state/
- *
- * The Rec chapter gave us a Turing-powerful UNTYPED language (FBAEC) with
- * conditionals and recursion, but every binding was IMMUTABLE: [Bind] and
- * lambda application only ever EXTEND an environment, they never change a
- * value already stored.  Here we add genuine MUTATION with a STORE - a
- * heap of reference cells - and the interpreter must now THREAD that store
- * through evaluation, taking it in and handing a possibly-changed store
- * back out.  That read/write threading is the whole point of the chapter
- * (and, in the follow-on SMon chapter, the motivation for a State monad).
- *
- * As with Rec, the language datatype is defined fresh in the lecture.
- * What this shared library adds - on top of everything re-exported from
- * the Rec chain (the option monad, [Env]/[lookup]/[extend] and their
- * lemmas) - is the STORE plumbing: an [update_at] for in-place writes and
- * a couple of small list lemmas about allocation and update.
+Programming Languages in Rocq - State Shared Infrastructure
+Mutable State (an explicit, threaded store)
+
+This chapter mirrors the "Mutable State" unit of PLIH:
+  https://ku-sldg.github.io/plih//state/
+
+The Rec chapter gave us a Turing-powerful UNTYPED language (FBAEC) with
+conditionals and recursion, but every binding was IMMUTABLE: [Bind] and
+lambda application only ever EXTEND an environment, they never change a
+value already stored.  Here we add genuine MUTATION with a STORE - a
+heap of reference cells - and the interpreter must now THREAD that store
+through evaluation, taking it in and handing a possibly-changed store
+back out.  That read/write threading is the whole point of the chapter
+(and, in the follow-on SMon chapter, the motivation for a State monad).
+
+As with Rec, the language datatype is defined fresh in the lecture.
+What this shared library adds - on top of everything re-exported from
+the Rec chain (the option monad, [Env]/[lookup]/[extend] and their
+lemmas) - is the STORE plumbing: an [update_at] for in-place writes and
+a couple of small list lemmas about allocation and update.
  *)
 
 Require Export plih_rocq_rec_shared.
@@ -26,20 +26,18 @@ Require Export plih_rocq_rec_shared.
 From Stdlib Require Import List.
 Import ListNotations.
 
-(* ================================================================ *)
-(* STORE PLUMBING                                                    *)
-(* ================================================================ *)
+(** * STORE PLUMBING *)
 
 (**
- * A store is a list indexed by LOCATION (a [nat]).  We keep the store
- * polymorphic here so the plumbing does not depend on the value type,
- * which is defined later in the lecture.
- *
- *   - READING a cell is just [nth_error];
- *   - ALLOCATING a cell appends at the end, so the fresh location is the
- *     old [length];
- *   - WRITING a cell replaces the element at a location, or fails
- *     ([None]) if the location is out of range.
+A store is a list indexed by LOCATION (a [nat]).  We keep the store
+polymorphic here so the plumbing does not depend on the value type,
+which is defined later in the lecture.
+
+  - READING a cell is just [nth_error];
+  - ALLOCATING a cell appends at the end, so the fresh location is the
+    old [length];
+  - WRITING a cell replaces the element at a location, or fails
+    ([None]) if the location is out of range.
  *)
 
 Fixpoint update_at {A : Type} (n : nat) (v : A) (xs : list A) : option (list A) :=

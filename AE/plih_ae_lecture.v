@@ -1,13 +1,13 @@
 (**
- * Programming Languages in Rocq - AE Lecture
- * Arithmetic Expressions
- * 
- * This lecture covers:
- * 1. Defining a simple language of arithmetic expressions
- * 2. Writing an interpreter for the language
- * 3. Proving basic properties about the interpreter
- * 
- * This mirrors the first section of PLIH but with added proofs.
+Programming Languages in Rocq - AE Lecture
+Arithmetic Expressions
+
+This lecture covers:
+1. Defining a simple language of arithmetic expressions
+2. Writing an interpreter for the language
+3. Proving basic properties about the interpreter
+
+This mirrors the first section of PLIH but with added proofs.
  *)
 
 From Stdlib Require Import List.
@@ -15,21 +15,19 @@ From Stdlib Require Import Arith.
 From Stdlib Require Import Lia.
 Require Import plih_rocq_ae_shared.
 
-(* ================================================================ *)
-(* SECTION 1: SYNTAX - Defining the Language                       *)
-(* ================================================================ *)
+(** * SECTION 1: SYNTAX - Defining the Language *)
 
 (**
- * An arithmetic expression (AE) is one of:
- *   - A number (literal)
- *   - The sum of two expressions
- *   - The difference of two expressions
- * 
- * This is an abstract syntax tree (AST). We're NOT implementing
- * parsing from text; we assume expressions are already in this form.
- * 
- * Compare to Haskell:
- *   data AE = Num Int | Plus AE AE | Minus AE AE
+An arithmetic expression (AE) is one of:
+  - A number (literal)
+  - The sum of two expressions
+  - The difference of two expressions
+
+This is an abstract syntax tree (AST). We're NOT implementing
+parsing from text; we assume expressions are already in this form.
+
+Compare to Haskell:
+  data AE = Num Int | Plus AE AE | Minus AE AE
  *)
 
 Inductive AE : Type :=
@@ -38,12 +36,12 @@ Inductive AE : Type :=
 | Minus : AE -> AE -> AE.
 
 (**
- * Examples of AE terms (these are VALUES of type AE):
- * 
- *   Num 5              represents: 5
- *   Plus (Num 3) (Num 4)  represents: 3 + 4
- *   Minus (Num 10) (Num 2) represents: 10 - 2
- *   Plus (Num 1) (Plus (Num 2) (Num 3))  represents: 1 + (2 + 3)
+Examples of AE terms (these are VALUES of type AE):
+
+  Num 5              represents: 5
+  Plus (Num 3) (Num 4)  represents: 3 + 4
+  Minus (Num 10) (Num 2) represents: 10 - 2
+  Plus (Num 1) (Plus (Num 2) (Num 3))  represents: 1 + (2 + 3)
  *)
 
 (* Some example AE values *)
@@ -52,23 +50,21 @@ Definition ae_example_2 : AE := Plus (Num 3) (Num 4).
 Definition ae_example_3 : AE := Minus (Num 10) (Num 2).
 Definition ae_example_4 : AE := Plus (Num 1) (Plus (Num 2) (Num 3)).
 
-(* ================================================================ *)
-(* SECTION 2: SEMANTICS - Defining Evaluation                      *)
-(* ================================================================ *)
+(** * SECTION 2: SEMANTICS - Defining Evaluation *)
 
 (**
- * Now we define what these expressions MEAN writing an interpreter.
- * 
- * The eval function maps an AE to a natural number (its value).
- * 
- * Rocq requires that eval be TOTAL (terminates on all inputs).
- * This is enforced requiring structural recursion on the AE argument.
- * 
- * Compare to Haskell:
- *   eval :: AE -> Int
- *   eval (Num n) = n
- *   eval (Plus e1 e2) = eval e1 + eval e2
- *   eval (Minus e1 e2) = eval e1 - eval e2
+Now we define what these expressions MEAN writing an interpreter.
+
+The eval function maps an AE to a natural number (its value).
+
+Rocq requires that eval be TOTAL (terminates on all inputs).
+This is enforced requiring structural recursion on the AE argument.
+
+Compare to Haskell:
+  eval :: AE -> Int
+  eval (Num n) = n
+  eval (Plus e1 e2) = eval e1 + eval e2
+  eval (Minus e1 e2) = eval e1 - eval e2
  *)
 
 Fixpoint eval (e : AE) : nat :=
@@ -92,14 +88,12 @@ Proof. reflexivity. Qed.
 Example test_eval_4 : eval (Plus (Num 1) (Plus (Num 2) (Num 3))) = 6.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 3: SIMPLE PROPERTIES                                    *)
-(* ================================================================ *)
+(** * SECTION 3: SIMPLE PROPERTIES *)
 
 (**
- * Now we begin proving properties about eval.
- * This is what differentiates Rocq from Haskell: we can prove
- * that our interpreter has certain desirable properties.
+Now we begin proving properties about eval.
+This is what differentiates Rocq from Haskell: we can prove
+that our interpreter has certain desirable properties.
  *)
 
 (* PROPERTY 1: Evaluation is deterministic
@@ -193,13 +187,11 @@ Proof.
   reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 4: INDUCTION OVER AE                                    *)
-(* ================================================================ *)
+(** * SECTION 4: INDUCTION OVER AE *)
 
 (**
- * The real power of formal verification comes when we use induction.
- * Since AE is inductively defined, we can prove properties * induction over its structure.
+The real power of formal verification comes when we use induction.
+Since AE is inductively defined, we can prove properties * induction over its structure.
  *)
 
 (* PROPERTY 7: Multiplication distributes over addition
@@ -260,13 +252,11 @@ Proof.
   lia.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 5: AUXILIARY FUNCTIONS AND THEIR PROPERTIES              *)
-(* ================================================================ *)
+(** * SECTION 5: AUXILIARY FUNCTIONS AND THEIR PROPERTIES *)
 
 (**
- * Often we want helper functions to manipulate AE terms.
- * Let's prove properties about these helpers.
+Often we want helper functions to manipulate AE terms.
+Let's prove properties about these helpers.
  *)
 
 (* Helper: Count the number of operations in an AE *)
@@ -288,13 +278,11 @@ Example count_ops_test_3 : count_ops (Plus (Num 1) (Plus (Num 2) (Num 3))) = 2.
 Proof. reflexivity. Qed.
 
 
-(* ================================================================ *)
-(* SECTION 6: EQUIVALENCE OF EXPRESSIONS                            *)
-(* ================================================================ *)
+(** * SECTION 6: EQUIVALENCE OF EXPRESSIONS *)
 
 (**
- * Two expressions are semantically equivalent if they evaluate to
- * the same value.
+Two expressions are semantically equivalent if they evaluate to
+the same value.
  *)
 
 Definition ae_equiv (e1 e2 : AE) : Prop := eval e1 = eval e2.
@@ -334,13 +322,11 @@ Proof.
   - exact H23.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 7: PROVING INEQUALITIES                                  *)
-(* ================================================================ *)
+(** * SECTION 7: PROVING INEQUALITIES *)
 
 (**
- * Sometimes we need to prove that one expression evaluates to
- * more or less than another.
+Sometimes we need to prove that one expression evaluates to
+more or less than another.
  *)
 
 Lemma plus_increases_value : forall e1 e2,
@@ -364,13 +350,11 @@ Proof.
   lia.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 8: OPTIMIZATIONS AND CORRECTNESS PROOFS                 *)
-(* ================================================================ *)
+(** * SECTION 8: OPTIMIZATIONS AND CORRECTNESS PROOFS *)
 
 (**
- * A common task is to prove that an "optimized" version of
- * an interpreter is correct.
+A common task is to prove that an "optimized" version of
+an interpreter is correct.
  *)
 
 (* An optimization: replace (Plus e (Num 0)) with e *)
@@ -401,13 +385,11 @@ Proof.
   - simpl. lia.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 9: REFLECTION / DECISION PROCEDURES                     *)
-(* ================================================================ *)
+(** * SECTION 9: REFLECTION / DECISION PROCEDURES *)
 
 (**
- * Sometimes we want to decide properties computationally
- * and then verify the decision.
+Sometimes we want to decide properties computationally
+and then verify the decision.
  *)
 
 (* Decide if two AE expressions are syntactically identical *)
@@ -456,25 +438,23 @@ Proof.
     -- simpl. rewrite IHe2_1. rewrite IHe2_2. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture, we:
- * 
- * 1. Defined a simple language (AE) using an inductive datatype
- * 2. Wrote an interpreter (eval) that is guaranteed to terminate
- * 3. Proved basic properties:
- *    - Commutativity of plus
- *    - Associativity of plus
- *    - Non-negativity of evaluation
- * 4. Proved correctness of optimizations
- * 5. Proved correctness of decision procedures
- * 
- * Key insight: By formalizing our language and interpreter in Rocq,
- * we can prove properties that would be difficult or impossible
- * to verify in Haskell alone.
- * 
- * Next: We'll add booleans, error handling, and environments.
+In this lecture, we:
+
+1. Defined a simple language (AE) using an inductive datatype
+2. Wrote an interpreter (eval) that is guaranteed to terminate
+3. Proved basic properties:
+   - Commutativity of plus
+   - Associativity of plus
+   - Non-negativity of evaluation
+4. Proved correctness of optimizations
+5. Proved correctness of decision procedures
+
+Key insight: By formalizing our language and interpreter in Rocq,
+we can prove properties that would be difficult or impossible
+to verify in Haskell alone.
+
+Next: We'll add booleans, error handling, and environments.
  *)

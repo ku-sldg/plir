@@ -1,29 +1,29 @@
 (**
- * Programming Languages in Rocq - Reader+State Monad Lecture
- * Structuring the interpreter with a combined Reader + State monad
- *
- * SMon hid the mutable STORE behind a State monad, but the read-only
- * ENVIRONMENT stayed an explicit argument.  RMon hid a read-only context
- * behind a Reader monad.  This chapter COMBINES both effects in one monad,
- * so the interpreter carries neither the environment nor the store by hand:
- *   - the environment is read with [askRS] and extended for a sub-term
- *     with [localRS] (the Reader part);
- *   - the store is read with [getRS] and replaced with [putRS] (the State
- *     part);
- *   - [bindRS] threads BOTH automatically.
- *
- * The plan:
- *   1. The reference-cell language [FBAES], values [RVal], the [Store], and
- *      the explicit interpreter [evalM] threading BOTH env and store by
- *      hand - the reference, carried over from the State chapter.
- *   2. The combined monad [RS E S A = E -> S -> option (A * S)], with
- *      [retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS].
- *   3. The MONADIC interpreter [evalRS], with NO explicit env or store.
- *   4. AGREEMENT: [evalRS fuel e env s = evalM fuel env s e] - one proof
- *      that both hidden resources line up with [evalM]'s hand plumbing.
- *
- * This mirrors the effect-combining ("monad transformer") idea of PLIH:
- *   https://ku-sldg.github.io/plih//state/
+Programming Languages in Rocq - Reader+State Monad Lecture
+Structuring the interpreter with a combined Reader + State monad
+
+SMon hid the mutable STORE behind a State monad, but the read-only
+ENVIRONMENT stayed an explicit argument.  RMon hid a read-only context
+behind a Reader monad.  This chapter COMBINES both effects in one monad,
+so the interpreter carries neither the environment nor the store by hand:
+  - the environment is read with [askRS] and extended for a sub-term
+    with [localRS] (the Reader part);
+  - the store is read with [getRS] and replaced with [putRS] (the State
+    part);
+  - [bindRS] threads BOTH automatically.
+
+The plan:
+  1. The reference-cell language [FBAES], values [RVal], the [Store], and
+     the explicit interpreter [evalM] threading BOTH env and store by
+     hand - the reference, carried over from the State chapter.
+  2. The combined monad [RS E S A = E -> S -> option (A * S)], with
+     [retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS].
+  3. The MONADIC interpreter [evalRS], with NO explicit env or store.
+  4. AGREEMENT: [evalRS fuel e env s = evalM fuel env s e] - one proof
+     that both hidden resources line up with [evalM]'s hand plumbing.
+
+This mirrors the effect-combining ("monad transformer") idea of PLIH:
+  https://ku-sldg.github.io/plih//state/
  *)
 
 From Stdlib Require Import String.
@@ -36,16 +36,14 @@ Require Import plih_rocq_rsmon_shared.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* SECTION 1: THE LANGUAGE AND THE REFERENCE INTERPRETER           *)
-(* ================================================================ *)
+(** * SECTION 1: THE LANGUAGE AND THE REFERENCE INTERPRETER *)
 
 (**
- * [FBAES], its values [RVal] (with locations [LocV]), the [Store], and the
- * explicit interpreter [evalM] are carried over from the State chapter.
- * [evalM] threads BOTH resources by hand: the environment [env] as an
- * argument (extended for [Bind]/[Lambda]/[App]), and the store [s] returned
- * in a pair.  The combined monad below hides both.
+[FBAES], its values [RVal] (with locations [LocV]), the [Store], and the
+explicit interpreter [evalM] are carried over from the State chapter.
+[evalM] threads BOTH resources by hand: the environment [env] as an
+argument (extended for [Bind]/[Lambda]/[App]), and the store [s] returned
+in a pair.  The combined monad below hides both.
  *)
 Inductive FBAES : Type :=
 | Num     : nat -> FBAES
@@ -175,24 +173,22 @@ Fixpoint evalM (fuel : nat) (env : Env RVal) (s : Store) (e : FBAES)
 
 Definition eval (e : FBAES) : option (RVal * Store) := evalM 1000 nil nil e.
 
-(* ================================================================ *)
-(* SECTION 2: THE COMBINED READER + STATE MONAD                    *)
-(* ================================================================ *)
+(** * SECTION 2: THE COMBINED READER + STATE MONAD *)
 
 (**
- * A combined computation over an environment [E] and a store [S] producing
- * an [A] is a function [E -> S -> option (A * S)]: given the CURRENT
- * environment and store, it may fail, or produce a value with the UPDATED
- * store (the environment is read-only, so it is never returned).  This is
- * exactly what [evalM] is, curried - the monad names the pattern.
- *
- * READER operations (environment):
- *   - [askRS]      : read the current environment as the value;
- *   - [localRS g m]: run [m] under environment [g e] (used to extend it).
- * STATE operations (store):
- *   - [getRS]      : read the current store as the value;
- *   - [putRS s']   : replace the store with [s'].
- * And the monad core [retRS] / [bindRS] (threading BOTH) / [failRS].
+A combined computation over an environment [E] and a store [S] producing
+an [A] is a function [E -> S -> option (A * S)]: given the CURRENT
+environment and store, it may fail, or produce a value with the UPDATED
+store (the environment is read-only, so it is never returned).  This is
+exactly what [evalM] is, curried - the monad names the pattern.
+
+READER operations (environment):
+  - [askRS]      : read the current environment as the value;
+  - [localRS g m]: run [m] under environment [g e] (used to extend it).
+STATE operations (store):
+  - [getRS]      : read the current store as the value;
+  - [putRS s']   : replace the store with [s'].
+And the monad core [retRS] / [bindRS] (threading BOTH) / [failRS].
  *)
 Definition RS (E S A : Type) : Type := E -> S -> option (A * S).
 
@@ -226,20 +222,18 @@ Definition runRS {E S A : Type} (m : RS E S A) (e : E) (s : S) : option (A * S) 
 Notation "x <- m ;; k" := (bindRS m (fun x => k))
   (at level 61, m at next level, right associativity).
 
-(* ================================================================ *)
-(* SECTION 3: THE MONADIC INTERPRETER                             *)
-(* ================================================================ *)
+(** * SECTION 3: THE MONADIC INTERPRETER *)
 
 (**
- * The interpreter, restructured over the combined monad.  There is NO
- * environment and NO store variable anywhere:
- *   - [Id] reads the environment with [askRS];
- *   - [Lambda] captures it with [askRS];
- *   - [Bind] extends it for the body with [localRS (extend i a)];
- *   - [App] switches to the closure's environment with
- *     [localRS (fun _ => extend i w cenv)] (static scoping);
- *   - [New]/[Deref]/[Assign] touch the store with [getRS]/[putRS];
- *   - [bindRS] threads both, everywhere, once.
+The interpreter, restructured over the combined monad.  There is NO
+environment and NO store variable anywhere:
+  - [Id] reads the environment with [askRS];
+  - [Lambda] captures it with [askRS];
+  - [Bind] extends it for the body with [localRS (extend i a)];
+  - [App] switches to the closure's environment with
+    [localRS (fun _ => extend i w cenv)] (static scoping);
+  - [New]/[Deref]/[Assign] touch the store with [getRS]/[putRS];
+  - [bindRS] threads both, everywhere, once.
  *)
 Fixpoint evalRS (fuel : nat) (e : FBAES) : RS (Env RVal) Store RVal :=
   match fuel with
@@ -329,9 +323,7 @@ Fixpoint evalRS (fuel : nat) (e : FBAES) : RS (Env RVal) Store RVal :=
 Definition evalReaderState (e : FBAES) : option (RVal * Store) :=
   runRS (evalRS 1000 e) nil nil.
 
-(* ================================================================ *)
-(* SECTION 4: RUNNING THE MONADIC INTERPRETER                     *)
-(* ================================================================ *)
+(** * SECTION 4: RUNNING THE MONADIC INTERPRETER *)
 
 (* The same programs as before - now BOTH the environment and the store are
    threaded by the monad, and the answers are unchanged. *)
@@ -363,16 +355,14 @@ Example evRS_scope_and_state :
   = Some (NumV 11, [NumV 11]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 5: AGREEMENT - THE HEADLINE                            *)
-(* ================================================================ *)
+(** * SECTION 5: AGREEMENT - THE HEADLINE *)
 
 (**
- * The combined refactor is faithful: supply any environment and store, and
- * the monadic interpreter returns exactly what the explicit one does.  One
- * induction handles BOTH hidden resources - the [askRS]/[localRS] threading
- * of the environment lines up with [evalM]'s [env] argument, and the
- * [getRS]/[putRS] threading of the store lines up with its returned store.
+The combined refactor is faithful: supply any environment and store, and
+the monadic interpreter returns exactly what the explicit one does.  One
+induction handles BOTH hidden resources - the [askRS]/[localRS] threading
+of the environment lines up with [evalM]'s [env] argument, and the
+[getRS]/[putRS] threading of the store lines up with its returned store.
  *)
 Theorem evalRS_agrees : forall fuel e env s,
   evalRS fuel e env s = evalM fuel env s e.
@@ -443,63 +433,59 @@ Proof.
 Qed.
 
 (**
- * The wrapper agrees too: running from the empty environment and store is
- * exactly the explicit [eval].
+The wrapper agrees too: running from the empty environment and store is
+exactly the explicit [eval].
  *)
 Corollary evalReaderState_agrees : forall e, evalReaderState e = eval e.
 Proof. intro e. unfold evalReaderState, runRS, eval. apply evalRS_agrees. Qed.
 
-(* ================================================================ *)
-(* SECTION 6: MONAD LAWS AND EFFECT INTERACTION                   *)
-(* ================================================================ *)
+(** * SECTION 6: MONAD LAWS AND EFFECT INTERACTION *)
 
 (**
- * LEFT IDENTITY holds by computation (and eta), as in the single-effect
- * monads.
+LEFT IDENTITY holds by computation (and eta), as in the single-effect
+monads.
  *)
 Lemma left_id_RS : forall (A B : Type) (a : A) (f : A -> RS (Env RVal) Store B),
   bindRS (retRS a) f = f a.
 Proof. reflexivity. Qed.
 
 (**
- * The two effects are INDEPENDENT: reading the environment does not touch
- * the store, and vice versa.  [askRS] leaves the store alone, and a store
- * write is invisible to [askRS] - so [ask]-then-[get] and [get]-then-[ask]
- * observe the same environment and store.
+The two effects are INDEPENDENT: reading the environment does not touch
+the store, and vice versa.  [askRS] leaves the store alone, and a store
+write is invisible to [askRS] - so [ask]-then-[get] and [get]-then-[ask]
+observe the same environment and store.
  *)
 Lemma ask_get_comm : forall (env : Env RVal) (s : Store),
   runRS (x <- askRS ;; y <- getRS ;; retRS (x, y)) env s = Some ((env, s), s).
 Proof. reflexivity. Qed.
 
 (**
- * LOCAL is scoped: extending the environment for a sub-computation does not
- * leak out, and it never affects the store.
+LOCAL is scoped: extending the environment for a sub-computation does not
+leak out, and it never affects the store.
  *)
 Lemma local_scoped : forall (env : Env RVal) (s : Store) i (v : RVal),
   runRS (localRS (extend i v) askRS) env s = Some (extend i v env, s).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture we:
- *   1. Carried over the reference-cell language [FBAES] and its explicit
- *      interpreter [evalM], which threads BOTH the environment and the
- *      store by hand.
- *   2. Combined a READER (for the read-only environment) and a STATE (for
- *      the mutable store) into one monad [RS E S A = E -> S -> option (A*S)]
- *      with [askRS]/[localRS] and [getRS]/[putRS] over a shared [bindRS].
- *   3. Rebuilt the interpreter as [evalRS] carrying NEITHER resource
- *      explicitly - [askRS]/[localRS] handle the environment,
- *      [getRS]/[putRS] the store, [bindRS] threads both.
- *   4. Proved AGREEMENT [evalRS fuel e env s = evalM fuel env s e] in a
- *      single induction (corollary [evalReaderState_agrees] for the
- *      wrappers), and checked the monad laws / effect-independence.
- *
- * This is the culmination of the monad arc: RMon hid a context, SMon hid a
- * store, and here BOTH are hidden at once by stacking their operations in
- * one monad - the interpreter finally reads like a plain recursive
- * definition while every resource is threaded, provably, underneath.
+In this lecture we:
+  1. Carried over the reference-cell language [FBAES] and its explicit
+     interpreter [evalM], which threads BOTH the environment and the
+     store by hand.
+  2. Combined a READER (for the read-only environment) and a STATE (for
+     the mutable store) into one monad [RS E S A = E -> S -> option (A*S)]
+     with [askRS]/[localRS] and [getRS]/[putRS] over a shared [bindRS].
+  3. Rebuilt the interpreter as [evalRS] carrying NEITHER resource
+     explicitly - [askRS]/[localRS] handle the environment,
+     [getRS]/[putRS] the store, [bindRS] threads both.
+  4. Proved AGREEMENT [evalRS fuel e env s = evalM fuel env s e] in a
+     single induction (corollary [evalReaderState_agrees] for the
+     wrappers), and checked the monad laws / effect-independence.
+
+This is the culmination of the monad arc: RMon hid a context, SMon hid a
+store, and here BOTH are hidden at once by stacking their operations in
+one monad - the interpreter finally reads like a plain recursive
+definition while every resource is threaded, provably, underneath.
  *)

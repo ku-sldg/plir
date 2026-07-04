@@ -1,32 +1,32 @@
 (**
- * Programming Languages in Rocq - Untyped Recursion Exercises
- * Recursion via fixpoint combinators - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the strict [evalM] and lazy [evalL] interpreters for FBAEC
- *   2. Drive PRODUCTIVE recursion with the Z (strict) and Y (lazy)
- *      fixpoint combinators, and watch strict Y diverge
- *   3. Use FUEL MONOTONICITY and simple value/branch laws
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: the language [FBAEC]; the value types [RVal]
- * ([NumV]/[BoolV]/[ClosureV]) and [LVal] ([LNumV]/[LBoolV]/[LCloV]); the
- * interpreters [evalM] (strict) and [evalL] (lazy) with wrappers [eval]
- * and [evalLazy]; [evalM_mono]; the combinators [Yc]/[Zc]; and the
- * generators [sumGen]/[factGen].  [lookup]/[extend] come from the shared
- * library.
- *
- * NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
- * literal fuel forces the kernel to unroll [evalM] and can blow up.  A
- * literal fuel is fine only on a CONCRETE closed term (it computes to a
- * value and stops).
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_rec_solutions.v.
+Programming Languages in Rocq - Untyped Recursion Exercises
+Recursion via fixpoint combinators - Student Problem Set
+
+In these exercises you will:
+  1. Run the strict [evalM] and lazy [evalL] interpreters for FBAEC
+  2. Drive PRODUCTIVE recursion with the Z (strict) and Y (lazy)
+     fixpoint combinators, and watch strict Y diverge
+  3. Use FUEL MONOTONICITY and simple value/branch laws
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: the language [FBAEC]; the value types [RVal]
+([NumV]/[BoolV]/[ClosureV]) and [LVal] ([LNumV]/[LBoolV]/[LCloV]); the
+interpreters [evalM] (strict) and [evalL] (lazy) with wrappers [eval]
+and [evalLazy]; [evalM_mono]; the combinators [Yc]/[Zc]; and the
+generators [sumGen]/[factGen].  [lookup]/[extend] come from the shared
+library.
+
+NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
+literal fuel forces the kernel to unroll [evalM] and can blow up.  A
+literal fuel is fine only on a CONCRETE closed term (it computes to a
+value and stops).
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_rec_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -40,9 +40,7 @@ Require Import plih_rec_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE INTERPRETERS                                *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE INTERPRETERS *)
 
 (* [*] Strict arithmetic. *)
 Example ex1_arith : eval (Minus (Mult (Num 3) (Num 4)) (Num 2)) = Some (NumV 10).
@@ -69,9 +67,7 @@ Example ex6_Y_strict_diverges :
   evalM 100 nil (App (App Yc factGen) (Num 4)) = None.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: VALUE AND BRANCH LAWS                                   *)
-(* ================================================================ *)
+(** * PART 2: VALUE AND BRANCH LAWS *)
 
 (* [*] A Boolean literal evaluates to itself (given positive fuel). *)
 Example ex7_boolean : forall k env b,
@@ -83,9 +79,7 @@ Example ex8_if_true : forall k env t f,
   evalM (S k) env (If (Boolean true) t f) = evalM k env t.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: FUEL MONOTONICITY                                       *)
-(* ================================================================ *)
+(** * PART 3: FUEL MONOTONICITY *)
 
 (* [**] Adding fuel cannot change an answer.  Cite [evalM_mono].  Keep
    the fuel a VARIABLE - do not instantiate it to a literal. *)

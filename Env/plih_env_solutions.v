@@ -1,13 +1,13 @@
 (**
- * Programming Languages in Rocq - Env Solutions
- * Complete solutions to plih_env_exercises.v
- *
- * The BAE syntax, [subst], [eval], [size], the free-variable machinery
- * and [challenge2_progress] come from the IDs chapter; [evalE],
- * [evalE_ext], [evalE_extend_subst], [evalE_agrees_eval] and the
- * lookup lemmas come from the Env lecture.  The [prelude] interpreter
- * and the error-reporting interpreter [evalErr] are defined here (and,
- * identically, in the exercises file).
+Programming Languages in Rocq - Env Solutions
+Complete solutions to plih_env_exercises.v
+
+The BAE syntax, [subst], [eval], [size], the free-variable machinery
+and [challenge2_progress] come from the IDs chapter; [evalE],
+[evalE_ext], [evalE_extend_subst], [evalE_agrees_eval] and the
+lookup lemmas come from the Env lecture.  The [prelude] interpreter
+and the error-reporting interpreter [evalErr] are defined here (and,
+identically, in the exercises file).
  *)
 
 From Stdlib Require Import String.
@@ -22,9 +22,7 @@ Require Import plih_ids_solutions.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* WARM-UP: RUNNING THE ENVIRONMENT INTERPRETER                    *)
-(* ================================================================ *)
+(** * WARM-UP: RUNNING THE ENVIRONMENT INTERPRETER *)
 
 Example ex1_evalE_num : evalE nil (Num 7) = Some 7.
 Proof. reflexivity. Qed.
@@ -44,9 +42,7 @@ Example ex5_evalE_shadow :
   evalE nil (Bind "x" (Num 1) (Bind "x" (Num 2) (Id "x"))) = Some 2.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 1: EQUATIONS FOR evalE                                      *)
-(* ================================================================ *)
+(** * PART 1: EQUATIONS FOR evalE *)
 
 Lemma ex6_evalE_num : forall env n, evalE env (Num n) = Some n.
 Proof. reflexivity. Qed.
@@ -62,9 +58,7 @@ Lemma ex9_evalE_id_bound : forall env x n,
   evalE (extend x n env) (Id x) = Some n.
 Proof. intros. cbn [evalE]. apply lookup_extend_eq. Qed.
 
-(* ================================================================ *)
-(* PART 2: EXTENSIONALITY, SHADOWING, SWAPPING                      *)
-(* ================================================================ *)
+(** * PART 2: EXTENSIONALITY, SHADOWING, SWAPPING *)
 
 Lemma ex10_evalE_ext : forall e env1 env2,
   (forall y, lookup y env1 = lookup y env2) ->
@@ -84,9 +78,7 @@ Proof.
   intros e env x i m n H. apply evalE_ext. intro y. apply lookup_swap_env. exact H.
 Qed.
 
-(* ================================================================ *)
-(* PART 3: AGREEMENT WITH THE SUBSTITUTION INTERPRETER             *)
-(* ================================================================ *)
+(** * PART 3: AGREEMENT WITH THE SUBSTITUTION INTERPRETER *)
 
 Lemma ex13_agree : forall e, evalE nil e = eval e.
 Proof. exact evalE_agrees_eval. Qed.
@@ -106,9 +98,7 @@ Proof.
   intros e Hc. rewrite evalE_agrees_eval. apply challenge2_progress. exact Hc.
 Qed.
 
-(* ================================================================ *)
-(* PART 4: A PRELUDE                                                *)
-(* ================================================================ *)
+(** * PART 4: A PRELUDE *)
 
 (* A prelude is a starting environment of always-available bindings. *)
 Definition prelude : Env nat := extend "answer" 42 (extend "pi" 3 nil).
@@ -125,15 +115,13 @@ Lemma ex19_prelude_shadow :
   evalPrelude (Bind "answer" (Num 1) (Id "answer")) = Some 1.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 5: AN ERROR-REPORTING INTERPRETER                          *)
-(* ================================================================ *)
+(** * PART 5: AN ERROR-REPORTING INTERPRETER *)
 
 (**
- * The Haskell course suggests an [evalErr] using [Either] to return a
- * value OR an error message.  Here [Result = string + nat]: [inl msg]
- * is an error, [inr n] is a value.  [forget] erases the message, so we
- * can state that [evalErr] refines [evalE].
+The Haskell course suggests an [evalErr] using [Either] to return a
+value OR an error message.  Here [Result = string + nat]: [inl msg]
+is an error, [inr n] is a value.  [forget] erases the message, so we
+can state that [evalErr] refines [evalE].
  *)
 
 Definition Result : Type := sum string nat.
@@ -200,9 +188,7 @@ Proof.
   intro e. rewrite ex21_forget_evalErr. apply evalE_agrees_eval.
 Qed.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1: a free identifier produces an error message. *)
 Lemma challenge1_unbound_reports : exists s,

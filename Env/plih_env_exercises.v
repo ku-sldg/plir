@@ -1,31 +1,31 @@
 (**
- * Programming Languages in Rocq - Env Exercises
- * Adding Environments - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the environment interpreter [evalE] for BAE
- *   2. Reason about environments (extensionality, shadowing, swapping)
- *   3. Use the AGREEMENT theorem relating [evalE] and the substitution
- *      interpreter [eval]
- *   4. Build a prelude interpreter and an error-reporting interpreter
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof
- * ending in [Qed].  The file compiles as given.
- *
- * From the Env lecture you have: [evalE], [evalEnv], [evalE_ext],
- * [lookup_shadow_env], [lookup_swap_env], [evalE_extend_subst],
- * [evalE_agrees_eval], [evalE_bind_num].  From the IDs chapter you have
- * [BAE], [subst], [eval], [closed], [bae_example_1], and (for a
- * challenge) [challenge2_progress].  The lookup lemmas [lookup_extend_eq]
- * and [lookup_extend_ne] come from the shared library.
- *
- * The [prelude] interpreter and the error interpreter [evalErr] are
- * PROVIDED below; the exercises are to prove properties about them.
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof,
- * [****] induction.  Solutions are in plih_env_solutions.v.
+Programming Languages in Rocq - Env Exercises
+Adding Environments - Student Problem Set
+
+In these exercises you will:
+  1. Run the environment interpreter [evalE] for BAE
+  2. Reason about environments (extensionality, shadowing, swapping)
+  3. Use the AGREEMENT theorem relating [evalE] and the substitution
+     interpreter [eval]
+  4. Build a prelude interpreter and an error-reporting interpreter
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof
+ending in [Qed].  The file compiles as given.
+
+From the Env lecture you have: [evalE], [evalEnv], [evalE_ext],
+[lookup_shadow_env], [lookup_swap_env], [evalE_extend_subst],
+[evalE_agrees_eval], [evalE_bind_num].  From the IDs chapter you have
+[BAE], [subst], [eval], [closed], [bae_example_1], and (for a
+challenge) [challenge2_progress].  The lookup lemmas [lookup_extend_eq]
+and [lookup_extend_ne] come from the shared library.
+
+The [prelude] interpreter and the error interpreter [evalErr] are
+PROVIDED below; the exercises are to prove properties about them.
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof,
+[****] induction.  Solutions are in plih_env_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -39,9 +39,7 @@ Require Import plih_env_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* WARM-UP: RUNNING THE ENVIRONMENT INTERPRETER                    *)
-(* ================================================================ *)
+(** * WARM-UP: RUNNING THE ENVIRONMENT INTERPRETER *)
 
 (* Exercise 1 [*] *)
 Example ex1_evalE_num : evalE nil (Num 7) = Some 7.
@@ -66,9 +64,7 @@ Example ex5_evalE_shadow :
   evalE nil (Bind "x" (Num 1) (Bind "x" (Num 2) (Id "x"))) = Some 2.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 1: EQUATIONS FOR evalE                                      *)
-(* ================================================================ *)
+(** * PART 1: EQUATIONS FOR evalE *)
 
 (* Exercise 6 [*] *)
 Lemma ex6_evalE_num : forall env n, evalE env (Num n) = Some n.
@@ -88,9 +84,7 @@ Lemma ex9_evalE_id_bound : forall env x n,
   evalE (extend x n env) (Id x) = Some n.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: EXTENSIONALITY, SHADOWING, SWAPPING                      *)
-(* ================================================================ *)
+(** * PART 2: EXTENSIONALITY, SHADOWING, SWAPPING *)
 
 (* Exercise 10 [*]: Hint: [evalE_ext]. *)
 Lemma ex10_evalE_ext : forall e env1 env2,
@@ -109,9 +103,7 @@ Lemma ex12_evalE_swap : forall e env x i m n,
   evalE (extend x m (extend i n env)) e = evalE (extend i n (extend x m env)) e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: AGREEMENT WITH THE SUBSTITUTION INTERPRETER             *)
-(* ================================================================ *)
+(** * PART 3: AGREEMENT WITH THE SUBSTITUTION INTERPRETER *)
 
 (* Exercise 13 [*]: Hint: [evalE_agrees_eval]. *)
 Lemma ex13_agree : forall e, evalE nil e = eval e.
@@ -135,9 +127,7 @@ Lemma ex16_progress_transfer : forall e,
   closed e -> exists m, evalE nil e = Some m.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 4: A PRELUDE (PROVIDED)                                     *)
-(* ================================================================ *)
+(** * PART 4: A PRELUDE (PROVIDED) *)
 
 Definition prelude : Env nat := extend "answer" 42 (extend "pi" 3 nil).
 Definition evalPrelude (e : BAE) : option nat := evalE prelude e.
@@ -155,9 +145,7 @@ Lemma ex19_prelude_shadow :
   evalPrelude (Bind "answer" (Num 1) (Id "answer")) = Some 1.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 5: AN ERROR-REPORTING INTERPRETER (PROVIDED)               *)
-(* ================================================================ *)
+(** * PART 5: AN ERROR-REPORTING INTERPRETER (PROVIDED) *)
 
 Definition Result : Type := sum string nat.
 
@@ -210,9 +198,7 @@ Lemma ex22_forget_evalErr_eval : forall e,
   forget (evalErr nil e) = eval e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1 [*]: a free identifier produces an error message. *)
 Lemma challenge1_unbound_reports : exists s,
@@ -224,11 +210,9 @@ Lemma challenge2_equiv_agree : forall e1 e2,
   eval e1 = eval e2 <-> evalE nil e1 = evalE nil e2.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* SUBMISSION GUIDELINES                                            *)
-(* ================================================================ *)
+(** * SUBMISSION GUIDELINES *)
 
 (**
- * Replace every [Admitted] with a complete proof ending in [Qed].
- * Compare your proofs against plih_env_solutions.v.
+Replace every [Admitted] with a complete proof ending in [Qed].
+Compare your proofs against plih_env_solutions.v.
  *)

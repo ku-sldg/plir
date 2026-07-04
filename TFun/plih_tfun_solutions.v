@@ -1,11 +1,11 @@
 (**
- * Programming Languages in Rocq - Typed Functions Solutions
- * Complete solutions to plih_tfun_exercises.v
- *
- * The types [Ty]/[Ty_eqb], the term language [TFBAEC], the checker
- * [typeof]/[typecheck], the strict interpreter [evalM]/[eval], the
- * metatheorem [evalM_mono], the predicates [isNumV]/[isBoolV], and the
- * sample terms [inc]/[selfApp] all come from the Typed Functions lecture.
+Programming Languages in Rocq - Typed Functions Solutions
+Complete solutions to plih_tfun_exercises.v
+
+The types [Ty]/[Ty_eqb], the term language [TFBAEC], the checker
+[typeof]/[typecheck], the strict interpreter [evalM]/[eval], the
+metatheorem [evalM_mono], the predicates [isNumV]/[isBoolV], and the
+sample terms [inc]/[selfApp] all come from the Typed Functions lecture.
  *)
 
 From Stdlib Require Import String.
@@ -19,9 +19,7 @@ Require Import plih_tfun_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: THE TYPE CHECKER - ACCEPTING AND REJECTING              *)
-(* ================================================================ *)
+(** * PART 1: THE TYPE CHECKER - ACCEPTING AND REJECTING *)
 
 Example ex1_ty_arith :
   typecheck (Mult (Num 6) (Plus (Num 3) (Num 4))) = Some TNum.
@@ -44,9 +42,7 @@ Example ex5_reject_selfApp :
   typecheck (selfApp (TArr TNum TNum)) = None.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: THE STRICT INTERPRETER                                  *)
-(* ================================================================ *)
+(** * PART 2: THE STRICT INTERPRETER *)
 
 Example ex6_eval_app : eval (App inc (Num 41)) = Some (NumV 42).
 Proof. reflexivity. Qed.
@@ -61,9 +57,7 @@ Example ex8_eval_lambda : forall k env i t b,
   evalM (S k) env (Lambda i t b) = Some (ClosureV i b env).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 3: METATHEORY                                              *)
-(* ================================================================ *)
+(** * PART 3: METATHEORY *)
 
 Example ex9_ty_eqb_sound : forall a b,
   Ty_eqb a b = true -> a = b.
@@ -91,9 +85,7 @@ Example ex12_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. intros f env e r1 r2 H1 H2. rewrite <- H1, <- H2. reflexivity. Qed.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                              *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 Definition twice : TFBAEC :=
   Lambda "f" (TArr TNum TNum)

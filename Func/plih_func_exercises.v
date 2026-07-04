@@ -1,30 +1,30 @@
 (**
- * Programming Languages in Rocq - Func Exercises
- * Adding Functions - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the closure interpreter [evalM] for FBAE
- *   2. State the value/equation laws and use FUEL MONOTONICITY
- *   3. Observe the difference between STATIC and DYNAMIC scoping
- *   4. Explore currying, divergence, and an error-reporting interpreter
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof
- * ending in [Qed].  The file compiles as given.
- *
- * From the Func lecture you have: [FBAE], [subst], [evalS], [evalM],
- * [evalDyn], [eval], the value types [FBAEVal] ([NumV]/[ClosureV]) and
- * [DVal] ([DNumV]/[DLamV]), the metatheorems [evalM_mono] and
- * [evalM_deterministic], and the example terms [idFun], [incFun],
- * [addFun], [scopeTest], [omega].  The [lookup]/[extend] operations
- * come from the shared library.
- *
- * The functions [constFun], [Result], [forget] and [evalErr] are
- * PROVIDED below; the exercises are to prove properties about them.
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof,
- * [****] induction.  Solutions are in plih_func_solutions.v.
+Programming Languages in Rocq - Func Exercises
+Adding Functions - Student Problem Set
+
+In these exercises you will:
+  1. Run the closure interpreter [evalM] for FBAE
+  2. State the value/equation laws and use FUEL MONOTONICITY
+  3. Observe the difference between STATIC and DYNAMIC scoping
+  4. Explore currying, divergence, and an error-reporting interpreter
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof
+ending in [Qed].  The file compiles as given.
+
+From the Func lecture you have: [FBAE], [subst], [evalS], [evalM],
+[evalDyn], [eval], the value types [FBAEVal] ([NumV]/[ClosureV]) and
+[DVal] ([DNumV]/[DLamV]), the metatheorems [evalM_mono] and
+[evalM_deterministic], and the example terms [idFun], [incFun],
+[addFun], [scopeTest], [omega].  The [lookup]/[extend] operations
+come from the shared library.
+
+The functions [constFun], [Result], [forget] and [evalErr] are
+PROVIDED below; the exercises are to prove properties about them.
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof,
+[****] induction.  Solutions are in plih_func_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -38,9 +38,7 @@ Require Import plih_func_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* WARM-UP: RUNNING THE INTERPRETER                                *)
-(* ================================================================ *)
+(** * WARM-UP: RUNNING THE INTERPRETER *)
 
 (* Exercise 1 [*] *)
 Example ex1_apply_id : eval (App idFun (Num 5)) = Some (NumV 5).
@@ -63,9 +61,7 @@ Example ex5_bind_fun :
   eval (Bind "f" incFun (App (Id "f") (Num 41))) = Some (NumV 42).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 1: EQUATIONS AND VALUES                                     *)
-(* ================================================================ *)
+(** * PART 1: EQUATIONS AND VALUES *)
 
 (* Exercise 6 [*] *)
 Lemma ex6_evalM_num : forall k env n, evalM (S k) env (Num n) = Some (NumV n).
@@ -87,9 +83,7 @@ Lemma ex9_closure_captures :
   eval (Lambda "x" (Id "x")) = Some (ClosureV "x" (Id "x") nil).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: FUEL MONOTONICITY AND DETERMINISM                       *)
-(* ================================================================ *)
+(** * PART 2: FUEL MONOTONICITY AND DETERMINISM *)
 
 (* Exercise 10 [*]: Hint: [evalM_mono]. *)
 Lemma ex10_mono : forall f1 f2 env e v,
@@ -118,9 +112,7 @@ Lemma ex13_evalDyn_mono : forall f1 f2 env e v,
   f1 <= f2 -> evalDyn f1 env e = Some v -> evalDyn f2 env e = Some v.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: STATIC vs DYNAMIC SCOPING                               *)
-(* ================================================================ *)
+(** * PART 3: STATIC vs DYNAMIC SCOPING *)
 
 (* Exercise 14 [*]: the closure interpreter is STATIC (answers 4). *)
 Lemma ex14_scope_static : eval scopeTest = Some (NumV 4).
@@ -136,9 +128,7 @@ Lemma ex16_scope_differs :
   eval scopeTest = Some (NumV 4) /\ evalDyn 100 nil scopeTest = Some (DNumV 5).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 4: CURRYING                                                *)
-(* ================================================================ *)
+(** * PART 4: CURRYING *)
 
 (* Exercise 17 [**]: partial application returns a closure capturing [x]. *)
 Lemma ex17_partial :
@@ -153,9 +143,7 @@ Lemma ex18_const :
   eval (App (App constFun (Num 1)) (Num 2)) = Some (NumV 1).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 5: DIVERGENCE, STRICT BINDING                              *)
-(* ================================================================ *)
+(** * PART 5: DIVERGENCE, STRICT BINDING *)
 
 (* Exercise 19 [*]: [omega] exhausts the fuel. *)
 Lemma ex19_omega : eval omega = None.
@@ -166,9 +154,7 @@ Proof. Admitted.
 Lemma ex20_strict : eval (Bind "z" omega (Num 5)) = None.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 6: AN ERROR-REPORTING INTERPRETER (PROVIDED)               *)
-(* ================================================================ *)
+(** * PART 6: AN ERROR-REPORTING INTERPRETER (PROVIDED) *)
 
 Definition Result : Type := sum string FBAEVal.
 
@@ -234,9 +220,7 @@ Lemma ex22_forget_evalErr : forall f env e,
   forget (evalErr f env e) = evalM f env e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                              *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1 [**]: an answer found with some fuel survives any larger
    amount of fuel.  Keep the fuel a VARIABLE (a literal fuel on an
@@ -251,11 +235,9 @@ Lemma challenge2_evalErr_sound : forall f env e v,
   evalErr f env e = inr v -> evalM f env e = Some v.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* SUBMISSION GUIDELINES                                            *)
-(* ================================================================ *)
+(** * SUBMISSION GUIDELINES *)
 
 (**
- * Replace every [Admitted] with a complete proof ending in [Qed].
- * Compare your proofs against plih_func_solutions.v.
+Replace every [Admitted] with a complete proof ending in [Qed].
+Compare your proofs against plih_func_solutions.v.
  *)

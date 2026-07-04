@@ -1,15 +1,15 @@
 (**
- * Programming Languages in Rocq - ABE Lecture
- * Arithmetic + Boolean Expressions
- *
- * This lecture extends AE by adding:
- * 1. Boolean literals and operations
- * 2. Comparison operations
- * 3. Conditional expressions
- * 4. Multiple value types
- * 5. Error handling
- *
- * This mirrors the PLIH section "Adding Booleans".
+Programming Languages in Rocq - ABE Lecture
+Arithmetic + Boolean Expressions
+
+This lecture extends AE by adding:
+1. Boolean literals and operations
+2. Comparison operations
+3. Conditional expressions
+4. Multiple value types
+5. Error handling
+
+This mirrors the PLIH section "Adding Booleans".
  *)
 
 From Stdlib Require Import List.
@@ -18,21 +18,19 @@ From Stdlib Require Import Lia.
 From Stdlib Require Import Bool.
 Require Export plih_rocq_abe_shared.
 
-(* ================================================================ *)
-(* SECTION 1: SYNTAX - EXTENDED LANGUAGE                           *)
-(* ================================================================ *)
+(** * SECTION 1: SYNTAX - EXTENDED LANGUAGE *)
 
 (**
- * ABE extends AE with:
- *   - Boolean literals: BTrue, BFalse
- *   - Boolean operations: And, Or, Not
- *   - Comparisons: LessThan, Equal
- *   - Conditionals: IfThenElse
- *
- * Compare to the Haskell course (data ABE = Num | Plus | Minus
- * | Boolean | And | Leq | IsZero | If).  We split the boolean and
- * comparison operators out into separate constructors so that each
- * proof exercises one idea at a time.
+ABE extends AE with:
+  - Boolean literals: BTrue, BFalse
+  - Boolean operations: And, Or, Not
+  - Comparisons: LessThan, Equal
+  - Conditionals: IfThenElse
+
+Compare to the Haskell course (data ABE = Num | Plus | Minus
+| Boolean | And | Leq | IsZero | If).  We split the boolean and
+comparison operators out into separate constructors so that each
+proof exercises one idea at a time.
  *)
 
 Inductive ABE : Type :=
@@ -54,21 +52,19 @@ Definition abe_example_1 : ABE := BTrue.
 Definition abe_example_2 : ABE := And BTrue BFalse.
 Definition abe_example_3 : ABE := LessThan (Num 3) (Num 5).
 
-(* ================================================================ *)
-(* SECTION 2: SEMANTICS - EVALUATION WITH MULTIPLE TYPES           *)
-(* ================================================================ *)
+(** * SECTION 2: SEMANTICS - EVALUATION WITH MULTIPLE TYPES *)
 
 (**
- * ABE evaluation is the KEY DIFFERENCE from AE:
- * - It can return either a number or a boolean (a [Value]).
- * - It can FAIL if there is a type mismatch.
- * - It returns [option Value] instead of [nat].
- *
- * Compare to Haskell:
- *   eval :: ABE -> Maybe ABE
- * We use [option Value]; [None] models a type error.
- *
- * The [Value] type (NumV / BoolV) lives in plih_rocq_abe_shared.v.
+ABE evaluation is the KEY DIFFERENCE from AE:
+- It can return either a number or a boolean (a [Value]).
+- It can FAIL if there is a type mismatch.
+- It returns [option Value] instead of [nat].
+
+Compare to Haskell:
+  eval :: ABE -> Maybe ABE
+We use [option Value]; [None] models a type error.
+
+The [Value] type (NumV / BoolV) lives in plih_rocq_abe_shared.v.
  *)
 
 Fixpoint eval (e : ABE) : option Value :=
@@ -139,14 +135,12 @@ Example test_eval_error :
   eval (Plus BTrue (Num 3)) = None.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 3: CLASSIFYING EXPRESSIONS                              *)
-(* ================================================================ *)
+(** * SECTION 3: CLASSIFYING EXPRESSIONS *)
 
 (**
- * Some expressions are guaranteed to produce numbers.
- * Some are guaranteed to produce booleans.
- * We capture these classes with inductive predicates.
+Some expressions are guaranteed to produce numbers.
+Some are guaranteed to produce booleans.
+We capture these classes with inductive predicates.
  *)
 
 (* An expression is "numeric" if it is built only from number operations. *)
@@ -222,15 +216,13 @@ Proof.
     simpl. rewrite H1, H2. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 4: WORKING WITH CONDITIONALS                            *)
-(* ================================================================ *)
+(** * SECTION 4: WORKING WITH CONDITIONALS *)
 
 (**
- * Conditionals are interesting because:
- * - The condition must be boolean.
- * - The branches can return anything.
- * - We only evaluate ONE branch.
+Conditionals are interesting because:
+- The condition must be boolean.
+- The branches can return anything.
+- We only evaluate ONE branch.
  *)
 
 Lemma if_true_evaluates_then : forall e1 e2,
@@ -256,14 +248,12 @@ Proof.
   simpl. rewrite Hcond. destruct b; reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 5: TYPE CONSISTENCY                                      *)
-(* ================================================================ *)
+(** * SECTION 5: TYPE CONSISTENCY *)
 
 (**
- * An important property: a numeric expression, if it evaluates,
- * evaluates to a number.  This is a stepping stone toward formal
- * type checking.
+An important property: a numeric expression, if it evaluates,
+evaluates to a number.  This is a stepping stone toward formal
+type checking.
  *)
 
 Lemma numeric_produces_numbers : forall e,
@@ -278,14 +268,12 @@ Proof.
   exists n. symmetry. exact Heval.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 6: EQUIVALENCE AND OPTIMIZATION                         *)
-(* ================================================================ *)
+(** * SECTION 6: EQUIVALENCE AND OPTIMIZATION *)
 
 (**
- * Two expressions are equivalent when they evaluate to the same
- * result.  Because eval returns [option Value], "same result" covers
- * both "both succeed with the same value" and "both fail".
+Two expressions are equivalent when they evaluate to the same
+result.  Because eval returns [option Value], "same result" covers
+both "both succeed with the same value" and "both fail".
  *)
 
 Definition abe_equiv (e1 e2 : ABE) : Prop := eval e1 = eval e2.
@@ -323,9 +311,7 @@ Proof.
   destruct b1; destruct b2; reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 7: BOOLEAN PROPERTIES                                    *)
-(* ================================================================ *)
+(** * SECTION 7: BOOLEAN PROPERTIES *)
 
 Lemma not_true : eval (Not BTrue) = Some (BoolV false).
 Proof. reflexivity. Qed.
@@ -334,11 +320,11 @@ Lemma not_false : eval (Not BFalse) = Some (BoolV true).
 Proof. reflexivity. Qed.
 
 (**
- * In a type-checked language, [And BTrue e] is only well behaved when
- * [e] is itself a boolean: if [e] evaluates to a number the whole
- * expression is a type error.  So these identities carry a hypothesis
- * about what [e] evaluates to - a small but important difference from
- * the untyped intuition "And True e = e".
+In a type-checked language, [And BTrue e] is only well behaved when
+[e] is itself a boolean: if [e] evaluates to a number the whole
+expression is a type error.  So these identities carry a hypothesis
+about what [e] evaluates to - a small but important difference from
+the untyped intuition "And True e = e".
  *)
 
 Lemma and_true_left : forall e b,
@@ -369,9 +355,7 @@ Proof.
   intros e b H. simpl. rewrite H. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 8: COMPARISON PROPERTIES                                *)
-(* ================================================================ *)
+(** * SECTION 8: COMPARISON PROPERTIES *)
 
 Lemma less_than_3_5 :
   eval (LessThan (Num 3) (Num 5)) = Some (BoolV true).
@@ -388,9 +372,7 @@ Proof.
   simpl. rewrite Nat.eqb_refl. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 9: CONDITIONAL SEMANTICS                                *)
-(* ================================================================ *)
+(** * SECTION 9: CONDITIONAL SEMANTICS *)
 
 Lemma conditional_with_arithmetic_branches :
   eval (IfThenElse (LessThan (Num 3) (Num 5))
@@ -409,9 +391,7 @@ Proof.
   reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 10: SIZE AND COMPLEXITY METRICS                         *)
-(* ================================================================ *)
+(** * SECTION 10: SIZE AND COMPLEXITY METRICS *)
 
 Fixpoint size (e : ABE) : nat :=
   match e with
@@ -457,24 +437,22 @@ Proof.
   intro e. induction e; simpl; lia.
 Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture, we:
- *
- * 1. Extended the language with booleans, comparisons, and conditionals.
- * 2. Introduced multiple value types (NumV, BoolV).
- * 3. Added error handling with [option Value].
- * 4. Proved that well-formed (numeric / boolean) expressions never fail.
- * 5. Explored boolean algebra properties, including De Morgan's law.
- * 6. Introduced type-consistency reasoning.
- * 7. Proved equivalence is reflexive, symmetric, and transitive.
- *
- * Key insight: adding booleans forces us to rethink evaluation.  We can
- * no longer assume every expression evaluates to a nat - some evaluate
- * to booleans, and some fail with type errors.
- *
- * Next: students add type checking to rule out the errors statically.
+In this lecture, we:
+
+1. Extended the language with booleans, comparisons, and conditionals.
+2. Introduced multiple value types (NumV, BoolV).
+3. Added error handling with [option Value].
+4. Proved that well-formed (numeric / boolean) expressions never fail.
+5. Explored boolean algebra properties, including De Morgan's law.
+6. Introduced type-consistency reasoning.
+7. Proved equivalence is reflexive, symmetric, and transitive.
+
+Key insight: adding booleans forces us to rethink evaluation.  We can
+no longer assume every expression evaluates to a nat - some evaluate
+to booleans, and some fail with type errors.
+
+Next: students add type checking to rule out the errors statically.
  *)

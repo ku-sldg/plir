@@ -1,13 +1,13 @@
 (**
- * Programming Languages in Rocq - ABE Shared Infrastructure
- * Arithmetic + Boolean Expressions
- *
- * Extends the foundation from AE to support multiple value types
- * and error handling.
- *
- * This module provides the [Value] type and the operations the ABE
- * interpreter is built from.  The interpreter itself lives in
- * plih_abe_lecture.v.
+Programming Languages in Rocq - ABE Shared Infrastructure
+Arithmetic + Boolean Expressions
+
+Extends the foundation from AE to support multiple value types
+and error handling.
+
+This module provides the [Value] type and the operations the ABE
+interpreter is built from.  The interpreter itself lives in
+plih_abe_lecture.v.
  *)
 
 From Stdlib Require Import List.
@@ -17,28 +17,24 @@ From Stdlib Require Import Lia.
 From Stdlib Require Import Bool.
 Require Export plih_rocq_ae_shared.
 
-(* ================================================================ *)
-(* PART 1: VALUE TYPES FOR ABE                                     *)
-(* ================================================================ *)
+(** * PART 1: VALUE TYPES FOR ABE *)
 
 (**
- * In AE, everything evaluated to nat.
- * In ABE, we have two kinds of values: numbers and booleans.
- *
- * We use a tagged union (inductive type) to represent both.
- *
- * Compare to Haskell, where the course represents values as ABE terms
- * (Num and Boolean).  Here we use a dedicated [Value] type so that the
- * distinction between *syntax* (ABE) and *values* (Value) is explicit.
+In AE, everything evaluated to nat.
+In ABE, we have two kinds of values: numbers and booleans.
+
+We use a tagged union (inductive type) to represent both.
+
+Compare to Haskell, where the course represents values as ABE terms
+(Num and Boolean).  Here we use a dedicated [Value] type so that the
+distinction between *syntax* (ABE) and *values* (Value) is explicit.
  *)
 
 Inductive Value : Type :=
 | NumV  : nat  -> Value
 | BoolV : bool -> Value.
 
-(* ================================================================ *)
-(* PART 2: VALUE OPERATIONS                                        *)
-(* ================================================================ *)
+(** * PART 2: VALUE OPERATIONS *)
 
 (* Extract a number from a value (if it is one) *)
 Definition value_to_nat (v : Value) : option nat :=
@@ -60,18 +56,16 @@ Definition nat_to_value : nat -> Value := NumV.
 (* Convert bool to Value *)
 Definition bool_to_value : bool -> Value := BoolV.
 
-(* ================================================================ *)
-(* PART 3: ERROR HANDLING WITH OPTION                              *)
-(* ================================================================ *)
+(** * PART 3: ERROR HANDLING WITH OPTION *)
 
 (**
- * Evaluation can now fail if there is a type mismatch.
- * For example: (True + 3) is syntactically valid but semantically
- * nonsense.
- *
- * We reuse the option monad from the AE shared library
- * ([bind], [return_], and the [>>=] notation) to represent
- * success/failure.
+Evaluation can now fail if there is a type mismatch.
+For example: (True + 3) is syntactically valid but semantically
+nonsense.
+
+We reuse the option monad from the AE shared library
+([bind], [return_], and the [>>=] notation) to represent
+success/failure.
  *)
 
 Definition eval_result : Type := option Value.
@@ -102,13 +96,11 @@ Definition lift_compare (op : nat -> nat -> bool) (v1 v2 : Value)
   | _, _ => None
   end.
 
-(* ================================================================ *)
-(* PART 4: TYPE CLASSIFICATION                                     *)
-(* ================================================================ *)
+(** * PART 4: TYPE CLASSIFICATION *)
 
 (**
- * We can ask: "What type of value is this?"
- * This is preparation for actual type checking in later chapters.
+We can ask: "What type of value is this?"
+This is preparation for actual type checking in later chapters.
  *)
 
 Inductive ValueType : Type :=
@@ -141,9 +133,7 @@ Proof.
   reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 5: BOOLEAN OPERATIONS                                      *)
-(* ================================================================ *)
+(** * PART 5: BOOLEAN OPERATIONS *)
 
 (* Logical AND *)
 Definition bool_and (b1 b2 : bool) : bool := andb b1 b2.
@@ -154,9 +144,7 @@ Definition bool_or (b1 b2 : bool) : bool := orb b1 b2.
 (* Logical NOT *)
 Definition bool_not (b : bool) : bool := negb b.
 
-(* ================================================================ *)
-(* PART 6: COMPARISON OPERATORS                                    *)
-(* ================================================================ *)
+(** * PART 6: COMPARISON OPERATORS *)
 
 Definition nat_less_than (n1 n2 : nat) : bool := Nat.ltb n1 n2.
 
@@ -180,23 +168,19 @@ Proof.
   apply Nat.eqb_eq.
 Qed.
 
-(* ================================================================ *)
-(* PART 7: ERROR ANALYSIS                                          *)
-(* ================================================================ *)
+(** * PART 7: ERROR ANALYSIS *)
 
 (**
- * When evaluation returns None, what went wrong?
- * We can classify errors.  For now the interpreter only uses option,
- * but this type previews how we might track richer error information.
+When evaluation returns None, what went wrong?
+We can classify errors.  For now the interpreter only uses option,
+but this type previews how we might track richer error information.
  *)
 
 Inductive EvalError : Type :=
 | TypeError    : EvalError
 | UnknownError : EvalError.
 
-(* ================================================================ *)
-(* PART 8: USEFUL LEMMAS ABOUT VALUES                              *)
-(* ================================================================ *)
+(** * PART 8: USEFUL LEMMAS ABOUT VALUES *)
 
 Lemma value_extraction_consistent : forall n,
   value_to_nat (NumV n) = Some n.
@@ -229,9 +213,7 @@ Proof.
     right; discriminate.
 Qed.
 
-(* ================================================================ *)
-(* PART 9: BOOLEAN ALGEBRA PROPERTIES                              *)
-(* ================================================================ *)
+(** * PART 9: BOOLEAN ALGEBRA PROPERTIES *)
 
 Lemma and_commutative : forall b1 b2,
   bool_and b1 b2 = bool_and b2 b1.
@@ -273,9 +255,7 @@ Proof.
   destruct b1; destruct b2; reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 10: EXPORTED INTERFACE                                     *)
-(* ================================================================ *)
+(** * PART 10: EXPORTED INTERFACE *)
 
 Export List.
 Export Nat.

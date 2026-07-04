@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - AE Exercises
- * Arithmetic Expressions - Student Problem Set
- *
- * In these exercises you will:
- * 1. Complete proofs by replacing [Admitted] with [Qed]
- * 2. Understand the eval function through examples
- * 3. Learn proof tactics (induction, lia, destruct, ...)
- * 4. Discover properties of arithmetic
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof
- * ending in [Qed].  The file compiles as given (Rocq accepts
- * [Admitted]), so you can check progress incrementally.
- *
- * The [AE] syntax, the [eval] interpreter, and the helpers [count_ops],
- * [ae_equiv], and [ae_eq_dec] come from the lecture, which we import.
- * Helper functions needed by some exercises (size, depth, optimize,
- * fold_constants, simplify) are PROVIDED below - the exercise is to
- * prove the lemmas about them.
- *
- * Difficulty: [*] trivial, [**] easy induction, [***] case analysis,
- * [****] harder.  Complete solutions are in plih_ae_solutions.v.
+Programming Languages in Rocq - AE Exercises
+Arithmetic Expressions - Student Problem Set
+
+In these exercises you will:
+1. Complete proofs by replacing [Admitted] with [Qed]
+2. Understand the eval function through examples
+3. Learn proof tactics (induction, lia, destruct, ...)
+4. Discover properties of arithmetic
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof
+ending in [Qed].  The file compiles as given (Rocq accepts
+[Admitted]), so you can check progress incrementally.
+
+The [AE] syntax, the [eval] interpreter, and the helpers [count_ops],
+[ae_equiv], and [ae_eq_dec] come from the lecture, which we import.
+Helper functions needed by some exercises (size, depth, optimize,
+fold_constants, simplify) are PROVIDED below - the exercise is to
+prove the lemmas about them.
+
+Difficulty: [*] trivial, [**] easy induction, [***] case analysis,
+[****] harder.  Complete solutions are in plih_ae_solutions.v.
  *)
 
 From Stdlib Require Import List.
@@ -30,9 +30,7 @@ From Stdlib Require Import Lia.
 Require Import plih_rocq_ae_shared.
 Require Import plih_ae_lecture.
 
-(* ================================================================ *)
-(* WARM-UP: DIRECT EVALUATION                                       *)
-(* ================================================================ *)
+(** * WARM-UP: DIRECT EVALUATION *)
 
 (* Exercise 1 [*]: Basic evaluation *)
 Example ex1_eval_num : eval (Num 42) = 42.
@@ -57,9 +55,7 @@ Example ex5_eval_complex :
   eval (Plus (Minus (Num 20) (Num 5)) (Num 10)) = 25.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 1: SIMPLE LEMMAS                                            *)
-(* ================================================================ *)
+(** * PART 1: SIMPLE LEMMAS *)
 
 (* Exercise 6 [*]: Plus distributes into eval *)
 Lemma ex6_eval_plus_distributes : forall e1 e2,
@@ -76,9 +72,7 @@ Lemma ex8_plus_commutative : forall e1 e2,
   eval (Plus e1 e2) = eval (Plus e2 e1).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: SIMPLE INDUCTION PROOFS                                  *)
-(* ================================================================ *)
+(** * PART 2: SIMPLE INDUCTION PROOFS *)
 
 (* Exercise 9 [**]: Zero is a left identity for plus *)
 Lemma ex9_zero_left_identity : forall e,
@@ -100,9 +94,7 @@ Lemma ex12_eval_is_positive : forall e,
   eval e >= 0.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: PROPERTIES OF OPERATIONS                                 *)
-(* ================================================================ *)
+(** * PART 3: PROPERTIES OF OPERATIONS *)
 
 (* Exercise 13 [**]: Adding 0 on the right does nothing *)
 Lemma ex13_plus_zero_right : forall e,
@@ -126,9 +118,7 @@ Lemma ex16_minus_twice : forall e1 e2 e3,
   if (eval e1) <? (eval e2 + eval e3) then 0 else eval e1 - eval e2 - eval e3.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 4: INEQUALITIES                                             *)
-(* ================================================================ *)
+(** * PART 4: INEQUALITIES *)
 
 (* Exercise 17 [**]: Plus does not decrease the value *)
 Lemma ex17_plus_increases : forall e1 e2,
@@ -145,9 +135,7 @@ Lemma ex19_plus_both_pos : forall e1 e2,
   eval e1 > 0 -> eval e2 > 0 -> eval (Plus e1 e2) > 1.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 5: AUXILIARY FUNCTIONS                                      *)
-(* ================================================================ *)
+(** * PART 5: AUXILIARY FUNCTIONS *)
 
 (* PROVIDED: number of nodes in the expression tree. *)
 Fixpoint size (e : AE) : nat :=
@@ -188,9 +176,7 @@ Lemma ex23_size_depth_relation : forall e,
   size e <= 2 ^ (depth e + 1).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 6: OPTIMIZATION CORRECTNESS                                 *)
-(* ================================================================ *)
+(** * PART 6: OPTIMIZATION CORRECTNESS *)
 
 (* PROVIDED: optimize children first, then drop a [+ 0] on the right. *)
 Fixpoint optimize (e : AE) : AE :=
@@ -214,9 +200,7 @@ Lemma ex25_optimize_reduces_size : forall e,
   size (optimize e) <= size e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 7: EQUIVALENCE RELATION                                     *)
-(* ================================================================ *)
+(** * PART 7: EQUIVALENCE RELATION *)
 
 (* [ae_equiv e1 e2] is defined in the lecture as [eval e1 = eval e2]. *)
 
@@ -240,9 +224,7 @@ Lemma ex29_equiv_example :
   ae_equiv (Plus (Num 1) (Num 2)) (Plus (Num 2) (Num 1)).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 8: CREATIVE PROBLEMS                                        *)
-(* ================================================================ *)
+(** * PART 8: CREATIVE PROBLEMS *)
 
 (* PROVIDED: constant folding - evaluate constant subexpressions. *)
 Fixpoint fold_constants (e : AE) : AE :=
@@ -271,9 +253,7 @@ Lemma ex31_double : forall e,
   eval e + eval e = 2 * eval e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1: a nonzero operation count means the head is Plus or
    Minus. ([count_ops] is from the lecture.) *)
@@ -301,12 +281,10 @@ Lemma challenge2_simplify_correct : forall e,
   eval (simplify e) = eval e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* SUBMISSION GUIDELINES                                            *)
-(* ================================================================ *)
+(** * SUBMISSION GUIDELINES *)
 
 (**
- * Replace every [Admitted] with a complete proof ending in [Qed].
- * When you are done, the file should compile with no remaining
- * [Admitted].  Compare your proofs against plih_ae_solutions.v.
+Replace every [Admitted] with a complete proof ending in [Qed].
+When you are done, the file should compile with no remaining
+[Admitted].  Compare your proofs against plih_ae_solutions.v.
  *)

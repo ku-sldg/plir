@@ -1,11 +1,11 @@
 (**
- * Programming Languages in Rocq - Untyped Recursion Solutions
- * Complete solutions to plih_rec_exercises.v
- *
- * The language [FBAEC], the interpreters [evalM]/[evalL] with wrappers
- * [eval]/[evalLazy], the metatheorem [evalM_mono], the combinators
- * [Yc]/[Zc], and the generators [sumGen]/[factGen] all come from the
- * Untyped Recursion lecture.
+Programming Languages in Rocq - Untyped Recursion Solutions
+Complete solutions to plih_rec_exercises.v
+
+The language [FBAEC], the interpreters [evalM]/[evalL] with wrappers
+[eval]/[evalLazy], the metatheorem [evalM_mono], the combinators
+[Yc]/[Zc], and the generators [sumGen]/[factGen] all come from the
+Untyped Recursion lecture.
  *)
 
 From Stdlib Require Import String.
@@ -19,9 +19,7 @@ Require Import plih_rec_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE INTERPRETERS                                *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE INTERPRETERS *)
 
 Example ex1_arith : eval (Minus (Mult (Num 3) (Num 4)) (Num 2)) = Some (NumV 10).
 Proof. reflexivity. Qed.
@@ -42,9 +40,7 @@ Example ex6_Y_strict_diverges :
   evalM 100 nil (App (App Yc factGen) (Num 4)) = None.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: VALUE AND BRANCH LAWS                                   *)
-(* ================================================================ *)
+(** * PART 2: VALUE AND BRANCH LAWS *)
 
 Example ex7_boolean : forall k env b,
   evalM (S k) env (Boolean b) = Some (BoolV b).
@@ -57,9 +53,7 @@ Example ex8_if_true : forall k env t f,
   evalM (S k) env (If (Boolean true) t f) = evalM k env t.
 Proof. intros k env t f. destruct k; reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 3: FUEL MONOTONICITY                                       *)
-(* ================================================================ *)
+(** * PART 3: FUEL MONOTONICITY *)
 
 Example ex9_more_fuel : forall f env e v,
   evalM f env e = Some v -> evalM (f + 10) env e = Some v.

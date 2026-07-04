@@ -1,33 +1,33 @@
 (**
- * Programming Languages in Rocq - Typed Functions Exercises
- * A static type system for the functional language - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the TYPE CHECKER [typeof]/[typecheck]: accept good programs,
- *      reject the classic stuck terms (including self-application)
- *   2. Run the STRICT interpreter [evalM]/[eval]
- *   3. Connect the two - TYPE SOUNDNESS in miniature - and use the
- *      metatheory ([Ty_eqb] correctness, fuel monotonicity, canonical
- *      forms)
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: the types [Ty] ([TNum]/[TBool]/[TArr]) with
- * [Ty_eqb] (and [Ty_eqb_refl]/[Ty_eqb_eq]); the term language [TFBAEC];
- * the checker [typeof]/[typecheck]; the values [TVal]
- * ([NumV]/[BoolV]/[ClosureV]); the strict interpreter [evalM]/[eval];
- * [evalM_mono]; the predicates [isNumV]/[isBoolV]; and the sample terms
- * [inc]/[selfApp].  [lookup]/[extend] come from the shared library.
- *
- * NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
- * literal fuel forces the kernel to unroll [evalM] and can blow up.  A
- * literal fuel is fine only on a CONCRETE closed term.
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_tfun_solutions.v.
+Programming Languages in Rocq - Typed Functions Exercises
+A static type system for the functional language - Student Problem Set
+
+In these exercises you will:
+  1. Run the TYPE CHECKER [typeof]/[typecheck]: accept good programs,
+     reject the classic stuck terms (including self-application)
+  2. Run the STRICT interpreter [evalM]/[eval]
+  3. Connect the two - TYPE SOUNDNESS in miniature - and use the
+     metatheory ([Ty_eqb] correctness, fuel monotonicity, canonical
+     forms)
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: the types [Ty] ([TNum]/[TBool]/[TArr]) with
+[Ty_eqb] (and [Ty_eqb_refl]/[Ty_eqb_eq]); the term language [TFBAEC];
+the checker [typeof]/[typecheck]; the values [TVal]
+([NumV]/[BoolV]/[ClosureV]); the strict interpreter [evalM]/[eval];
+[evalM_mono]; the predicates [isNumV]/[isBoolV]; and the sample terms
+[inc]/[selfApp].  [lookup]/[extend] come from the shared library.
+
+NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
+literal fuel forces the kernel to unroll [evalM] and can blow up.  A
+literal fuel is fine only on a CONCRETE closed term.
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_tfun_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -41,9 +41,7 @@ Require Import plih_tfun_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: THE TYPE CHECKER - ACCEPTING AND REJECTING              *)
-(* ================================================================ *)
+(** * PART 1: THE TYPE CHECKER - ACCEPTING AND REJECTING *)
 
 (* [*] A well-typed arithmetic term has type [TNum]. *)
 Example ex1_ty_arith :
@@ -72,9 +70,7 @@ Example ex5_reject_selfApp :
   typecheck (selfApp (TArr TNum TNum)) = None.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: THE STRICT INTERPRETER                                  *)
-(* ================================================================ *)
+(** * PART 2: THE STRICT INTERPRETER *)
 
 (* [*] Applying [inc] to 41 evaluates to 42. *)
 Example ex6_eval_app : eval (App inc (Num 41)) = Some (NumV 42).
@@ -92,9 +88,7 @@ Example ex8_eval_lambda : forall k env i t b,
   evalM (S k) env (Lambda i t b) = Some (ClosureV i b env).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: METATHEORY                                              *)
-(* ================================================================ *)
+(** * PART 3: METATHEORY *)
 
 (* [**] Type equality is sound: cite [Ty_eqb_eq]. *)
 Example ex9_ty_eqb_sound : forall a b,
@@ -119,9 +113,7 @@ Example ex12_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                              *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* PROVIDED: [twice f x] applies a Nat->Nat function twice. *)
 Definition twice : TFBAEC :=

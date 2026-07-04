@@ -1,12 +1,12 @@
 (**
- * Programming Languages in Rocq - IDs Solutions
- * Complete solutions to plih_ids_exercises.v
- *
- * The BAE syntax, [subst], the fuel interpreter [evalF]/[eval] and its
- * equation lemmas ([eval_Num], [eval_Plus], [eval_Bind], ...), the
- * free-variable machinery ([free_in], [closed], [subst_not_free],
- * [free_in_subst_num], [closed_after_subst]) and [bae_equiv] all come
- * from the lecture, which we import.
+Programming Languages in Rocq - IDs Solutions
+Complete solutions to plih_ids_exercises.v
+
+The BAE syntax, [subst], the fuel interpreter [evalF]/[eval] and its
+equation lemmas ([eval_Num], [eval_Plus], [eval_Bind], ...), the
+free-variable machinery ([free_in], [closed], [subst_not_free],
+[free_in_subst_num], [closed_after_subst]) and [bae_equiv] all come
+from the lecture, which we import.
  *)
 
 From Stdlib Require Import String.
@@ -19,9 +19,7 @@ Require Import plih_ids_lecture.
 
 Local Open Scope string_scope.
 
-(* ================================================================ *)
-(* WARM-UP: RUNNING THE INTERPRETER                                *)
-(* ================================================================ *)
+(** * WARM-UP: RUNNING THE INTERPRETER *)
 
 Example ex1_eval_num : eval (Num 42) = Some 42.
 Proof. reflexivity. Qed.
@@ -41,9 +39,7 @@ Example ex5_eval_nested :
   = Some 9.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 1: SUBSTITUTION                                             *)
-(* ================================================================ *)
+(** * PART 1: SUBSTITUTION *)
 
 Example ex6_subst_leaf : subst "x" (Num 3) (Id "x") = Num 3.
 Proof. reflexivity. Qed.
@@ -60,9 +56,7 @@ Lemma ex9_subst_size : forall e i n,
   size (subst i (Num n) e) = size e.
 Proof. intros. apply size_subst_num. Qed.
 
-(* ================================================================ *)
-(* PART 2: FREE VARIABLES AND CLOSED TERMS                         *)
-(* ================================================================ *)
+(** * PART 2: FREE VARIABLES AND CLOSED TERMS *)
 
 Lemma ex10_closed_num : closed (Num 5).
 Proof. intro x. reflexivity. Qed.
@@ -85,9 +79,7 @@ Proof.
   intro H. specialize (H "x"). compute in H. discriminate.
 Qed.
 
-(* ================================================================ *)
-(* PART 3: EVALUATION EQUATIONS                                     *)
-(* ================================================================ *)
+(** * PART 3: EVALUATION EQUATIONS *)
 
 Lemma ex15_eval_plus : forall l r,
   eval (Plus l r) =
@@ -117,9 +109,7 @@ Lemma ex19_bind_unused : forall x v b n,
   eval (Bind x v b) = eval b.
 Proof. intros. eapply bind_unused; eassumption. Qed.
 
-(* ================================================================ *)
-(* PART 4: EQUIVALENCE                                              *)
-(* ================================================================ *)
+(** * PART 4: EQUIVALENCE *)
 
 Lemma ex20_equiv_refl : forall e, bae_equiv e e.
 Proof. exact bae_equiv_refl. Qed.
@@ -136,9 +126,7 @@ Proof.
   intros e x n H. rewrite subst_closed by assumption. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 5: FREE VARIABLES UNDER SUBSTITUTION                        *)
-(* ================================================================ *)
+(** * PART 5: FREE VARIABLES UNDER SUBSTITUTION *)
 
 (* Substituting for [x] removes [x] from the free set. *)
 Lemma ex23_x_not_free_after_subst : forall e n,
@@ -156,9 +144,7 @@ Proof.
   apply String.eqb_neq in Hz. rewrite Hz. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1: fuel independence - any sufficient fuel gives [eval]. *)
 Lemma challenge1_fuel_independent : forall e f,

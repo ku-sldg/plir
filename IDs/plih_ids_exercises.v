@@ -1,29 +1,29 @@
 (**
- * Programming Languages in Rocq - IDs Exercises
- * Adding Identifiers - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the substitution interpreter for BAE
- *   2. Reason about substitution, free variables, and closed terms
- *   3. Use the [eval] equation lemmas from the lecture
- *   4. Prove PROGRESS: closed programs never get stuck (challenge)
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof
- * ending in [Qed].  The file compiles as given (Rocq accepts
- * [Admitted]), so you can check progress incrementally.
- *
- * The BAE syntax, [subst], the fuel interpreter [eval] together with
- * its equation lemmas ([eval_Num], [eval_Plus], [eval_Minus],
- * [eval_Bind], [bind_num_subst], [bind_unused]), the free-variable
- * machinery ([free_in], [closed], [subst_not_free], [subst_closed],
- * [free_in_subst_num], [closed_after_subst]) and [bae_equiv] all come
- * from the lecture, which we import.
- *
- * Difficulty: [*] trivial (reflexivity), [**] one or two lemma
- * citations, [***] case analysis / small induction, [****] harder.
- * Complete solutions are in plih_ids_solutions.v.
+Programming Languages in Rocq - IDs Exercises
+Adding Identifiers - Student Problem Set
+
+In these exercises you will:
+  1. Run the substitution interpreter for BAE
+  2. Reason about substitution, free variables, and closed terms
+  3. Use the [eval] equation lemmas from the lecture
+  4. Prove PROGRESS: closed programs never get stuck (challenge)
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof
+ending in [Qed].  The file compiles as given (Rocq accepts
+[Admitted]), so you can check progress incrementally.
+
+The BAE syntax, [subst], the fuel interpreter [eval] together with
+its equation lemmas ([eval_Num], [eval_Plus], [eval_Minus],
+[eval_Bind], [bind_num_subst], [bind_unused]), the free-variable
+machinery ([free_in], [closed], [subst_not_free], [subst_closed],
+[free_in_subst_num], [closed_after_subst]) and [bae_equiv] all come
+from the lecture, which we import.
+
+Difficulty: [*] trivial (reflexivity), [**] one or two lemma
+citations, [***] case analysis / small induction, [****] harder.
+Complete solutions are in plih_ids_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -36,9 +36,7 @@ Require Import plih_ids_lecture.
 
 Local Open Scope string_scope.
 
-(* ================================================================ *)
-(* WARM-UP: RUNNING THE INTERPRETER                                *)
-(* ================================================================ *)
+(** * WARM-UP: RUNNING THE INTERPRETER *)
 
 (* Exercise 1 [*]: A literal evaluates to itself. *)
 Example ex1_eval_num : eval (Num 42) = Some 42.
@@ -63,9 +61,7 @@ Example ex5_eval_nested :
   = Some 9.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 1: SUBSTITUTION                                             *)
-(* ================================================================ *)
+(** * PART 1: SUBSTITUTION *)
 
 (* Exercise 6 [*]: Substituting for a matching identifier. *)
 Example ex6_subst_leaf : subst "x" (Num 3) (Id "x") = Num 3.
@@ -87,9 +83,7 @@ Lemma ex9_subst_size : forall e i n,
   size (subst i (Num n) e) = size e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: FREE VARIABLES AND CLOSED TERMS                         *)
-(* ================================================================ *)
+(** * PART 2: FREE VARIABLES AND CLOSED TERMS *)
 
 (* Exercise 10 [*]: A number is closed. *)
 Lemma ex10_closed_num : closed (Num 5).
@@ -116,9 +110,7 @@ Proof. Admitted.
 Lemma ex14_id_not_closed : ~ closed (Id "x").
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: EVALUATION EQUATIONS                                     *)
-(* ================================================================ *)
+(** * PART 3: EVALUATION EQUATIONS *)
 
 (* Exercise 15 [*]: The evaluation equation for Plus. Hint: [eval_Plus]. *)
 Lemma ex15_eval_plus : forall l r,
@@ -153,9 +145,7 @@ Lemma ex19_bind_unused : forall x v b n,
   eval (Bind x v b) = eval b.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 4: EQUIVALENCE                                              *)
-(* ================================================================ *)
+(** * PART 4: EQUIVALENCE *)
 
 (* Exercise 20 [*]: Equivalence is reflexive. *)
 Lemma ex20_equiv_refl : forall e, bae_equiv e e.
@@ -172,9 +162,7 @@ Lemma ex22_eval_subst_closed : forall e x n,
   closed e -> eval (subst x (Num n) e) = eval e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 5: FREE VARIABLES UNDER SUBSTITUTION                        *)
-(* ================================================================ *)
+(** * PART 5: FREE VARIABLES UNDER SUBSTITUTION *)
 
 (* Exercise 23 [**]: Substituting for [x] removes [x] from the free set.
    Hint: [free_in_subst_num]. *)
@@ -188,9 +176,7 @@ Lemma ex24_other_free_preserved : forall e n z,
   free_in z (subst "x" (Num n) e) = free_in z e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1 [**]: Any sufficient fuel computes [eval].
    Hint: [evalF_eval]. *)
@@ -206,12 +192,10 @@ Theorem challenge2_progress : forall e,
   closed e -> exists m, eval e = Some m.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* SUBMISSION GUIDELINES                                            *)
-(* ================================================================ *)
+(** * SUBMISSION GUIDELINES *)
 
 (**
- * Replace every [Admitted] with a complete proof ending in [Qed].
- * When you are done, the file should compile with no remaining
- * [Admitted].  Compare your proofs against plih_ids_solutions.v.
+Replace every [Admitted] with a complete proof ending in [Qed].
+When you are done, the file should compile with no remaining
+[Admitted].  Compare your proofs against plih_ids_solutions.v.
  *)

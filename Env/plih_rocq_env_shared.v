@@ -1,20 +1,20 @@
 (**
- * Programming Languages in Rocq - Env Shared Infrastructure
- * Adding Environments
- *
- * This chapter mirrors "Adding Environments" from PLIH:
- *   https://ku-sldg.github.io/plih//ids/2-Adding-Environments.html
- *
- * It keeps the SAME BAE language from the "Adding Identifiers" chapter,
- * but replaces eager substitution with a DEFERRED environment.  So we
- * re-export the IDs lecture wholesale: it gives us [BAE], [subst], the
- * substitution interpreter [eval], [size], the free-variable machinery,
- * and - crucially - lets us PROVE that the environment interpreter
- * agrees with the substitution interpreter.
- *
- * The environment type itself, [Env], together with [lookup] and
- * [extend], already lives in the AE shared library and reaches us
- * through this re-export chain.
+Programming Languages in Rocq - Env Shared Infrastructure
+Adding Environments
+
+This chapter mirrors "Adding Environments" from PLIH:
+  https://ku-sldg.github.io/plih//ids/2-Adding-Environments.html
+
+It keeps the SAME BAE language from the "Adding Identifiers" chapter,
+but replaces eager substitution with a DEFERRED environment.  So we
+re-export the IDs lecture wholesale: it gives us [BAE], [subst], the
+substitution interpreter [eval], [size], the free-variable machinery,
+and - crucially - lets us PROVE that the environment interpreter
+agrees with the substitution interpreter.
+
+The environment type itself, [Env], together with [lookup] and
+[extend], already lives in the AE shared library and reaches us
+through this re-export chain.
  *)
 
 From Stdlib Require Import String.

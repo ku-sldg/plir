@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - Reader+State+Either Monad Exercises
- * Three-effect interpreter - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the three-effect interpreter [evalRSErr], observing successes
- *      ([inr]) and DESCRIPTIVE error messages ([inl])
- *   2. Use the REFINEMENT theorem to relate it to the explicit [evalM]
- *   3. Prove monad laws and effect-interaction facts
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: the language [FBAES]; values [RVal] and the
- * [Store]; the explicit interpreter [evalM]/[eval]; the combined monad
- * [RSE]/[retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/[putRSE]/[throwRSE]/
- * [runRSE] with [;;]; [forget]; the monadic interpreter
- * [evalRSE]/[evalRSErr]; and the theorems [evalRSE_refines] /
- * [evalRSErr_refines].
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_rsemon_solutions.v.
+Programming Languages in Rocq - Reader+State+Either Monad Exercises
+Three-effect interpreter - Student Problem Set
+
+In these exercises you will:
+  1. Run the three-effect interpreter [evalRSErr], observing successes
+     ([inr]) and DESCRIPTIVE error messages ([inl])
+  2. Use the REFINEMENT theorem to relate it to the explicit [evalM]
+  3. Prove monad laws and effect-interaction facts
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: the language [FBAES]; values [RVal] and the
+[Store]; the explicit interpreter [evalM]/[eval]; the combined monad
+[RSE]/[retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/[putRSE]/[throwRSE]/
+[runRSE] with [;;]; [forget]; the monadic interpreter
+[evalRSE]/[evalRSErr]; and the theorems [evalRSE_refines] /
+[evalRSErr_refines].
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_rsemon_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -35,9 +35,7 @@ Require Import plih_rsemon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE THREE-EFFECT INTERPRETER                   *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE THREE-EFFECT INTERPRETER *)
 
 (* [*] A success carries value and store on the [inr] side. *)
 Example ex1_arith :
@@ -67,9 +65,7 @@ Example ex5_not_a_location :
   evalRSErr (Deref (Boolean true)) = inl "deref: not a location".
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: REFINEMENT IN ACTION                                    *)
-(* ================================================================ *)
+(** * PART 2: REFINEMENT IN ACTION *)
 
 (* [**] Forgetting the message recovers the explicit [eval] on this
    program.  Cite [evalRSErr_refines]. *)
@@ -91,9 +87,7 @@ Example ex8_transport : forall e p,
   evalRSErr e = inr p -> eval e = Some p.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS AND EFFECT INTERACTION                      *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS AND EFFECT INTERACTION *)
 
 (* [*] LEFT IDENTITY. *)
 Example ex9_left_id : forall (A B : Type) (a : A) (f : A -> RSE (Env RVal) Store B),

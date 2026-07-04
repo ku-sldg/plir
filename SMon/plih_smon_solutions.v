@@ -1,11 +1,11 @@
 (**
- * Programming Languages in Rocq - State Monad Solutions
- * Complete solutions to plih_smon_exercises.v
- *
- * The language [FBAES], the explicit interpreter [evalM]/[eval], the State
- * monad ([retS]/[bindS]/[getS]/[putS]/[failS]/[runState]), the monadic
- * interpreter [evalS]/[evalStore], and the theorems [evalS_agrees] /
- * [evalStore_agrees] all come from the State Monad lecture.
+Programming Languages in Rocq - State Monad Solutions
+Complete solutions to plih_smon_exercises.v
+
+The language [FBAES], the explicit interpreter [evalM]/[eval], the State
+monad ([retS]/[bindS]/[getS]/[putS]/[failS]/[runState]), the monadic
+interpreter [evalS]/[evalStore], and the theorems [evalS_agrees] /
+[evalStore_agrees] all come from the State Monad lecture.
  *)
 
 From Stdlib Require Import String.
@@ -19,9 +19,7 @@ Require Import plih_smon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE MONADIC INTERPRETER                        *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE MONADIC INTERPRETER *)
 
 Example ex1_arith :
   evalStore (Minus (Mult (Num 3) (Num 4)) (Num 2)) = Some (NumV 10, nil).
@@ -42,9 +40,7 @@ Example ex3_two_cells :
   = Some (NumV 2, [NumV 9; NumV 2]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: AGREEMENT IN ACTION                                     *)
-(* ================================================================ *)
+(** * PART 2: AGREEMENT IN ACTION *)
 
 Example ex4_wrapper_agrees :
   evalStore (New (Num 5)) = eval (New (Num 5)).
@@ -58,9 +54,7 @@ Example ex6_transport : forall e v s',
   evalStore e = Some (v, s') -> eval e = Some (v, s').
 Proof. intros e v s' H. rewrite <- evalStore_agrees. exact H. Qed.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS                                              *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS *)
 
 Example ex7_left_id : forall (A B : Type) (a : A) (f : A -> State Store B),
   bindS (retS a) f = f a.

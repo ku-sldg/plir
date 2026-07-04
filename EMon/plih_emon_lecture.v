@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - Reader+Either Monad Lecture
- * Informative type errors with a combined Reader-and-Either monad
- *
- * RMon's Reader monad hid the context but still failed with a bare [None].
- * A type checker should say WHY it rejected a program.  This chapter keeps
- * the Reader threading and stacks the EITHER monad on top: a computation
- * is now [RE E A = E -> string + A], which reads a context [E] and either
- * fails with a message ([inl msg]) or succeeds with a value ([inr a]).
- *
- * The plan:
- *   1. The typed language [Ty]/[TFBAEC] and the DIRECT [option] checker
- *      [typeof] (RMon's reference).
- *   2. The combined READER+EITHER monad [RE] with [retE]/[bindE]/[askE]/
- *      [localE]/[throwE]/[runE].
- *   3. The message-carrying checker [typeofE], throwing a descriptive
- *      error at each failure.
- *   4. REFINEMENT: [forget (typeofE e ctx) = typeof ctx e] - erasing the
- *      message recovers exactly RMon's [option] answer.  So the richer
- *      checker accepts and rejects exactly the same programs; it just says
- *      more when it rejects.
- *
- * This mirrors the "Reader and Either" unit of PLIH (a source placeholder):
- *   https://ku-sldg.github.io/plih//types/6-Reader-And-Either.html
+Programming Languages in Rocq - Reader+Either Monad Lecture
+Informative type errors with a combined Reader-and-Either monad
+
+RMon's Reader monad hid the context but still failed with a bare [None].
+A type checker should say WHY it rejected a program.  This chapter keeps
+the Reader threading and stacks the EITHER monad on top: a computation
+is now [RE E A = E -> string + A], which reads a context [E] and either
+fails with a message ([inl msg]) or succeeds with a value ([inr a]).
+
+The plan:
+  1. The typed language [Ty]/[TFBAEC] and the DIRECT [option] checker
+     [typeof] (RMon's reference).
+  2. The combined READER+EITHER monad [RE] with [retE]/[bindE]/[askE]/
+     [localE]/[throwE]/[runE].
+  3. The message-carrying checker [typeofE], throwing a descriptive
+     error at each failure.
+  4. REFINEMENT: [forget (typeofE e ctx) = typeof ctx e] - erasing the
+     message recovers exactly RMon's [option] answer.  So the richer
+     checker accepts and rejects exactly the same programs; it just says
+     more when it rejects.
+
+This mirrors the "Reader and Either" unit of PLIH (a source placeholder):
+  https://ku-sldg.github.io/plih//types/6-Reader-And-Either.html
  *)
 
 From Stdlib Require Import String.
@@ -34,9 +34,7 @@ Require Import plih_rocq_emon_shared.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* SECTION 1: THE TYPED LANGUAGE AND DIRECT CHECKER               *)
-(* ================================================================ *)
+(** * SECTION 1: THE TYPED LANGUAGE AND DIRECT CHECKER *)
 
 Inductive Ty : Type :=
 | TNum  : Ty
@@ -118,23 +116,21 @@ Fixpoint typeof (ctx : Ctx) (e : TFBAEC) : option Ty :=
 
 Definition typecheck (e : TFBAEC) : option Ty := typeof nil e.
 
-(* ================================================================ *)
-(* SECTION 2: THE READER+EITHER MONAD                             *)
-(* ================================================================ *)
+(** * SECTION 2: THE READER+EITHER MONAD *)
 
 (**
- * [RE E A] combines READER (thread an environment [E]) with EITHER (fail
- * with a [string] message or succeed with an [A]).  It is a function
- * [E -> string + A]: given the environment, return [inl msg] on error or
- * [inr a] on success.
- *   - [retE a]     : succeed with [a];
- *   - [bindE m f]  : run [m]; on success feed the value to [f], on error
- *                    PROPAGATE the message unchanged - both under the same
- *                    environment;
- *   - [askE]       : read the environment;
- *   - [localE g m] : run [m] under a transformed environment;
- *   - [throwE msg] : fail with [msg];
- *   - [runE m e]   : execute [m] with environment [e].
+[RE E A] combines READER (thread an environment [E]) with EITHER (fail
+with a [string] message or succeed with an [A]).  It is a function
+[E -> string + A]: given the environment, return [inl msg] on error or
+[inr a] on success.
+  - [retE a]     : succeed with [a];
+  - [bindE m f]  : run [m]; on success feed the value to [f], on error
+                   PROPAGATE the message unchanged - both under the same
+                   environment;
+  - [askE]       : read the environment;
+  - [localE g m] : run [m] under a transformed environment;
+  - [throwE msg] : fail with [msg];
+  - [runE m e]   : execute [m] with environment [e].
  *)
 Definition RE (E A : Type) : Type := E -> sum string A.
 
@@ -155,15 +151,13 @@ Definition runE {E A : Type} (m : RE E A) (e : E) : sum string A := m e.
 Notation "x <- m ;; k" := (bindE m (fun x => k))
   (at level 61, m at next level, right associativity).
 
-(* ================================================================ *)
-(* SECTION 3: THE MESSAGE-CARRYING TYPE CHECKER                   *)
-(* ================================================================ *)
+(** * SECTION 3: THE MESSAGE-CARRYING TYPE CHECKER *)
 
 (**
- * [typeofE] is RMon's monadic checker with every [failR] replaced by a
- * [throwE] carrying a description of what went wrong.  The Reader
- * operations ([askE]/[localE]) are unchanged - context is still threaded
- * implicitly - so only the FAILURE story is richer.
+[typeofE] is RMon's monadic checker with every [failR] replaced by a
+[throwE] carrying a description of what went wrong.  The Reader
+operations ([askE]/[localE]) are unchanged - context is still threaded
+implicitly - so only the FAILURE story is richer.
  *)
 Fixpoint typeofE (e : TFBAEC) : RE Ctx Ty :=
   match e with
@@ -223,16 +217,14 @@ Fixpoint typeofE (e : TFBAEC) : RE Ctx Ty :=
 
 Definition typecheckE (e : TFBAEC) : sum string Ty := runE (typeofE e) nil.
 
-(* ================================================================ *)
-(* SECTION 4: REFINEMENT - MESSAGES ASIDE, THE SAME CHECKER        *)
-(* ================================================================ *)
+(** * SECTION 4: REFINEMENT - MESSAGES ASIDE, THE SAME CHECKER *)
 
 (**
- * [forget] erases an error message, turning the [Either] answer back into
- * an [option] one.  The headline theorem is that [typeofE] REFINES the
- * direct [typeof]: forgetting the message recovers exactly RMon's
- * [option] result.  So the message-carrying checker accepts and rejects
- * precisely the same programs - it only says MORE when it rejects.
+[forget] erases an error message, turning the [Either] answer back into
+an [option] one.  The headline theorem is that [typeofE] REFINES the
+direct [typeof]: forgetting the message recovers exactly RMon's
+[option] result.  So the message-carrying checker accepts and rejects
+precisely the same programs - it only says MORE when it rejects.
  *)
 Definition forget {A : Type} (r : sum string A) : option A :=
   match r with inr a => Some a | inl _ => None end.
@@ -281,9 +273,7 @@ Qed.
 Corollary typecheckE_refines : forall e, forget (typecheckE e) = typecheck e.
 Proof. intros e. apply typeofE_refines. Qed.
 
-(* ================================================================ *)
-(* SECTION 5: ERRORS THAT EXPLAIN THEMSELVES                      *)
-(* ================================================================ *)
+(** * SECTION 5: ERRORS THAT EXPLAIN THEMSELVES *)
 
 Definition inc : TFBAEC := Lambda "x" TNum (Plus (Id "x") (Num 1)).
 
@@ -318,24 +308,22 @@ Proof. reflexivity. Qed.
 Example em_forget_bad : forget (typecheckE (Id "y")) = None.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture we:
- *   1. Kept the typed language and the direct [option] checker [typeof].
- *   2. Combined READER with EITHER: [RE E A = E -> string + A], threading
- *      a context AND carrying an error message, with
- *      [retE]/[bindE]/[askE]/[localE]/[throwE]/[runE].
- *   3. Wrote [typeofE], which reports a descriptive message at every
- *      failure instead of a bare [None].
- *   4. Proved REFINEMENT ([forget (typeofE e ctx) = typeof ctx e]): the
- *      message-carrying checker decides exactly the same programs; the
- *      messages are extra information, not a change of behavior.
- *
- * This completes the monadic-interpreter arc: the Reader monad removed the
- * context plumbing, and the Either monad turned silent failure into
- * explained failure - all while provably preserving what the checker
- * decides.  Next in the course: modeling mutable STATE.
+In this lecture we:
+  1. Kept the typed language and the direct [option] checker [typeof].
+  2. Combined READER with EITHER: [RE E A = E -> string + A], threading
+     a context AND carrying an error message, with
+     [retE]/[bindE]/[askE]/[localE]/[throwE]/[runE].
+  3. Wrote [typeofE], which reports a descriptive message at every
+     failure instead of a bare [None].
+  4. Proved REFINEMENT ([forget (typeofE e ctx) = typeof ctx e]): the
+     message-carrying checker decides exactly the same programs; the
+     messages are extra information, not a change of behavior.
+
+This completes the monadic-interpreter arc: the Reader monad removed the
+context plumbing, and the Either monad turned silent failure into
+explained failure - all while provably preserving what the checker
+decides.  Next in the course: modeling mutable STATE.
  *)

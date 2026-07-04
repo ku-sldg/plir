@@ -1,12 +1,12 @@
 (**
- * Programming Languages in Rocq - Reader+State+Either Monad Solutions
- * Complete solutions to plih_rsemon_exercises.v
- *
- * The language [FBAES], the explicit interpreter [evalM]/[eval], the
- * three-effect monad ([retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/
- * [putRSE]/[throwRSE]/[runRSE]), [forget], the monadic interpreter
- * [evalRSE]/[evalRSErr], and the theorems [evalRSE_refines] /
- * [evalRSErr_refines] all come from the Reader+State+Either lecture.
+Programming Languages in Rocq - Reader+State+Either Monad Solutions
+Complete solutions to plih_rsemon_exercises.v
+
+The language [FBAES], the explicit interpreter [evalM]/[eval], the
+three-effect monad ([retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/
+[putRSE]/[throwRSE]/[runRSE]), [forget], the monadic interpreter
+[evalRSE]/[evalRSErr], and the theorems [evalRSE_refines] /
+[evalRSErr_refines] all come from the Reader+State+Either lecture.
  *)
 
 From Stdlib Require Import String.
@@ -20,9 +20,7 @@ Require Import plih_rsemon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE THREE-EFFECT INTERPRETER                   *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE THREE-EFFECT INTERPRETER *)
 
 Example ex1_arith :
   evalRSErr (Minus (Mult (Num 3) (Num 4)) (Num 2)) = inr (NumV 10, nil).
@@ -47,9 +45,7 @@ Example ex5_not_a_location :
   evalRSErr (Deref (Boolean true)) = inl "deref: not a location".
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: REFINEMENT IN ACTION                                    *)
-(* ================================================================ *)
+(** * PART 2: REFINEMENT IN ACTION *)
 
 Example ex6_forget_ok :
   forget (evalRSErr (Bind "r" (New (Num 5)) (Deref (Id "r"))))
@@ -66,9 +62,7 @@ Proof.
   intros e p H. rewrite <- evalRSErr_refines. rewrite H. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS AND EFFECT INTERACTION                      *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS AND EFFECT INTERACTION *)
 
 Example ex9_left_id : forall (A B : Type) (a : A) (f : A -> RSE (Env RVal) Store B),
   bindRSE (retRSE a) f = f a.

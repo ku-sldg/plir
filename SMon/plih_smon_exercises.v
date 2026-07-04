@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - State Monad Exercises
- * Structuring the interpreter with a State monad - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the monadic interpreter [evalS]/[evalStore] on cell programs
- *   2. Use the AGREEMENT theorem to transport results between the monadic
- *      and explicit interpreters
- *   3. Prove the State-monad laws that hold definitionally
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: the language [FBAES]; values [RVal]
- * ([NumV]/[BoolV]/[ClosureV]/[LocV]) and the [Store]; the explicit
- * interpreter [evalM]/[eval]; the State monad [State]/[retS]/[bindS]/
- * [getS]/[putS]/[failS]/[runState] with [;;]; the monadic interpreter
- * [evalS]/[evalStore]; and the theorems [evalS_agrees] and
- * [evalStore_agrees].
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_smon_solutions.v.
+Programming Languages in Rocq - State Monad Exercises
+Structuring the interpreter with a State monad - Student Problem Set
+
+In these exercises you will:
+  1. Run the monadic interpreter [evalS]/[evalStore] on cell programs
+  2. Use the AGREEMENT theorem to transport results between the monadic
+     and explicit interpreters
+  3. Prove the State-monad laws that hold definitionally
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: the language [FBAES]; values [RVal]
+([NumV]/[BoolV]/[ClosureV]/[LocV]) and the [Store]; the explicit
+interpreter [evalM]/[eval]; the State monad [State]/[retS]/[bindS]/
+[getS]/[putS]/[failS]/[runState] with [;;]; the monadic interpreter
+[evalS]/[evalStore]; and the theorems [evalS_agrees] and
+[evalStore_agrees].
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_smon_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -35,9 +35,7 @@ Require Import plih_smon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE MONADIC INTERPRETER                        *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE MONADIC INTERPRETER *)
 
 (* [*] Pure arithmetic leaves the store empty. *)
 Example ex1_arith :
@@ -61,9 +59,7 @@ Example ex3_two_cells :
   = Some (NumV 2, [NumV 9; NumV 2]).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: AGREEMENT IN ACTION                                     *)
-(* ================================================================ *)
+(** * PART 2: AGREEMENT IN ACTION *)
 
 (* [**] The monadic wrapper agrees with the explicit one on this program.
    Cite [evalStore_agrees]. *)
@@ -83,9 +79,7 @@ Example ex6_transport : forall e v s',
   evalStore e = Some (v, s') -> eval e = Some (v, s').
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS                                              *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS *)
 
 (* [*] LEFT IDENTITY: binding a pure value just runs the continuation. *)
 Example ex7_left_id : forall (A B : Type) (a : A) (f : A -> State Store B),

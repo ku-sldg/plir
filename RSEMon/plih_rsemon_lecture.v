@@ -1,30 +1,30 @@
 (**
- * Programming Languages in Rocq - Reader+State+Either Monad Lecture
- * Stacking three effects: environment, store, and error messages
- *
- * RSMon hid the environment (Reader) and the store (State) in one monad,
- * but failure was still silent - a wrong program just returned [None].
- * EMon showed how an EITHER layer turns that [None] into a descriptive
- * error MESSAGE, and that the message is "added information": forgetting it
- * recovers the plain answer.  This chapter is the capstone that stacks all
- * three effects in one monad:
- *   - the environment is read with [askRSE] / extended with [localRSE];
- *   - the store is read with [getRSE] / replaced with [putRSE];
- *   - failure raises a descriptive message with [throwRSE];
- *   - [bindRSE] threads the environment and store AND short-circuits on the
- *     first error.
- *
- * The plan:
- *   1. The language [FBAES] and the explicit interpreter [evalM] (option
- *      valued, threading env and store by hand) - the reference.
- *   2. The combined monad [RSE E S A = E -> S -> sum string (A * S)] with
- *      [retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/[putRSE]/[throwRSE].
- *   3. The MONADIC interpreter [evalRSE], raising descriptive messages.
- *   4. REFINEMENT: [forget (evalRSE fuel e env s) = evalM fuel env s e] -
- *      the messages are extra information, not changed behavior.
- *
- * This mirrors the effect-combining ("monad transformer") idea of PLIH:
- *   https://ku-sldg.github.io/plih//state/
+Programming Languages in Rocq - Reader+State+Either Monad Lecture
+Stacking three effects: environment, store, and error messages
+
+RSMon hid the environment (Reader) and the store (State) in one monad,
+but failure was still silent - a wrong program just returned [None].
+EMon showed how an EITHER layer turns that [None] into a descriptive
+error MESSAGE, and that the message is "added information": forgetting it
+recovers the plain answer.  This chapter is the capstone that stacks all
+three effects in one monad:
+  - the environment is read with [askRSE] / extended with [localRSE];
+  - the store is read with [getRSE] / replaced with [putRSE];
+  - failure raises a descriptive message with [throwRSE];
+  - [bindRSE] threads the environment and store AND short-circuits on the
+    first error.
+
+The plan:
+  1. The language [FBAES] and the explicit interpreter [evalM] (option
+     valued, threading env and store by hand) - the reference.
+  2. The combined monad [RSE E S A = E -> S -> sum string (A * S)] with
+     [retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/[putRSE]/[throwRSE].
+  3. The MONADIC interpreter [evalRSE], raising descriptive messages.
+  4. REFINEMENT: [forget (evalRSE fuel e env s) = evalM fuel env s e] -
+     the messages are extra information, not changed behavior.
+
+This mirrors the effect-combining ("monad transformer") idea of PLIH:
+  https://ku-sldg.github.io/plih//state/
  *)
 
 From Stdlib Require Import String.
@@ -37,15 +37,13 @@ Require Import plih_rocq_rsemon_shared.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* SECTION 1: THE LANGUAGE AND THE REFERENCE INTERPRETER           *)
-(* ================================================================ *)
+(** * SECTION 1: THE LANGUAGE AND THE REFERENCE INTERPRETER *)
 
 (**
- * [FBAES], values [RVal] (with locations [LocV]), the [Store], and the
- * explicit interpreter [evalM] are carried over from the State chapter -
- * option valued, threading BOTH env and store by hand.  [evalM] is the
- * reference the refined interpreter must match after erasing messages.
+[FBAES], values [RVal] (with locations [LocV]), the [Store], and the
+explicit interpreter [evalM] are carried over from the State chapter -
+option valued, threading BOTH env and store by hand.  [evalM] is the
+reference the refined interpreter must match after erasing messages.
  *)
 Inductive FBAES : Type :=
 | Num     : nat -> FBAES
@@ -175,21 +173,19 @@ Fixpoint evalM (fuel : nat) (env : Env RVal) (s : Store) (e : FBAES)
 
 Definition eval (e : FBAES) : option (RVal * Store) := evalM 1000 nil nil e.
 
-(* ================================================================ *)
-(* SECTION 2: THE READER + STATE + EITHER MONAD                    *)
-(* ================================================================ *)
+(** * SECTION 2: THE READER + STATE + EITHER MONAD *)
 
 (**
- * Three effects in one type: given an environment [E] and a store [S], a
- * computation either raises an error MESSAGE ([inl : string]) or succeeds
- * with a value and the updated store ([inr : A * S]).
- *
- *   RSE E S A := E -> S -> sum string (A * S)
- *
- * READER: [askRSE] reads the environment, [localRSE g m] runs [m] under a
- * modified one.  STATE: [getRSE] reads the store, [putRSE] replaces it.
- * EITHER: [throwRSE msg] raises a message, and [bindRSE] SHORT-CIRCUITS on
- * the first [inl] while threading env and store through the [inr] path.
+Three effects in one type: given an environment [E] and a store [S], a
+computation either raises an error MESSAGE ([inl : string]) or succeeds
+with a value and the updated store ([inr : A * S]).
+
+  RSE E S A := E -> S -> sum string (A * S)
+
+READER: [askRSE] reads the environment, [localRSE g m] runs [m] under a
+modified one.  STATE: [getRSE] reads the store, [putRSE] replaces it.
+EITHER: [throwRSE msg] raises a message, and [bindRSE] SHORT-CIRCUITS on
+the first [inl] while threading env and store through the [inr] path.
  *)
 Definition RSE (E S A : Type) : Type := E -> S -> sum string (A * S).
 
@@ -224,9 +220,9 @@ Notation "x <- m ;; k" := (bindRSE m (fun x => k))
   (at level 61, m at next level, right associativity).
 
 (**
- * [forget] erases the error message, turning the [Either] answer back into
- * the option-valued answer of [evalM]: an [inl] message becomes [None] and
- * an [inr] result becomes [Some].
+[forget] erases the error message, turning the [Either] answer back into
+the option-valued answer of [evalM]: an [inl] message becomes [None] and
+an [inr] result becomes [Some].
  *)
 Definition forget {X : Type} (r : sum string X) : option X :=
   match r with
@@ -234,15 +230,13 @@ Definition forget {X : Type} (r : sum string X) : option X :=
   | inl _ => None
   end.
 
-(* ================================================================ *)
-(* SECTION 3: THE MONADIC INTERPRETER                             *)
-(* ================================================================ *)
+(** * SECTION 3: THE MONADIC INTERPRETER *)
 
 (**
- * The interpreter over the three-effect monad.  It carries neither the
- * environment nor the store, and instead of failing silently it raises a
- * DESCRIPTIVE message at every stuck point.  Running out of fuel is itself
- * reported as an error.
+The interpreter over the three-effect monad.  It carries neither the
+environment nor the store, and instead of failing silently it raises a
+DESCRIPTIVE message at every stuck point.  Running out of fuel is itself
+reported as an error.
  *)
 Fixpoint evalRSE (fuel : nat) (e : FBAES) : RSE (Env RVal) Store RVal :=
   match fuel with
@@ -350,9 +344,7 @@ Fixpoint evalRSE (fuel : nat) (e : FBAES) : RSE (Env RVal) Store RVal :=
 Definition evalRSErr (e : FBAES) : sum string (RVal * Store) :=
   runRSE (evalRSE 1000 e) nil nil.
 
-(* ================================================================ *)
-(* SECTION 4: RUNNING THE MONADIC INTERPRETER                     *)
-(* ================================================================ *)
+(** * SECTION 4: RUNNING THE MONADIC INTERPRETER *)
 
 (* Successes carry the value and store on the [inr] side. *)
 Example evRSE_arith :
@@ -393,18 +385,16 @@ Example evRSE_forget_bad :
   forget (evalRSErr (Id "x")) = eval (Id "x").
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 5: REFINEMENT - THE HEADLINE                           *)
-(* ================================================================ *)
+(** * SECTION 5: REFINEMENT - THE HEADLINE *)
 
 (**
- * The three-effect interpreter REFINES the explicit one: forgetting the
- * error message recovers exactly [evalM]'s option-valued answer.  The
- * messages are added information, not changed behavior.  The proof is by
- * induction on fuel; each case rewrites the [evalM] side BACKWARDS with the
- * inductive hypothesis to expose [forget (evalRSE ...)], then splits the
- * [sum] result - [inl] (error/out-of-fuel) forgets to [None], [inr]
- * carries the value and store that line up with [evalM].
+The three-effect interpreter REFINES the explicit one: forgetting the
+error message recovers exactly [evalM]'s option-valued answer.  The
+messages are added information, not changed behavior.  The proof is by
+induction on fuel; each case rewrites the [evalM] side BACKWARDS with the
+inductive hypothesis to expose [forget (evalRSE ...)], then splits the
+[sum] result - [inl] (error/out-of-fuel) forgets to [None], [inr]
+carries the value and store that line up with [evalM].
  *)
 Theorem evalRSE_refines : forall fuel e env s,
   forget (evalRSE fuel e env s) = evalM fuel env s e.
@@ -491,26 +481,24 @@ Proof.
 Qed.
 
 (**
- * The wrapper refines too: forgetting the message recovers the explicit
- * [eval].
+The wrapper refines too: forgetting the message recovers the explicit
+[eval].
  *)
 Corollary evalRSErr_refines : forall e, forget (evalRSErr e) = eval e.
 Proof. intro e. unfold evalRSErr, runRSE, eval. apply evalRSE_refines. Qed.
 
-(* ================================================================ *)
-(* SECTION 6: MONAD LAWS AND THE THREE CHANNELS                   *)
-(* ================================================================ *)
+(** * SECTION 6: MONAD LAWS AND THE THREE CHANNELS *)
 
 (**
- * LEFT IDENTITY holds by computation, as in every monad here.
+LEFT IDENTITY holds by computation, as in every monad here.
  *)
 Lemma left_id_RSE : forall (A B : Type) (a : A) (f : A -> RSE (Env RVal) Store B),
   bindRSE (retRSE a) f = f a.
 Proof. reflexivity. Qed.
 
 (**
- * The EITHER channel short-circuits: once a message is raised, the rest of
- * the computation is skipped.
+The EITHER channel short-circuits: once a message is raised, the rest of
+the computation is skipped.
  *)
 Lemma throw_short_circuits :
   forall (B : Type) (msg : string) (f : RVal -> RSE (Env RVal) Store B),
@@ -518,38 +506,36 @@ Lemma throw_short_circuits :
 Proof. reflexivity. Qed.
 
 (**
- * The three channels are independent: a single computation can observe the
- * environment ([askRSE]), read the store ([getRSE]), and still succeed -
- * each effect leaves the others untouched.
+The three channels are independent: a single computation can observe the
+environment ([askRSE]), read the store ([getRSE]), and still succeed -
+each effect leaves the others untouched.
  *)
 Lemma channels_independent : forall (env : Env RVal) (s : Store),
   runRSE (x <- askRSE ;; y <- getRSE ;; retRSE (x, y)) env s
   = inr ((env, s), s).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture we:
- *   1. Carried over [FBAES] and the explicit option-valued interpreter
- *      [evalM] as the reference.
- *   2. Stacked THREE effects in one monad
- *      [RSE E S A = E -> S -> sum string (A * S)]: Reader
- *      ([askRSE]/[localRSE]) for the environment, State
- *      ([getRSE]/[putRSE]) for the store, and Either ([throwRSE], with
- *      [bindRSE] short-circuiting) for descriptive error messages.
- *   3. Rebuilt the interpreter as [evalRSE], carrying no resource by hand
- *      and raising a descriptive message at every stuck point (including
- *      running out of fuel).
- *   4. Proved REFINEMENT [forget (evalRSE fuel e env s) = evalM fuel env s e]
- *      (corollary [evalRSErr_refines] for the wrappers): the messages add
- *      information without changing behavior.
- *
- * This is the capstone of the monad arc.  Reader (RMon) hid a context,
- * Either (EMon) added messages, State (SMon) hid a store, RSMon combined
- * two effects, and here THREE effects share one [bindRSE] - each effect
- * contributing its own operations while the interpreter reads like a plain
- * recursive definition.  That is exactly what monad transformers buy you.
+In this lecture we:
+  1. Carried over [FBAES] and the explicit option-valued interpreter
+     [evalM] as the reference.
+  2. Stacked THREE effects in one monad
+     [RSE E S A = E -> S -> sum string (A * S)]: Reader
+     ([askRSE]/[localRSE]) for the environment, State
+     ([getRSE]/[putRSE]) for the store, and Either ([throwRSE], with
+     [bindRSE] short-circuiting) for descriptive error messages.
+  3. Rebuilt the interpreter as [evalRSE], carrying no resource by hand
+     and raising a descriptive message at every stuck point (including
+     running out of fuel).
+  4. Proved REFINEMENT [forget (evalRSE fuel e env s) = evalM fuel env s e]
+     (corollary [evalRSErr_refines] for the wrappers): the messages add
+     information without changing behavior.
+
+This is the capstone of the monad arc.  Reader (RMon) hid a context,
+Either (EMon) added messages, State (SMon) hid a store, RSMon combined
+two effects, and here THREE effects share one [bindRSE] - each effect
+contributing its own operations while the interpreter reads like a plain
+recursive definition.  That is exactly what monad transformers buy you.
  *)

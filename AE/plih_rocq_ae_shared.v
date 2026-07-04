@@ -1,9 +1,9 @@
 (**
- * Programming Languages in Rocq
- * Shared Interpreter Infrastructure
- * 
- * This module defines reusable components for building and proving
- * properties about language interpreters.
+Programming Languages in Rocq
+Shared Interpreter Infrastructure
+
+This module defines reusable components for building and proving
+properties about language interpreters.
  *)
 
 From Stdlib Require Import List.
@@ -11,9 +11,7 @@ From Stdlib Require Import String.
 From Stdlib Require Import Arith.
 From Stdlib Require Import Lia.
 
-(* ================================================================ *)
-(* PART 1: Monadic Operations                                       *)
-(* ================================================================ *)
+(** * PART 1: Monadic Operations *)
 
 (* The option monad for error handling *)
 Definition M (A : Type) := option A.
@@ -36,9 +34,7 @@ Definition liftM2 {A B C : Type} (op : A -> B -> C) (m1 : M A) (m2 : M B) : M C 
   | _,_ => None
   end.
 
-(* ================================================================ *)
-(* PART 2: Basic Monad Laws (Proven for Reference)                 *)
-(* ================================================================ *)
+(** * PART 2: Basic Monad Laws (Proven for Reference) *)
 
 Lemma monad_left_identity {A B : Type} (a : A) (f : A -> M B) :
   (return_ a >>= f) = f a.
@@ -52,9 +48,7 @@ Lemma monad_assoc {A B C : Type} (m : M A) (f : A -> M B) (g : B -> M C) :
   ((m >>= f) >>= g) = (m >>= fun a => (f a >>= g)).
 Proof. destruct m; reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 3: Decidable Equality for Basic Types                      *)
-(* ================================================================ *)
+(** * PART 3: Decidable Equality for Basic Types *)
 
 Lemma nat_eq_dec : forall (n m : nat), {n = m} + {n <> m}.
 Proof.
@@ -67,9 +61,7 @@ Proof.
     try (left; reflexivity); right; discriminate.
 Defined.
 
-(* ================================================================ *)
-(* PART 4: List Utilities                                           *)
-(* ================================================================ *)
+(** * PART 4: List Utilities *)
 
 Definition Env A := list (string * A).
 
@@ -113,9 +105,7 @@ Proof.
   destruct (String.eqb x y); reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 5: Exported Interface                                       *)
-(* ================================================================ *)
+(** * PART 5: Exported Interface *)
 
 (* Make these available to students *)
 Export List.

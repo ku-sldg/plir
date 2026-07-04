@@ -1,140 +1,128 @@
 (**
- * PLIH in Rocq: Func (Adding Functions) Module
- * Complete Summary and Organization
- *
- * Documentation only - no Rocq code, so this file compiles trivially.
- *
- * FILES (in Func/):
- *   1. plih_rocq_func_shared.v      -- shared infra (re-exports IDs/AE)
- *   2. plih_func_lecture.v          -- lecture: closures, scoping, fuel
- *   3. plih_func_exercises.v        -- student problem set (Admitted stubs)
- *   4. plih_func_solutions.v        -- complete solutions
- *   5. plih_func_instructor_guide.v -- teaching guide
- *   6. plih_func_summary.v          -- this file
- *
- * Source chapter (PLIH, Haskell):
- *   https://ku-sldg.github.io/plih//funs/1-Adding-Functions.html
- *   https://ku-sldg.github.io/plih//funs/2-Scoping.html
+PLIH in Rocq: Func (Adding Functions) Module
+Complete Summary and Organization
+
+Documentation only - no Rocq code, so this file compiles trivially.
+
+FILES (in Func/):
+  1. plih_rocq_func_shared.v      -- shared infra (re-exports IDs/AE)
+  2. plih_func_lecture.v          -- lecture: closures, scoping, fuel
+  3. plih_func_exercises.v        -- student problem set (Admitted stubs)
+  4. plih_func_solutions.v        -- complete solutions
+  5. plih_func_instructor_guide.v -- teaching guide
+  6. plih_func_summary.v          -- this file
+
+Source chapter (PLIH, Haskell):
+  https://ku-sldg.github.io/plih//funs/1-Adding-Functions.html
+  https://ku-sldg.github.io/plih//funs/2-Scoping.html
  *)
 
-(* ================================================================ *)
-(* QUICK START                                                      *)
-(* ================================================================ *)
+(** * QUICK START *)
 
 (**
- * FOR STUDENTS:
- *   1. Finish the IDs and Env chapters first - this chapter reuses the
- *      environment machinery and the substitution ideas.
- *   2. Read plih_func_lecture.v.
- *   3. Work plih_func_exercises.v ([Admitted] -> [Qed]).
- *   4. Check against plih_func_solutions.v.
- *
- * FOR INSTRUCTORS:
- *   1. Read plih_func_instructor_guide.v.
- *   2. Assign the exercises; grade by building the file.
+FOR STUDENTS:
+  1. Finish the IDs and Env chapters first - this chapter reuses the
+     environment machinery and the substitution ideas.
+  2. Read plih_func_lecture.v.
+  3. Work plih_func_exercises.v ([Admitted] -> [Qed]).
+  4. Check against plih_func_solutions.v.
+
+FOR INSTRUCTORS:
+  1. Read plih_func_instructor_guide.v.
+  2. Assign the exercises; grade by building the file.
  *)
 
-(* ================================================================ *)
-(* THE BIG IDEA                                                     *)
-(* ================================================================ *)
+(** * THE BIG IDEA *)
 
 (**
- * FBAE adds FIRST-CLASS FUNCTIONS ([Lambda]/[App]) to BAE.  Two things
- * change in a fundamental way:
- *
- * 1. THE LANGUAGE CAN DIVERGE.  With self-application we can write
- *    [omega], which loops forever.  So - unlike AE/BAE - there is NO
- *    measure that bounds evaluation, and BOTH interpreters (the
- *    substitution [evalS] and the environment [evalM]) must be driven
- *    by explicit FUEL.  Running out of fuel yields [None].
- *
- *    The well-definedness result that replaces "size is enough fuel"
- *    (proved in IDs/Env) is FUEL MONOTONICITY:
- *
- *        evalM_mono : f1 <= f2 -> evalM f1 env e = Some v
- *                              -> evalM f2 env e = Some v
- *
- *    i.e. more fuel never changes a definite answer.
- *
- * 2. SCOPING BECOMES A CHOICE.  A function value must remember the
- *    environment in force where it was DEFINED - a CLOSURE - to get
- *    STATIC scoping.  Evaluating a called function's body in the
- *    CALLER's environment instead gives DYNAMIC scoping.  We build both
- *    ([evalM] with [ClosureV], [evalDyn] with a bare lambda value) and
- *    exhibit a term on which they disagree (4 vs 5).  The substitution
- *    interpreter [evalS] agrees with the closure interpreter: both are
- *    static.
+FBAE adds FIRST-CLASS FUNCTIONS ([Lambda]/[App]) to BAE.  Two things
+change in a fundamental way:
+
+1. THE LANGUAGE CAN DIVERGE.  With self-application we can write
+   [omega], which loops forever.  So - unlike AE/BAE - there is NO
+   measure that bounds evaluation, and BOTH interpreters (the
+   substitution [evalS] and the environment [evalM]) must be driven
+   by explicit FUEL.  Running out of fuel yields [None].
+
+   The well-definedness result that replaces "size is enough fuel"
+   (proved in IDs/Env) is FUEL MONOTONICITY:
+
+       evalM_mono : f1 <= f2 -> evalM f1 env e = Some v
+                             -> evalM f2 env e = Some v
+
+   i.e. more fuel never changes a definite answer.
+
+2. SCOPING BECOMES A CHOICE.  A function value must remember the
+   environment in force where it was DEFINED - a CLOSURE - to get
+   STATIC scoping.  Evaluating a called function's body in the
+   CALLER's environment instead gives DYNAMIC scoping.  We build both
+   ([evalM] with [ClosureV], [evalDyn] with a bare lambda value) and
+   exhibit a term on which they disagree (4 vs 5).  The substitution
+   interpreter [evalS] agrees with the closure interpreter: both are
+   static.
  *)
 
-(* ================================================================ *)
-(* MODULE STRUCTURE                                                 *)
-(* ================================================================ *)
+(** * MODULE STRUCTURE *)
 
 (**
- * LAYER 1: Foundations (plih_rocq_func_shared.v)
- *   - re-exports the IDs shared library ([Env]/[lookup]/[extend], the
- *     option monad, [String.eqb] lemmas).  FBAE is defined fresh.
- *
- * LAYER 2: Lecture (plih_func_lecture.v)
- *   Section 1: Syntax - the FBAE language ([Lambda], [App])
- *   Section 2: Free identifiers, size, substitution (which can GROW)
- *   Section 3: The substitution interpreter [evalS] (fuel)
- *   Section 4: Values and closures; the environment interpreter [evalM]
- *   Section 5: Running the interpreters
- *   Section 6: Fuel monotonicity + determinism (the headline)
- *   Section 7: Static vs dynamic scoping ([evalDyn]; 4 vs 5)
- *   Section 8: Currying
- *   Section 9: Divergence ([omega]); strict vs lazy binding
- *
- * LAYER 3: Exercises (plih_func_exercises.v)
- *   22 exercises + 2 challenges, including an error-reporting
- *   interpreter [evalErr] that distinguishes "out of gas" from "stuck".
- *
- * LAYER 4: Solutions (plih_func_solutions.v)
- *
- * LAYER 5: Instructor guide (plih_func_instructor_guide.v)
+LAYER 1: Foundations (plih_rocq_func_shared.v)
+  - re-exports the IDs shared library ([Env]/[lookup]/[extend], the
+    option monad, [String.eqb] lemmas).  FBAE is defined fresh.
+
+LAYER 2: Lecture (plih_func_lecture.v)
+  Section 1: Syntax - the FBAE language ([Lambda], [App])
+  Section 2: Free identifiers, size, substitution (which can GROW)
+  Section 3: The substitution interpreter [evalS] (fuel)
+  Section 4: Values and closures; the environment interpreter [evalM]
+  Section 5: Running the interpreters
+  Section 6: Fuel monotonicity + determinism (the headline)
+  Section 7: Static vs dynamic scoping ([evalDyn]; 4 vs 5)
+  Section 8: Currying
+  Section 9: Divergence ([omega]); strict vs lazy binding
+
+LAYER 3: Exercises (plih_func_exercises.v)
+  22 exercises + 2 challenges, including an error-reporting
+  interpreter [evalErr] that distinguishes "out of gas" from "stuck".
+
+LAYER 4: Solutions (plih_func_solutions.v)
+
+LAYER 5: Instructor guide (plih_func_instructor_guide.v)
  *)
 
-(* ================================================================ *)
-(* KEY CONCEPTS TESTED BY EXERCISES                                 *)
-(* ================================================================ *)
+(** * KEY CONCEPTS TESTED BY EXERCISES *)
 
 (**
- * Exercises 1-5   (warm-up):    running [evalM]; reflexivity.
- * Exercises 6-9   (equations):  evalM on Num/Lambda/Id; closures.
- * Exercises 10-13 (fuel):       monotonicity, determinism; re-proving
- *                               monotonicity for [evalDyn] (induction).
- * Exercises 14-16 (scoping):    static (4) vs dynamic (5).
- * Exercises 17-18 (currying):   partial application returns a closure.
- * Exercises 19-20 (divergence): [omega]; strict binding diverges.
- * Exercises 21-22 (evalErr):    an error interpreter refining [evalM].
- * Challenges:                   fuel stability; soundness of [evalErr].
+Exercises 1-5   (warm-up):    running [evalM]; reflexivity.
+Exercises 6-9   (equations):  evalM on Num/Lambda/Id; closures.
+Exercises 10-13 (fuel):       monotonicity, determinism; re-proving
+                              monotonicity for [evalDyn] (induction).
+Exercises 14-16 (scoping):    static (4) vs dynamic (5).
+Exercises 17-18 (currying):   partial application returns a closure.
+Exercises 19-20 (divergence): [omega]; strict binding diverges.
+Exercises 21-22 (evalErr):    an error interpreter refining [evalM].
+Challenges:                   fuel stability; soundness of [evalErr].
  *)
 
-(* ================================================================ *)
-(* WHAT'S DIFFERENT FROM THE EARLIER CHAPTERS                       *)
-(* ================================================================ *)
+(** * WHAT'S DIFFERENT FROM THE EARLIER CHAPTERS *)
 
 (**
- * IDs/Env:  substitution preserves [size], so [size e] is enough fuel
- *           and (for Env) the interpreter is even a clean structural
- *           [Fixpoint].  Every closed term terminates.
- *
- * Func:     substitution can GROW a term (we substitute functions), and
- *           self-application diverges.  No measure works; fuel is
- *           essential and can genuinely run out.  The metatheory shifts
- *           from "termination" to "monotone approximation of a partial
- *           function".
+IDs/Env:  substitution preserves [size], so [size e] is enough fuel
+          and (for Env) the interpreter is even a clean structural
+          [Fixpoint].  Every closed term terminates.
+
+Func:     substitution can GROW a term (we substitute functions), and
+          self-application diverges.  No measure works; fuel is
+          essential and can genuinely run out.  The metatheory shifts
+          from "termination" to "monotone approximation of a partial
+          function".
  *)
 
-(* ================================================================ *)
-(* TRANSITION TO NEXT SECTION                                       *)
-(* ================================================================ *)
+(** * TRANSITION TO NEXT SECTION *)
 
 (**
- * The stuck states ("applying a non-function", "unbound identifier")
- * and the divergence that forced fuel on us are exactly what a TYPE
- * SYSTEM sets out to control.  The next chapter, "Typed Functions",
- * adds function types; well-typed programs no longer get stuck, and the
- * story regains a total, structural flavour.
+The stuck states ("applying a non-function", "unbound identifier")
+and the divergence that forced fuel on us are exactly what a TYPE
+SYSTEM sets out to control.  The next chapter, "Typed Functions",
+adds function types; well-typed programs no longer get stuck, and the
+story regains a total, structural flavour.
  *)

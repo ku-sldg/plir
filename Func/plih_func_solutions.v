@@ -1,13 +1,13 @@
 (**
- * Programming Languages in Rocq - Func Solutions
- * Complete solutions to plih_func_exercises.v
- *
- * The FBAE syntax, [subst], the interpreters [evalS] (substitution),
- * [evalM] (closures) and [evalDyn] (dynamic scoping), the value types
- * [FBAEVal]/[DVal], [eval], [evalM_mono], [evalM_deterministic], and
- * the example terms [idFun], [incFun], [addFun], [scopeTest], [omega]
- * all come from the Func lecture.  The error-reporting interpreter
- * [evalErr] is defined here (and, identically, in the exercises file).
+Programming Languages in Rocq - Func Solutions
+Complete solutions to plih_func_exercises.v
+
+The FBAE syntax, [subst], the interpreters [evalS] (substitution),
+[evalM] (closures) and [evalDyn] (dynamic scoping), the value types
+[FBAEVal]/[DVal], [eval], [evalM_mono], [evalM_deterministic], and
+the example terms [idFun], [incFun], [addFun], [scopeTest], [omega]
+all come from the Func lecture.  The error-reporting interpreter
+[evalErr] is defined here (and, identically, in the exercises file).
  *)
 
 From Stdlib Require Import String.
@@ -21,9 +21,7 @@ Require Import plih_func_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* WARM-UP: RUNNING THE INTERPRETER                                *)
-(* ================================================================ *)
+(** * WARM-UP: RUNNING THE INTERPRETER *)
 
 Example ex1_apply_id : eval (App idFun (Num 5)) = Some (NumV 5).
 Proof. reflexivity. Qed.
@@ -41,9 +39,7 @@ Example ex5_bind_fun :
   eval (Bind "f" incFun (App (Id "f") (Num 41))) = Some (NumV 42).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 1: EQUATIONS AND VALUES                                     *)
-(* ================================================================ *)
+(** * PART 1: EQUATIONS AND VALUES *)
 
 Lemma ex6_evalM_num : forall k env n, evalM (S k) env (Num n) = Some (NumV n).
 Proof. reflexivity. Qed.
@@ -60,9 +56,7 @@ Lemma ex9_closure_captures :
   eval (Lambda "x" (Id "x")) = Some (ClosureV "x" (Id "x") nil).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: FUEL MONOTONICITY AND DETERMINISM                       *)
-(* ================================================================ *)
+(** * PART 2: FUEL MONOTONICITY AND DETERMINISM *)
 
 Lemma ex10_mono : forall f1 f2 env e v,
   f1 <= f2 -> evalM f1 env e = Some v -> evalM f2 env e = Some v.
@@ -112,9 +106,7 @@ Proof.
     + exact H.
 Qed.
 
-(* ================================================================ *)
-(* PART 3: STATIC vs DYNAMIC SCOPING                               *)
-(* ================================================================ *)
+(** * PART 3: STATIC vs DYNAMIC SCOPING *)
 
 Lemma ex14_scope_static : eval scopeTest = Some (NumV 4).
 Proof. reflexivity. Qed.
@@ -127,9 +119,7 @@ Lemma ex16_scope_differs :
   eval scopeTest = Some (NumV 4) /\ evalDyn 100 nil scopeTest = Some (DNumV 5).
 Proof. split; reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 4: CURRYING                                                *)
-(* ================================================================ *)
+(** * PART 4: CURRYING *)
 
 (* Partial application of [addFun] returns a closure capturing [x]. *)
 Lemma ex17_partial :
@@ -143,9 +133,7 @@ Lemma ex18_const :
   eval (App (App constFun (Num 1)) (Num 2)) = Some (NumV 1).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 5: DIVERGENCE, STRICT BINDING                              *)
-(* ================================================================ *)
+(** * PART 5: DIVERGENCE, STRICT BINDING *)
 
 Lemma ex19_omega : eval omega = None.
 Proof. reflexivity. Qed.
@@ -153,15 +141,13 @@ Proof. reflexivity. Qed.
 Lemma ex20_strict : eval (Bind "z" omega (Num 5)) = None.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 6: AN ERROR-REPORTING INTERPRETER (PROVIDED)               *)
-(* ================================================================ *)
+(** * PART 6: AN ERROR-REPORTING INTERPRETER (PROVIDED) *)
 
 (**
- * As in the Env chapter, [evalErr] returns a value OR a message, using
- * [Result = string + FBAEVal].  Now there are two ways to fail: running
- * out of gas, and getting STUCK (a type error or an unbound name).  The
- * [forget] map erases the message so we can relate [evalErr] to [evalM].
+As in the Env chapter, [evalErr] returns a value OR a message, using
+[Result = string + FBAEVal].  Now there are two ways to fail: running
+out of gas, and getting STUCK (a type error or an unbound name).  The
+[forget] map erases the message so we can relate [evalErr] to [evalM].
  *)
 
 Definition Result : Type := sum string FBAEVal.
@@ -255,9 +241,7 @@ Proof.
       destruct (lookup s env); reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                              *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1: an answer found with some fuel survives any larger
    amount of fuel - so the limiting partial function is well defined.

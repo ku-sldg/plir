@@ -1,25 +1,25 @@
 (**
- * Programming Languages in Rocq - Reader Monad Exercises
- * Structuring the type checker with a Reader monad - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the MONADIC type checker [typeofR]/[typecheckR]
- *   2. Use the AGREEMENT theorem relating it to the direct [typeof]
- *   3. Verify small READER-monad laws
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: [Ty]/[Ty_eqb], the terms [TFBAEC], the direct
- * checker [typeof]/[typecheck], the [Reader] monad
- * ([retR]/[bindR]/[askR]/[localR]/[failR]/[runR] with [;;]), the monadic
- * checker [typeofR]/[typecheckR], the theorems [typeofR_agrees] and
- * [typecheckR_agrees], and the sample terms [inc]/[factGen].
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_rmon_solutions.v.
+Programming Languages in Rocq - Reader Monad Exercises
+Structuring the type checker with a Reader monad - Student Problem Set
+
+In these exercises you will:
+  1. Run the MONADIC type checker [typeofR]/[typecheckR]
+  2. Use the AGREEMENT theorem relating it to the direct [typeof]
+  3. Verify small READER-monad laws
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: [Ty]/[Ty_eqb], the terms [TFBAEC], the direct
+checker [typeof]/[typecheck], the [Reader] monad
+([retR]/[bindR]/[askR]/[localR]/[failR]/[runR] with [;;]), the monadic
+checker [typeofR]/[typecheckR], the theorems [typeofR_agrees] and
+[typecheckR_agrees], and the sample terms [inc]/[factGen].
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_rmon_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -33,9 +33,7 @@ Require Import plih_rmon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE MONADIC CHECKER                            *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE MONADIC CHECKER *)
 
 (* [*] A well-typed higher-order function has a function type. *)
 Example ex1_ho :
@@ -52,9 +50,7 @@ Example ex3_bind :
   typecheckR (Bind "x" (Num 5) (Plus (Id "x") (Num 1))) = Some TNum.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: AGREEMENT WITH THE DIRECT CHECKER                      *)
-(* ================================================================ *)
+(** * PART 2: AGREEMENT WITH THE DIRECT CHECKER *)
 
 (* [**] On a concrete term the monadic and direct checkers agree at every
    context.  Cite [typeofR_agrees]. *)
@@ -67,9 +63,7 @@ Proof. Admitted.
 Example ex5_typecheck_agree : forall e, typecheckR e = typecheck e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: READER-MONAD LAWS                                       *)
-(* ================================================================ *)
+(** * PART 3: READER-MONAD LAWS *)
 
 (* [**] Left identity: binding a pure value just applies the function. *)
 Example ex6_left_id : forall (E A B : Type) (a : A) (f : A -> Reader E B),

@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - ABE Exercises
- * Arithmetic + Boolean Expressions - Student Problem Set
- *
- * Building on AE, these exercises cover:
- * 1. Boolean evaluation
- * 2. Error handling with option
- * 3. Type consistency
- * 4. Conditionals
- * 5. Boolean algebra
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise is stated as a Lemma/Example ending in [Admitted].
- * Replace [Admitted] with a real proof terminated by [Qed].
- * The file compiles as given (Rocq accepts [Admitted] with a warning),
- * so you can check your progress incrementally.
- *
- * The [ABE] syntax and the [eval] interpreter come from the lecture,
- * which we import.  Function definitions you need (count_ifs,
- * optimize_not, extract_booleans) are PROVIDED so the statements type
- * check - the exercise is to prove the lemmas about them.
- *
- * Complete solutions are in plih_abe_solutions.v.
+Programming Languages in Rocq - ABE Exercises
+Arithmetic + Boolean Expressions - Student Problem Set
+
+Building on AE, these exercises cover:
+1. Boolean evaluation
+2. Error handling with option
+3. Type consistency
+4. Conditionals
+5. Boolean algebra
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise is stated as a Lemma/Example ending in [Admitted].
+Replace [Admitted] with a real proof terminated by [Qed].
+The file compiles as given (Rocq accepts [Admitted] with a warning),
+so you can check your progress incrementally.
+
+The [ABE] syntax and the [eval] interpreter come from the lecture,
+which we import.  Function definitions you need (count_ifs,
+optimize_not, extract_booleans) are PROVIDED so the statements type
+check - the exercise is to prove the lemmas about them.
+
+Complete solutions are in plih_abe_solutions.v.
  *)
 
 From Stdlib Require Import List.
@@ -32,9 +32,7 @@ Require Import plih_abe_lecture.
 
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: BASIC BOOLEAN EVALUATION                                *)
-(* ================================================================ *)
+(** * PART 1: BASIC BOOLEAN EVALUATION *)
 
 Example ex1_bool_true : eval BTrue = Some (BoolV true).
 Proof. Admitted.
@@ -54,9 +52,7 @@ Example ex5_or_false_false :
   eval (Or BFalse BFalse) = Some (BoolV false).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: TYPE MISMATCHES (Error Handling)                        *)
-(* ================================================================ *)
+(** * PART 2: TYPE MISMATCHES (Error Handling) *)
 
 Example ex6_type_error_add :
   eval (Plus BTrue (Num 3)) = None.
@@ -76,9 +72,7 @@ Lemma ex9_type_mismatch_both_operands : forall e1 e2,
   exists n1 n2, eval (Plus e1 e2) = Some (NumV (n1 + n2)).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: CONDITIONALS                                            *)
-(* ================================================================ *)
+(** * PART 3: CONDITIONALS *)
 
 Example ex10_if_true_takes_then :
   eval (IfThenElse BTrue (Num 42) (Num 99)) = Some (NumV 42).
@@ -103,9 +97,7 @@ Example ex13_nested_if :
   = Some (NumV 2).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 4: COMPARISON OPERATIONS                                   *)
-(* ================================================================ *)
+(** * PART 4: COMPARISON OPERATIONS *)
 
 Example ex14_less_than_true :
   eval (LessThan (Num 3) (Num 5)) = Some (BoolV true).
@@ -123,9 +115,7 @@ Example ex17_equal_false :
   eval (Equal (Num 3) (Num 5)) = Some (BoolV false).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 5: BOOLEAN ALGEBRA                                         *)
-(* ================================================================ *)
+(** * PART 5: BOOLEAN ALGEBRA *)
 
 Lemma ex18_not_true :
   eval (Not BTrue) = Some (BoolV false).
@@ -148,9 +138,7 @@ Lemma ex22_or_commutative : forall e1 e2,
   eval (Or e1 e2) = eval (Or e2 e1).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 6: CONDITIONAL PROPERTIES                                  *)
-(* ================================================================ *)
+(** * PART 6: CONDITIONAL PROPERTIES *)
 
 (* NOTE: the condition must evaluate to a boolean - otherwise the whole
    conditional is a type error.  That is why this lemma takes a
@@ -168,9 +156,7 @@ Lemma ex25_if_false_takes_else : forall e1 e2,
   eval (IfThenElse BFalse e1 e2) = eval e2.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 7: COMBINING FEATURES                                      *)
-(* ================================================================ *)
+(** * PART 7: COMBINING FEATURES *)
 
 Example ex26_complex_expr :
   eval (Plus (IfThenElse BTrue (Num 3) (Num 5)) (Num 2))
@@ -184,9 +170,7 @@ Example ex27_boolean_conditional :
   = Some (BoolV true).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 8: TYPE CONSISTENCY PROOFS                                 *)
-(* ================================================================ *)
+(** * PART 8: TYPE CONSISTENCY PROOFS *)
 
 (* The predicates [is_numeric] and [is_boolean] are defined in the
    lecture (plih_abe_lecture.v). *)
@@ -203,9 +187,7 @@ Lemma ex30_numeric_no_error : forall e,
   is_numeric e -> eval e <> None.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 9: EQUIVALENCE PROOFS                                      *)
-(* ================================================================ *)
+(** * PART 9: EQUIVALENCE PROOFS *)
 
 (* [abe_equiv] is defined in the lecture. *)
 
@@ -230,9 +212,7 @@ Lemma ex35_demorgan_or : forall e1 e2,
   abe_equiv (Not (Or e1 e2)) (And (Not e1) (Not e2)).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 10: COMPLEXITY AND SIZE                                    *)
-(* ================================================================ *)
+(** * PART 10: COMPLEXITY AND SIZE *)
 
 (* [size] is defined in the lecture. *)
 
@@ -260,15 +240,13 @@ Lemma ex37_ifs_bounded_by_size : forall e,
   count_ifs e <= size e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 11: OPTIMIZATION                                           *)
-(* ================================================================ *)
+(** * PART 11: OPTIMIZATION *)
 
 (**
- * Naive "double-negation elimination" ([Not (Not e)] -> [e]) is UNSOUND
- * in a type-checked language: [Not (Not (Num 5))] is a type error but
- * [Num 5] is not.  Instead we implement (and prove correct) constant
- * folding of [Not] applied to a boolean literal.
+Naive "double-negation elimination" ([Not (Not e)] -> [e]) is UNSOUND
+in a type-checked language: [Not (Not (Num 5))] is a type error but
+[Num 5] is not.  Instead we implement (and prove correct) constant
+folding of [Not] applied to a boolean literal.
  *)
 
 (* PROVIDED *)
@@ -304,9 +282,7 @@ Lemma ex39_optimize_not_reduces_size : forall e,
   size (optimize_not e) <= size e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 12: CREATIVE PROBLEMS                                      *)
-(* ================================================================ *)
+(** * PART 12: CREATIVE PROBLEMS *)
 
 (* PROVIDED: collect every boolean literal occurring in an expression. *)
 Fixpoint extract_booleans (e : ABE) : list ABE :=
@@ -330,9 +306,7 @@ Lemma ex40_booleans_extracted_all_eval : forall e,
   (b = BTrue \/ b = BFalse).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1: if/then/else with identical branches is neutral -
    provided the condition is a boolean. *)
@@ -361,12 +335,10 @@ Lemma challenge4_type_error_propagates : forall e1 e2,
   eval (Plus e1 e2) = None.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* SUBMISSION GUIDELINES                                            *)
-(* ================================================================ *)
+(** * SUBMISSION GUIDELINES *)
 
 (**
- * Replace every [Admitted] with a complete proof ending in [Qed].
- * When you are done, the file should compile with NO "Admitted"
- * warnings.  Compare your proofs against plih_abe_solutions.v.
+Replace every [Admitted] with a complete proof ending in [Qed].
+When you are done, the file should compile with NO "Admitted"
+warnings.  Compare your proofs against plih_abe_solutions.v.
  *)

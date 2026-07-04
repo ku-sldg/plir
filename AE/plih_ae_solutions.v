@@ -1,11 +1,11 @@
 (**
- * Programming Languages in Rocq - AE Solutions
- * Complete solutions to plih_ae_exercises.v
- *
- * The exercises reuse the [AE] syntax, the [eval] interpreter, and the
- * helpers [count_ops], [ae_equiv], [ae_eq_dec] from the lecture, so we
- * import it.  The extra helper functions (size, depth, optimize,
- * fold_constants, simplify) are defined here.
+Programming Languages in Rocq - AE Solutions
+Complete solutions to plih_ae_exercises.v
+
+The exercises reuse the [AE] syntax, the [eval] interpreter, and the
+helpers [count_ops], [ae_equiv], [ae_eq_dec] from the lecture, so we
+import it.  The extra helper functions (size, depth, optimize,
+fold_constants, simplify) are defined here.
  *)
 
 From Stdlib Require Import List.
@@ -14,9 +14,7 @@ From Stdlib Require Import Lia.
 Require Import plih_rocq_ae_shared.
 Require Import plih_ae_lecture.
 
-(* ================================================================ *)
-(* WARM-UP: DIRECT EVALUATION                                       *)
-(* ================================================================ *)
+(** * WARM-UP: DIRECT EVALUATION *)
 
 Example ex1_eval_num : eval (Num 42) = 42.
 Proof. reflexivity. Qed.
@@ -36,9 +34,7 @@ Example ex5_eval_complex :
   eval (Plus (Minus (Num 20) (Num 5)) (Num 10)) = 25.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 1: SIMPLE LEMMAS                                            *)
-(* ================================================================ *)
+(** * PART 1: SIMPLE LEMMAS *)
 
 Lemma ex6_eval_plus_distributes : forall e1 e2,
   eval (Plus e1 e2) = eval e1 + eval e2.
@@ -52,9 +48,7 @@ Lemma ex8_plus_commutative : forall e1 e2,
   eval (Plus e1 e2) = eval (Plus e2 e1).
 Proof. intros e1 e2. simpl. lia. Qed.
 
-(* ================================================================ *)
-(* PART 2: SIMPLE INDUCTION PROOFS                                  *)
-(* ================================================================ *)
+(** * PART 2: SIMPLE INDUCTION PROOFS *)
 
 Lemma ex9_zero_left_identity : forall e,
   eval (Plus (Num 0) e) = eval e.
@@ -72,9 +66,7 @@ Lemma ex12_eval_is_positive : forall e,
   eval e >= 0.
 Proof. intro e. lia. Qed.
 
-(* ================================================================ *)
-(* PART 3: PROPERTIES OF OPERATIONS                                 *)
-(* ================================================================ *)
+(** * PART 3: PROPERTIES OF OPERATIONS *)
 
 Lemma ex13_plus_zero_right : forall e,
   eval (Plus e (Num 0)) = eval e.
@@ -98,9 +90,7 @@ Proof.
   - apply Nat.ltb_ge in E. lia.
 Qed.
 
-(* ================================================================ *)
-(* PART 4: INEQUALITIES                                             *)
-(* ================================================================ *)
+(** * PART 4: INEQUALITIES *)
 
 Lemma ex17_plus_increases : forall e1 e2,
   eval (Plus e1 e2) >= eval e1.
@@ -114,9 +104,7 @@ Lemma ex19_plus_both_pos : forall e1 e2,
   eval e1 > 0 -> eval e2 > 0 -> eval (Plus e1 e2) > 1.
 Proof. intros e1 e2 H1 H2. simpl. lia. Qed.
 
-(* ================================================================ *)
-(* PART 5: AUXILIARY FUNCTIONS                                      *)
-(* ================================================================ *)
+(** * PART 5: AUXILIARY FUNCTIONS *)
 
 Fixpoint size (e : AE) : nat :=
   match e with
@@ -189,9 +177,7 @@ Proof.
   intro e. pose proof (size_lt_pow e). lia.
 Qed.
 
-(* ================================================================ *)
-(* PART 6: OPTIMIZATION CORRECTNESS                                 *)
-(* ================================================================ *)
+(** * PART 6: OPTIMIZATION CORRECTNESS *)
 
 (* Optimize children first, then drop a [+ 0] on the right.  Recursing
    before folding keeps the correctness proof free of nested-pattern
@@ -237,9 +223,7 @@ Proof.
     simpl. lia.
 Qed.
 
-(* ================================================================ *)
-(* PART 7: EQUIVALENCE RELATION                                     *)
-(* ================================================================ *)
+(** * PART 7: EQUIVALENCE RELATION *)
 
 (* [ae_equiv] is defined in the lecture as [eval e1 = eval e2]. *)
 
@@ -259,9 +243,7 @@ Lemma ex29_equiv_example :
   ae_equiv (Plus (Num 1) (Num 2)) (Plus (Num 2) (Num 1)).
 Proof. unfold ae_equiv. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 8: CREATIVE PROBLEMS                                        *)
-(* ================================================================ *)
+(** * PART 8: CREATIVE PROBLEMS *)
 
 (* Constant folding: evaluate constant subexpressions statically. *)
 Fixpoint fold_constants (e : AE) : AE :=
@@ -296,9 +278,7 @@ Lemma ex31_double : forall e,
   eval e + eval e = 2 * eval e.
 Proof. intro e. lia. Qed.
 
-(* ================================================================ *)
-(* CHALLENGE PROBLEMS                                               *)
-(* ================================================================ *)
+(** * CHALLENGE PROBLEMS *)
 
 (* Challenge 1: a nonzero operation count means the head is Plus or
    Minus. ([count_ops] is from the lecture.) *)

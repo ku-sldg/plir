@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - State Monad Lecture
- * Structuring the interpreter with a State monad
- *
- * The State chapter's interpreter threads the store BY HAND: every case
- * names intermediate stores [s1], [s2], ... and passes each subexpression
- * the store its predecessor left.  This chapter refactors that plumbing
- * into a STATE MONAD - a computation "over a mutable store" - so threading
- * becomes implicit ([get] to read it, [put] to replace it, [bind] to carry
- * it along).  We then PROVE the monadic interpreter computes exactly what
- * the explicit one does.
- *
- * The plan:
- *   1. The reference-cell language [FBAES], values [RVal], the [Store], and
- *      the DIRECT store-threading interpreter [evalM] - the reference,
- *      carried over from the State chapter.
- *   2. The STATE monad: [State S A = S -> option (A * S)], with [retS],
- *      [bindS] (with [;;] notation), [getS], [putS], [failS], [runState].
- *   3. The MONADIC interpreter [evalS], written with no explicit store.
- *   4. AGREEMENT: [evalS fuel env e s = evalM fuel env s e] for all inputs
- *      - the refactor changes the code, not the behavior.
- *
- * This mirrors the "State Monad" idea of PLIH:
- *   https://ku-sldg.github.io/plih//state/
+Programming Languages in Rocq - State Monad Lecture
+Structuring the interpreter with a State monad
+
+The State chapter's interpreter threads the store BY HAND: every case
+names intermediate stores [s1], [s2], ... and passes each subexpression
+the store its predecessor left.  This chapter refactors that plumbing
+into a STATE MONAD - a computation "over a mutable store" - so threading
+becomes implicit ([get] to read it, [put] to replace it, [bind] to carry
+it along).  We then PROVE the monadic interpreter computes exactly what
+the explicit one does.
+
+The plan:
+  1. The reference-cell language [FBAES], values [RVal], the [Store], and
+     the DIRECT store-threading interpreter [evalM] - the reference,
+     carried over from the State chapter.
+  2. The STATE monad: [State S A = S -> option (A * S)], with [retS],
+     [bindS] (with [;;] notation), [getS], [putS], [failS], [runState].
+  3. The MONADIC interpreter [evalS], written with no explicit store.
+  4. AGREEMENT: [evalS fuel env e s = evalM fuel env s e] for all inputs
+     - the refactor changes the code, not the behavior.
+
+This mirrors the "State Monad" idea of PLIH:
+  https://ku-sldg.github.io/plih//state/
  *)
 
 From Stdlib Require Import String.
@@ -34,15 +34,13 @@ Require Import plih_rocq_smon_shared.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* SECTION 1: THE LANGUAGE AND THE REFERENCE INTERPRETER           *)
-(* ================================================================ *)
+(** * SECTION 1: THE LANGUAGE AND THE REFERENCE INTERPRETER *)
 
 (**
- * [FBAES], its values [RVal] (with locations [LocV]), the [Store], and the
- * explicit store-threading interpreter [evalM] are carried over verbatim
- * from the State chapter.  They are the REFERENCE the monadic interpreter
- * must match - notice how [evalM] names [s1], [s2], ... by hand.
+[FBAES], its values [RVal] (with locations [LocV]), the [Store], and the
+explicit store-threading interpreter [evalM] are carried over verbatim
+from the State chapter.  They are the REFERENCE the monadic interpreter
+must match - notice how [evalM] names [s1], [s2], ... by hand.
  *)
 Inductive FBAES : Type :=
 | Num     : nat -> FBAES
@@ -172,23 +170,21 @@ Fixpoint evalM (fuel : nat) (env : Env RVal) (s : Store) (e : FBAES)
 
 Definition eval (e : FBAES) : option (RVal * Store) := evalM 1000 nil nil e.
 
-(* ================================================================ *)
-(* SECTION 2: THE STATE MONAD                                      *)
-(* ================================================================ *)
+(** * SECTION 2: THE STATE MONAD *)
 
 (**
- * A STATE computation over store type [S] producing an [A] is a function
- * [S -> option (A * S)]: given the current store it may FAIL ([None]) or
- * produce a value together with the UPDATED store.  This is exactly the
- * shape [evalM] returns - the monad just names the pattern.
- *
- *   - [retS a]   : succeed with [a], leaving the store untouched;
- *   - [bindS m f]: run [m], then run [f] on its result IN THE STORE [m]
- *                  left - this is where the threading happens, once;
- *   - [getS]     : read the current store as the value;
- *   - [putS s']  : replace the store with [s'];
- *   - [failS]    : fail;
- *   - [runState] : run a computation from an initial store.
+A STATE computation over store type [S] producing an [A] is a function
+[S -> option (A * S)]: given the current store it may FAIL ([None]) or
+produce a value together with the UPDATED store.  This is exactly the
+shape [evalM] returns - the monad just names the pattern.
+
+  - [retS a]   : succeed with [a], leaving the store untouched;
+  - [bindS m f]: run [m], then run [f] on its result IN THE STORE [m]
+                 left - this is where the threading happens, once;
+  - [getS]     : read the current store as the value;
+  - [putS s']  : replace the store with [s'];
+  - [failS]    : fail;
+  - [runState] : run a computation from an initial store.
  *)
 Definition State (S A : Type) : Type := S -> option (A * S).
 
@@ -215,17 +211,15 @@ Definition runState {S A : Type} (m : State S A) (s : S) : option (A * S) := m s
 Notation "x <- m ;; k" := (bindS m (fun x => k))
   (at level 61, m at next level, right associativity).
 
-(* ================================================================ *)
-(* SECTION 3: THE MONADIC INTERPRETER                             *)
-(* ================================================================ *)
+(** * SECTION 3: THE MONADIC INTERPRETER *)
 
 (**
- * The same interpreter, restructured over the State monad.  There is NO
- * store variable in sight: [bindS] threads it, [getS]/[putS] touch it only
- * where a cell is actually read or written.  Compare case-by-case with
- * [evalM] above - [New]/[Deref]/[Assign] are where [getS]/[putS] appear;
- * everything else is pure [retS]/[bindS].  The environment is still an
- * explicit argument (it is READ-ONLY, so it needs no monad here).
+The same interpreter, restructured over the State monad.  There is NO
+store variable in sight: [bindS] threads it, [getS]/[putS] touch it only
+where a cell is actually read or written.  Compare case-by-case with
+[evalM] above - [New]/[Deref]/[Assign] are where [getS]/[putS] appear;
+everything else is pure [retS]/[bindS].  The environment is still an
+explicit argument (it is READ-ONLY, so it needs no monad here).
  *)
 Fixpoint evalS (fuel : nat) (env : Env RVal) (e : FBAES) : State Store RVal :=
   match fuel with
@@ -312,9 +306,7 @@ Fixpoint evalS (fuel : nat) (env : Env RVal) (e : FBAES) : State Store RVal :=
 Definition evalStore (e : FBAES) : option (RVal * Store) :=
   runState (evalS 1000 nil e) nil.
 
-(* ================================================================ *)
-(* SECTION 4: RUNNING THE MONADIC INTERPRETER                     *)
-(* ================================================================ *)
+(** * SECTION 4: RUNNING THE MONADIC INTERPRETER *)
 
 (* The same programs as in the State chapter - now the store is threaded by
    the monad, but the answers are identical. *)
@@ -343,16 +335,14 @@ Example evS_aliasing :
   = Some (NumV 99, [NumV 99]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 5: AGREEMENT - THE HEADLINE                            *)
-(* ================================================================ *)
+(** * SECTION 5: AGREEMENT - THE HEADLINE *)
 
 (**
- * The refactor is faithful: run from any store, the monadic interpreter
- * returns exactly what the explicit one does.  The proof is by induction
- * on fuel; each case unfolds the monad operations and rewrites the
- * inductive hypothesis at every subexpression, so the implicit threading
- * of [bindS]/[getS]/[putS] lines up with [evalM]'s hand-written stores.
+The refactor is faithful: run from any store, the monadic interpreter
+returns exactly what the explicit one does.  The proof is by induction
+on fuel; each case unfolds the monad operations and rewrites the
+inductive hypothesis at every subexpression, so the implicit threading
+of [bindS]/[getS]/[putS] lines up with [evalM]'s hand-written stores.
  *)
 Theorem evalS_agrees : forall fuel env e s,
   evalS fuel env e s = evalM fuel env s e.
@@ -422,59 +412,55 @@ Proof.
 Qed.
 
 (**
- * The wrapper agrees too: running the monadic interpreter from the empty
- * store and environment is exactly the explicit [eval].
+The wrapper agrees too: running the monadic interpreter from the empty
+store and environment is exactly the explicit [eval].
  *)
 Corollary evalStore_agrees : forall e, evalStore e = eval e.
 Proof. intro e. unfold evalStore, runState, eval. apply evalS_agrees. Qed.
 
-(* ================================================================ *)
-(* SECTION 6: MONAD LAWS                                          *)
-(* ================================================================ *)
+(** * SECTION 6: MONAD LAWS *)
 
 (**
- * The State operations obey the monad laws.  LEFT IDENTITY holds by
- * computation (and eta): binding a pure value just applies the
- * continuation.
+The State operations obey the monad laws.  LEFT IDENTITY holds by
+computation (and eta): binding a pure value just applies the
+continuation.
  *)
 Lemma left_id_S : forall (A B : Type) (a : A) (f : A -> State Store B),
   bindS (retS a) f = f a.
 Proof. reflexivity. Qed.
 
 (**
- * GET-AFTER-PUT: after replacing the store with [s'], reading it back
- * yields [s'] - so [put] then [get] is the same as [put] then return [s'].
+GET-AFTER-PUT: after replacing the store with [s'], reading it back
+yields [s'] - so [put] then [get] is the same as [put] then return [s'].
  *)
 Lemma get_put_S : forall (s' : Store),
   bindS (putS s') (fun _ => getS) = bindS (putS s') (fun _ => retS s').
 Proof. reflexivity. Qed.
 
 (**
- * (RIGHT IDENTITY [bindS m retS = m] also holds, but only up to functional
- * extensionality - it needs to reduce a [match m s] whose scrutinee is
- * abstract - so we omit it, as in the Reader/Either chapters.)
+(RIGHT IDENTITY [bindS m retS = m] also holds, but only up to functional
+extensionality - it needs to reduce a [match m s] whose scrutinee is
+abstract - so we omit it, as in the Reader/Either chapters.)
  *)
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture we:
- *   1. Carried over the reference-cell language [FBAES] and its EXPLICIT
- *      store-threading interpreter [evalM] from the State chapter.
- *   2. Defined the STATE monad [State S A = S -> option (A * S)] with
- *      [retS]/[bindS]/[getS]/[putS]/[failS] and [;;] notation.
- *   3. Rebuilt the interpreter as [evalS] with NO explicit store - [bindS]
- *      threads it, [getS]/[putS] appear only at [New]/[Deref]/[Assign].
- *   4. Proved AGREEMENT: [evalS fuel env e s = evalM fuel env s e], so the
- *      monadic refactor changes the structure, not the behavior (corollary
- *      [evalStore_agrees] lifts this to the top-level wrappers).
- *   5. Checked the monad laws that hold definitionally (left identity,
- *      get-after-put).
- *
- * This closes the mutable-state arc: the State chapter showed WHAT
- * mutation means (an explicitly threaded store); this chapter shows how to
- * STRUCTURE that threading so the interpreter reads like the pure ones
- * again - the same payoff the Reader monad gave the type checker.
+In this lecture we:
+  1. Carried over the reference-cell language [FBAES] and its EXPLICIT
+     store-threading interpreter [evalM] from the State chapter.
+  2. Defined the STATE monad [State S A = S -> option (A * S)] with
+     [retS]/[bindS]/[getS]/[putS]/[failS] and [;;] notation.
+  3. Rebuilt the interpreter as [evalS] with NO explicit store - [bindS]
+     threads it, [getS]/[putS] appear only at [New]/[Deref]/[Assign].
+  4. Proved AGREEMENT: [evalS fuel env e s = evalM fuel env s e], so the
+     monadic refactor changes the structure, not the behavior (corollary
+     [evalStore_agrees] lifts this to the top-level wrappers).
+  5. Checked the monad laws that hold definitionally (left identity,
+     get-after-put).
+
+This closes the mutable-state arc: the State chapter showed WHAT
+mutation means (an explicitly threaded store); this chapter shows how to
+STRUCTURE that threading so the interpreter reads like the pure ones
+again - the same payoff the Reader monad gave the type checker.
  *)

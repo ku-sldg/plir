@@ -1,12 +1,12 @@
 (**
- * Programming Languages in Rocq - Mutable State Solutions
- * Complete solutions to plih_state_exercises.v
- *
- * The language [FBAES], the store-threading interpreter [evalM] with
- * wrapper [eval], the metatheorem [evalM_mono], the derived forms
- * [MutBind]/[Get]/[SetVar], and the combinator [Zc] come from the Mutable
- * State lecture; [update_at]/[update_at_length]/[nth_error_snoc] come from
- * the shared library.
+Programming Languages in Rocq - Mutable State Solutions
+Complete solutions to plih_state_exercises.v
+
+The language [FBAES], the store-threading interpreter [evalM] with
+wrapper [eval], the metatheorem [evalM_mono], the derived forms
+[MutBind]/[Get]/[SetVar], and the combinator [Zc] come from the Mutable
+State lecture; [update_at]/[update_at_length]/[nth_error_snoc] come from
+the shared library.
  *)
 
 From Stdlib Require Import String.
@@ -20,9 +20,7 @@ Require Import plih_state_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE INTERPRETER                                 *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE INTERPRETER *)
 
 Example ex1_arith : eval (Plus (Num 2) (Num 3)) = Some (NumV 5, nil).
 Proof. reflexivity. Qed.
@@ -53,9 +51,7 @@ Example ex5_two_cells :
   = Some (NumV 2, [NumV 9; NumV 2]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: DERIVED FORMS AND VALUE LAWS                            *)
-(* ================================================================ *)
+(** * PART 2: DERIVED FORMS AND VALUE LAWS *)
 
 Example ex6_mutvar :
   eval (MutBind "n" (Num 10)
@@ -76,9 +72,7 @@ Example ex8_id : forall k env st x v,
   evalM (S k) env st (Id x) = Some (v, st).
 Proof. intros k env st x v H. simpl. rewrite H. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 3: METATHEORY AND THE STORE                               *)
-(* ================================================================ *)
+(** * PART 3: METATHEORY AND THE STORE *)
 
 Example ex9_more_fuel : forall f env st e p,
   evalM f env st e = Some p -> evalM (f + 10) env st e = Some p.

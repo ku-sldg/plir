@@ -1,32 +1,32 @@
 (**
- * Programming Languages in Rocq - Mutable State Exercises
- * An explicit, threaded store - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the store-threading interpreter [evalM] on reference cells,
- *      observing the (value, store) PAIR it returns
- *   2. Use the derived mutable-variable forms and see aliasing
- *   3. Use FUEL MONOTONICITY, simple value laws, and the store lemmas
- *      [update_at_length] / [nth_error_snoc]
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: the language [FBAES]; the value type [RVal]
- * ([NumV]/[BoolV]/[ClosureV]/[LocV]); the store [Store] and interpreter
- * [evalM] with wrapper [eval]; [evalM_mono]; the derived forms
- * [MutBind]/[Get]/[SetVar]; the combinator [Zc].  [lookup]/[extend],
- * [update_at], [update_at_length], and [nth_error_snoc] come from the
- * shared library.
- *
- * NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
- * literal fuel forces the kernel to unroll [evalM] and can blow up.  A
- * literal fuel is fine only on a CONCRETE closed term.
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_state_solutions.v.
+Programming Languages in Rocq - Mutable State Exercises
+An explicit, threaded store - Student Problem Set
+
+In these exercises you will:
+  1. Run the store-threading interpreter [evalM] on reference cells,
+     observing the (value, store) PAIR it returns
+  2. Use the derived mutable-variable forms and see aliasing
+  3. Use FUEL MONOTONICITY, simple value laws, and the store lemmas
+     [update_at_length] / [nth_error_snoc]
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: the language [FBAES]; the value type [RVal]
+([NumV]/[BoolV]/[ClosureV]/[LocV]); the store [Store] and interpreter
+[evalM] with wrapper [eval]; [evalM_mono]; the derived forms
+[MutBind]/[Get]/[SetVar]; the combinator [Zc].  [lookup]/[extend],
+[update_at], [update_at_length], and [nth_error_snoc] come from the
+shared library.
+
+NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
+literal fuel forces the kernel to unroll [evalM] and can blow up.  A
+literal fuel is fine only on a CONCRETE closed term.
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_state_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -40,9 +40,7 @@ Require Import plih_state_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE INTERPRETER                                 *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE INTERPRETER *)
 
 (* [*] Pure arithmetic leaves the store empty. *)
 Example ex1_arith : eval (Plus (Num 2) (Num 3)) = Some (NumV 5, nil).
@@ -79,9 +77,7 @@ Example ex5_two_cells :
   = Some (NumV 2, [NumV 9; NumV 2]).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: DERIVED FORMS AND VALUE LAWS                            *)
-(* ================================================================ *)
+(** * PART 2: DERIVED FORMS AND VALUE LAWS *)
 
 (* [*] A mutable variable updated in place. *)
 Example ex6_mutvar :
@@ -103,9 +99,7 @@ Example ex8_id : forall k env st x v,
   evalM (S k) env st (Id x) = Some (v, st).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: METATHEORY AND THE STORE                               *)
-(* ================================================================ *)
+(** * PART 3: METATHEORY AND THE STORE *)
 
 (* [**] Adding fuel cannot change an answer.  Cite [evalM_mono].  Keep the
    fuel a VARIABLE - do not instantiate it to a literal. *)

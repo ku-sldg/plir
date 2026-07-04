@@ -1,18 +1,18 @@
 (**
- * Programming Languages in Rocq - IDs Lecture
- * Adding Identifiers
- *
- * This lecture covers:
- *   1. Extending AE with identifiers (Id) and local bindings (Bind)
- *   2. Substitution as the meaning of a binding
- *   3. Free and bound identifiers; closed terms
- *   4. Writing a SUBSTITUTION-BASED interpreter in Rocq - and the
- *      surprise that it is NOT structurally recursive, so we drive it
- *      with a fuel argument
- *   5. Proving properties about substitution and evaluation
- *
- * This mirrors the "Adding Identifiers" section of PLIH:
- *   https://ku-sldg.github.io/plih//ids/1-Adding-IDs.html
+Programming Languages in Rocq - IDs Lecture
+Adding Identifiers
+
+This lecture covers:
+  1. Extending AE with identifiers (Id) and local bindings (Bind)
+  2. Substitution as the meaning of a binding
+  3. Free and bound identifiers; closed terms
+  4. Writing a SUBSTITUTION-BASED interpreter in Rocq - and the
+     surprise that it is NOT structurally recursive, so we drive it
+     with a fuel argument
+  5. Proving properties about substitution and evaluation
+
+This mirrors the "Adding Identifiers" section of PLIH:
+  https://ku-sldg.github.io/plih//ids/1-Adding-IDs.html
  *)
 
 From Stdlib Require Import String.
@@ -24,25 +24,23 @@ Require Import plih_rocq_ids_shared.
 
 Local Open Scope string_scope.
 
-(* ================================================================ *)
-(* SECTION 1: SYNTAX - The BAE Language                             *)
-(* ================================================================ *)
+(** * SECTION 1: SYNTAX - The BAE Language *)
 
 (**
- * BAE ("Bind and Arithmetic Expressions") is AE plus two new forms:
- *   - [Id x]         : a use (an instance) of an identifier
- *   - [Bind x v b]   : bind [x] to the value of [v], then evaluate [b]
- *
- * Concrete syntax:
- *   t ::= NUM | ID | t + t | t - t | bind ID = t in t
- *
- * Compare to the Haskell course:
- *   data BAE where
- *     Num   :: Int -> BAE
- *     Plus  :: BAE -> BAE -> BAE
- *     Minus :: BAE -> BAE -> BAE
- *     Bind  :: String -> BAE -> BAE -> BAE
- *     Id    :: String -> BAE
+BAE ("Bind and Arithmetic Expressions") is AE plus two new forms:
+  - [Id x]         : a use (an instance) of an identifier
+  - [Bind x v b]   : bind [x] to the value of [v], then evaluate [b]
+
+Concrete syntax:
+  t ::= NUM | ID | t + t | t - t | bind ID = t in t
+
+Compare to the Haskell course:
+  data BAE where
+    Num   :: Int -> BAE
+    Plus  :: BAE -> BAE -> BAE
+    Minus :: BAE -> BAE -> BAE
+    Bind  :: String -> BAE -> BAE -> BAE
+    Id    :: String -> BAE
  *)
 
 Inductive BAE : Type :=
@@ -53,17 +51,17 @@ Inductive BAE : Type :=
 | Id    : string -> BAE.
 
 (**
- * BINDING TERMINOLOGY (from the chapter):
- *   - Instance:          any occurrence of an identifier.
- *   - Binding instance:  where an identifier is declared and given a
- *                        value - the [x] in [Bind x v b].
- *   - Scope:             the region where an identifier can be used -
- *                        the body [b] of [Bind x v b].
- *   - Bound instance:    a use of [x] inside the scope of its binding.
- *   - Free instance:     a use of [x] with no enclosing binding.
- *
- * Example: [bind x = 5 + 2 in x + x - 4] introduces [x] with value 7,
- * usable only in [x + x - 4].
+BINDING TERMINOLOGY (from the chapter):
+  - Instance:          any occurrence of an identifier.
+  - Binding instance:  where an identifier is declared and given a
+                       value - the [x] in [Bind x v b].
+  - Scope:             the region where an identifier can be used -
+                       the body [b] of [Bind x v b].
+  - Bound instance:    a use of [x] inside the scope of its binding.
+  - Free instance:     a use of [x] with no enclosing binding.
+
+Example: [bind x = 5 + 2 in x + x - 4] introduces [x] with value 7,
+usable only in [x + x - 4].
  *)
 
 Definition bae_example_1 : BAE :=
@@ -75,13 +73,11 @@ Definition bae_example_2 : BAE :=
 (* [Id "x"] on its own is a FREE instance - it has no binding. *)
 Definition bae_free : BAE := Plus (Id "x") (Num 1).
 
-(* ================================================================ *)
-(* SECTION 2: FREE IDENTIFIERS AND CLOSED TERMS                     *)
-(* ================================================================ *)
+(** * SECTION 2: FREE IDENTIFIERS AND CLOSED TERMS *)
 
 (**
- * [free_in x e] is [true] when [x] has a FREE instance in [e].  A
- * [Bind y ...] shadows [x] in its body exactly when [x = y].
+[free_in x e] is [true] when [x] has a FREE instance in [e].  A
+[Bind y ...] shadows [x] in its body exactly when [x = y].
  *)
 
 Fixpoint free_in (x : string) (e : BAE) : bool :=
@@ -102,27 +98,25 @@ Proof. reflexivity. Qed.
 Example bound_not_free : free_in "x" bae_example_1 = false.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 3: SUBSTITUTION                                          *)
-(* ================================================================ *)
+(** * SECTION 3: SUBSTITUTION *)
 
 (**
- * [subst i v e] replaces every FREE instance of [i] in [e] with the
- * term [v].  Notationally the chapter writes this [ [i |-> v] e ].
- *
- * The only subtle case is [Bind i' v' b']: we always substitute inside
- * the bound value [v'] (it is evaluated in the OUTER scope), but we
- * substitute inside the body [b'] only when [i <> i'] - a matching
- * inner binding SHADOWS the outer [i].
- *
- * Compare to Haskell:
- *   subst _ _ (Num x)          = Num x
- *   subst i v (Plus l r)       = Plus (subst i v l) (subst i v r)
- *   subst i v (Minus l r)      = Minus (subst i v l) (subst i v r)
- *   subst i v (Bind i' v' b')  = if i==i'
- *                                then Bind i' (subst i v v') b'
- *                                else Bind i' (subst i v v') (subst i v b')
- *   subst i v (Id i')          = if i==i' then v else Id i'
+[subst i v e] replaces every FREE instance of [i] in [e] with the
+term [v].  Notationally the chapter writes this [ [i |-> v] e ].
+
+The only subtle case is [Bind i' v' b']: we always substitute inside
+the bound value [v'] (it is evaluated in the OUTER scope), but we
+substitute inside the body [b'] only when [i <> i'] - a matching
+inner binding SHADOWS the outer [i].
+
+Compare to Haskell:
+  subst _ _ (Num x)          = Num x
+  subst i v (Plus l r)       = Plus (subst i v l) (subst i v r)
+  subst i v (Minus l r)      = Minus (subst i v l) (subst i v r)
+  subst i v (Bind i' v' b')  = if i==i'
+                               then Bind i' (subst i v v') b'
+                               else Bind i' (subst i v v') (subst i v b')
+  subst i v (Id i')          = if i==i' then v else Id i'
  *)
 
 Fixpoint subst (i : string) (v : BAE) (e : BAE) : BAE :=
@@ -148,13 +142,11 @@ Example subst_shadowed :
   = Bind "x" (Num 1) (Id "x").
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 4: SIZE AND A KEY SUBSTITUTION INVARIANT                 *)
-(* ================================================================ *)
+(** * SECTION 4: SIZE AND A KEY SUBSTITUTION INVARIANT *)
 
 (**
- * [size] counts the nodes of an expression.  It is the measure that
- * makes our interpreter terminate (see Section 5).
+[size] counts the nodes of an expression.  It is the measure that
+makes our interpreter terminate (see Section 5).
  *)
 
 Fixpoint size (e : BAE) : nat :=
@@ -170,10 +162,10 @@ Lemma size_pos : forall e, 1 <= size e.
 Proof. induction e; simpl; lia. Qed.
 
 (**
- * THE KEY INVARIANT.  Substituting a NUMBER for an identifier does not
- * change the size of a term: it only replaces [Id] leaves (size 1) by
- * [Num] leaves (size 1).  This is exactly what will let evaluation
- * recurse "through" a substitution without shrinking structurally.
+THE KEY INVARIANT.  Substituting a NUMBER for an identifier does not
+change the size of a term: it only replaces [Id] leaves (size 1) by
+[Num] leaves (size 1).  This is exactly what will let evaluation
+recurse "through" a substitution without shrinking structurally.
  *)
 
 Lemma size_subst_num : forall e i n,
@@ -190,28 +182,26 @@ Proof.
   - destruct (String.eqb i y); reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 5: SEMANTICS - A SUBSTITUTION INTERPRETER (WITH FUEL)    *)
-(* ================================================================ *)
+(** * SECTION 5: SEMANTICS - A SUBSTITUTION INTERPRETER (WITH FUEL) *)
 
 (**
- * We now write the interpreter.  The natural definition is:
- *
- *   eval (Bind i v b) = eval v >>= fun n => eval (subst i (Num n) b)
- *
- * But there is a catch that does not arise in Haskell: [subst i (Num
- * n) b] is a BRAND NEW term, not a structural subterm of [Bind i v b].
- * Rocq's termination checker cannot see that the recursion shrinks, so
- * a plain [Fixpoint] on the expression is REJECTED.
- *
- * The fix is to recurse on a decreasing FUEL counter instead.  Because
- * substituting a number preserves [size] (Section 4), starting with
- * fuel [= size e] is always enough.
- *
- * (Foreshadowing: the next chapter, "Adding Environments", removes
- * substitution entirely, and the resulting interpreter IS a clean
- * structural [Fixpoint] with no fuel.  That is one more reason
- * environments are the better design.)
+We now write the interpreter.  The natural definition is:
+
+  eval (Bind i v b) = eval v >>= fun n => eval (subst i (Num n) b)
+
+But there is a catch that does not arise in Haskell: [subst i (Num
+n) b] is a BRAND NEW term, not a structural subterm of [Bind i v b].
+Rocq's termination checker cannot see that the recursion shrinks, so
+a plain [Fixpoint] on the expression is REJECTED.
+
+The fix is to recurse on a decreasing FUEL counter instead.  Because
+substituting a number preserves [size] (Section 4), starting with
+fuel [= size e] is always enough.
+
+(Foreshadowing: the next chapter, "Adding Environments", removes
+substitution entirely, and the resulting interpreter IS a clean
+structural [Fixpoint] with no fuel.  That is one more reason
+environments are the better design.)
  *)
 
 Fixpoint evalF (fuel : nat) (e : BAE) : option nat :=
@@ -243,9 +233,9 @@ Fixpoint evalF (fuel : nat) (e : BAE) : option nat :=
 Definition eval (e : BAE) : option nat := evalF (size e) e.
 
 (**
- * FUEL MONOTONICITY.  Any two fuel amounts that are both large enough
- * (at least [size e]) compute the same answer.  This is what makes
- * [eval] well defined regardless of the exact fuel we picked.
+FUEL MONOTONICITY.  Any two fuel amounts that are both large enough
+(at least [size e]) compute the same answer.  This is what makes
+[eval] well defined regardless of the exact fuel we picked.
  *)
 Lemma evalF_mono : forall f1 f2 e,
   size e <= f1 -> size e <= f2 -> evalF f1 e = evalF f2 e.
@@ -274,9 +264,9 @@ Proof.
 Qed.
 
 (**
- * CLEAN EQUATIONS.  With monotonicity in hand we can prove the
- * "obvious" recursive equations for [eval], hiding the fuel entirely.
- * These are the lemmas we actually use to reason about [eval].
+CLEAN EQUATIONS.  With monotonicity in hand we can prove the
+"obvious" recursive equations for [eval], hiding the fuel entirely.
+These are the lemmas we actually use to reason about [eval].
  *)
 
 Lemma eval_Num : forall n, eval (Num n) = Some n.
@@ -326,9 +316,7 @@ Proof.
   reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 6: TESTING THE INTERPRETER                              *)
-(* ================================================================ *)
+(** * SECTION 6: TESTING THE INTERPRETER *)
 
 Example test_eval_1 :
   eval bae_example_1 = Some 10.
@@ -348,13 +336,11 @@ Example test_eval_shadow :
   eval (Bind "x" (Num 1) (Bind "x" (Num 2) (Id "x"))) = Some 2.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 7: PROPERTIES OF SUBSTITUTION                           *)
-(* ================================================================ *)
+(** * SECTION 7: PROPERTIES OF SUBSTITUTION *)
 
 (**
- * Substituting for an identifier that does not occur free leaves the
- * term unchanged.  This is the syntactic heart of "shadowing".
+Substituting for an identifier that does not occur free leaves the
+term unchanged.  This is the syntactic heart of "shadowing".
  *)
 Lemma subst_not_free : forall e i v,
   free_in i e = false -> subst i v e = e.
@@ -382,9 +368,9 @@ Proof.
 Qed.
 
 (**
- * How substitution changes the free variables.  Replacing [x] by a
- * NUMBER (which has no free variables of its own) removes [x] from the
- * free set and leaves every other identifier exactly as it was.
+How substitution changes the free variables.  Replacing [x] by a
+NUMBER (which has no free variables of its own) removes [x] from the
+free set and leaves every other identifier exactly as it was.
  *)
 Lemma free_in_subst_num : forall e x n z,
   free_in z (subst x (Num n) e)
@@ -410,10 +396,10 @@ Proof.
 Qed.
 
 (**
- * If [x] is the ONLY identifier that might occur free in [e], then
- * substituting a number for [x] yields a CLOSED term.  This is the
- * "last variable gets bound" step behind the progress theorem for
- * closed programs (an exercise/challenge).
+If [x] is the ONLY identifier that might occur free in [e], then
+substituting a number for [x] yields a CLOSED term.  This is the
+"last variable gets bound" step behind the progress theorem for
+closed programs (an exercise/challenge).
  *)
 Lemma closed_after_subst : forall e x n,
   (forall y, y <> x -> free_in y e = false) ->
@@ -425,13 +411,11 @@ Proof.
   - apply String.eqb_neq in E. apply H. exact E.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 8: PROPERTIES OF EVALUATION                             *)
-(* ================================================================ *)
+(** * SECTION 8: PROPERTIES OF EVALUATION *)
 
 (**
- * Evaluation is deterministic - [eval] is a function, so this is
- * immediate, but it is worth stating.
+Evaluation is deterministic - [eval] is a function, so this is
+immediate, but it is worth stating.
  *)
 Lemma eval_deterministic : forall e r1 r2,
   eval e = r1 -> eval e = r2 -> r1 = r2.
@@ -442,8 +426,8 @@ Lemma eval_num_value : forall n, eval (Num n) = Some n.
 Proof. exact eval_Num. Qed.
 
 (**
- * [bind x = a in b] where [a] is a literal is exactly [b] with [x]
- * replaced by [a].  This is the defining "let" equation.
+[bind x = a in b] where [a] is a literal is exactly [b] with [x]
+replaced by [a].  This is the defining "let" equation.
  *)
 Lemma bind_num_subst : forall x n b,
   eval (Bind x (Num n) b) = eval (subst x (Num n) b).
@@ -452,8 +436,8 @@ Proof.
 Qed.
 
 (**
- * An unused binding can be dropped: if [x] does not occur free in [b]
- * and the bound expression evaluates, the binding has no effect.
+An unused binding can be dropped: if [x] does not occur free in [b]
+and the bound expression evaluates, the binding has no effect.
  *)
 Lemma bind_unused : forall x v b n,
   eval v = Some n ->
@@ -465,14 +449,12 @@ Proof.
   rewrite subst_not_free by assumption. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 9: EXPRESSION EQUIVALENCE                               *)
-(* ================================================================ *)
+(** * SECTION 9: EXPRESSION EQUIVALENCE *)
 
 (**
- * Two BAE terms are equivalent when they evaluate to the same result
- * (including both failing).  As with AE this is an equivalence
- * relation.
+Two BAE terms are equivalent when they evaluate to the same result
+(including both failing).  As with AE this is an equivalence
+relation.
  *)
 
 Definition bae_equiv (e1 e2 : BAE) : Prop := eval e1 = eval e2.
@@ -498,21 +480,19 @@ Example alpha_example :
             (Bind "y" (Num 3) (Plus (Id "y") (Num 1))).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture we:
- *   1. Defined BAE = AE + identifiers (Id) + local bindings (Bind).
- *   2. Formalised free/bound instances and closed terms.
- *   3. Defined substitution and proved it ignores non-free variables.
- *   4. Discovered that a substitution interpreter is NOT structurally
- *      recursive in Rocq, and drove it with a [size]-bounded fuel.
- *   5. Recovered clean recursive equations for [eval] and proved
- *      properties of substitution and evaluation.
- *
- * Next: "Adding Environments" replaces eager substitution with a
- * deferred environment, yielding a clean structural interpreter, and
- * we PROVE the two interpreters always agree.
+In this lecture we:
+  1. Defined BAE = AE + identifiers (Id) + local bindings (Bind).
+  2. Formalised free/bound instances and closed terms.
+  3. Defined substitution and proved it ignores non-free variables.
+  4. Discovered that a substitution interpreter is NOT structurally
+     recursive in Rocq, and drove it with a [size]-bounded fuel.
+  5. Recovered clean recursive equations for [eval] and proved
+     properties of substitution and evaluation.
+
+Next: "Adding Environments" replaces eager substitution with a
+deferred environment, yielding a clean structural interpreter, and
+we PROVE the two interpreters always agree.
  *)

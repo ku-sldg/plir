@@ -1,12 +1,12 @@
 (**
- * Programming Languages in Rocq - Reader+State Monad Solutions
- * Complete solutions to plih_rsmon_exercises.v
- *
- * The language [FBAES], the explicit interpreter [evalM]/[eval], the
- * combined monad ([retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/
- * [failRS]/[runRS]), the monadic interpreter [evalRS]/[evalReaderState],
- * and the theorems [evalRS_agrees] / [evalReaderState_agrees] all come from
- * the Reader+State Monad lecture.
+Programming Languages in Rocq - Reader+State Monad Solutions
+Complete solutions to plih_rsmon_exercises.v
+
+The language [FBAES], the explicit interpreter [evalM]/[eval], the
+combined monad ([retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/
+[failRS]/[runRS]), the monadic interpreter [evalRS]/[evalReaderState],
+and the theorems [evalRS_agrees] / [evalReaderState_agrees] all come from
+the Reader+State Monad lecture.
  *)
 
 From Stdlib Require Import String.
@@ -20,9 +20,7 @@ Require Import plih_rsmon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE COMBINED INTERPRETER                       *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE COMBINED INTERPRETER *)
 
 Example ex1_arith :
   evalReaderState (Minus (Mult (Num 3) (Num 4)) (Num 2)) = Some (NumV 10, nil).
@@ -51,9 +49,7 @@ Example ex4_scope_and_state :
   = Some (NumV 7, [NumV 7]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: AGREEMENT IN ACTION                                     *)
-(* ================================================================ *)
+(** * PART 2: AGREEMENT IN ACTION *)
 
 Example ex5_wrapper_agrees :
   evalReaderState (App (Lambda "x" (Id "x")) (Num 5))
@@ -68,9 +64,7 @@ Example ex7_transport : forall e v s',
   evalReaderState e = Some (v, s') -> eval e = Some (v, s').
 Proof. intros e v s' H. rewrite <- evalReaderState_agrees. exact H. Qed.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS AND EFFECT INTERACTION                      *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS AND EFFECT INTERACTION *)
 
 Example ex8_left_id : forall (A B : Type) (a : A) (f : A -> RS (Env RVal) Store B),
   bindRS (retRS a) f = f a.

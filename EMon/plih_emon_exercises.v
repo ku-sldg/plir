@@ -1,25 +1,25 @@
 (**
- * Programming Languages in Rocq - Reader+Either Monad Exercises
- * Informative type errors - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the message-carrying checker [typeofE]/[typecheckE]
- *   2. Use the REFINEMENT theorem relating it to the direct [typeof]
- *   3. Verify small laws of the combined Reader+Either monad
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: [Ty]/[Ty_eqb], the terms [TFBAEC], the direct
- * checker [typeof]/[typecheck], the monad [RE]
- * ([retE]/[bindE]/[askE]/[localE]/[throwE]/[runE] with [;;]), the checker
- * [typeofE]/[typecheckE], [forget], the theorems [typeofE_refines] and
- * [typecheckE_refines], and the sample term [inc].
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_emon_solutions.v.
+Programming Languages in Rocq - Reader+Either Monad Exercises
+Informative type errors - Student Problem Set
+
+In these exercises you will:
+  1. Run the message-carrying checker [typeofE]/[typecheckE]
+  2. Use the REFINEMENT theorem relating it to the direct [typeof]
+  3. Verify small laws of the combined Reader+Either monad
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: [Ty]/[Ty_eqb], the terms [TFBAEC], the direct
+checker [typeof]/[typecheck], the monad [RE]
+([retE]/[bindE]/[askE]/[localE]/[throwE]/[runE] with [;;]), the checker
+[typeofE]/[typecheckE], [forget], the theorems [typeofE_refines] and
+[typecheckE_refines], and the sample term [inc].
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_emon_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -33,9 +33,7 @@ Require Import plih_emon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE MESSAGE-CARRYING CHECKER                   *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE MESSAGE-CARRYING CHECKER *)
 
 (* [*] A good program succeeds with [inr <type>]. *)
 Example ex1_ok : typecheckE (Bind "x" (Num 5) (IsZero (Id "x"))) = inr TBool.
@@ -52,9 +50,7 @@ Example ex3_app_msg :
   typecheckE (App (Num 1) (Num 2)) = inl "app: applying a non-function".
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: REFINEMENT OF THE DIRECT CHECKER                       *)
-(* ================================================================ *)
+(** * PART 2: REFINEMENT OF THE DIRECT CHECKER *)
 
 (* [**] On a concrete term, forgetting the message recovers the direct
    checker's answer at every context.  Cite [typeofE_refines]. *)
@@ -66,9 +62,7 @@ Proof. Admitted.
 Example ex5_refine_top : forall e, forget (typecheckE e) = typecheck e.
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS                                              *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS *)
 
 (* [**] Left identity: binding a pure value just applies the function. *)
 Example ex6_left_id : forall (E A B : Type) (a : A) (f : A -> RE E B),

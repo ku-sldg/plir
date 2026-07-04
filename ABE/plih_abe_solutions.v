@@ -1,12 +1,12 @@
 (**
- * Programming Languages in Rocq - ABE Solutions
- * Complete solutions to all exercises in plih_abe_exercises.v
- *
- * The exercises reuse the [ABE] syntax and [eval] interpreter from the
- * lecture, so we simply import it.  A handful of exercise statements
- * carry extra hypotheses compared with the "obvious" untyped version -
- * see the comments at those exercises for why this is necessary in a
- * type-checked language.
+Programming Languages in Rocq - ABE Solutions
+Complete solutions to all exercises in plih_abe_exercises.v
+
+The exercises reuse the [ABE] syntax and [eval] interpreter from the
+lecture, so we simply import it.  A handful of exercise statements
+carry extra hypotheses compared with the "obvious" untyped version -
+see the comments at those exercises for why this is necessary in a
+type-checked language.
  *)
 
 From Stdlib Require Import List.
@@ -17,9 +17,7 @@ Require Import plih_abe_lecture.
 
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: BASIC BOOLEAN EVALUATION                                *)
-(* ================================================================ *)
+(** * PART 1: BASIC BOOLEAN EVALUATION *)
 
 Example ex1_bool_true : eval BTrue = Some (BoolV true).
 Proof. reflexivity. Qed.
@@ -39,9 +37,7 @@ Example ex5_or_false_false :
   eval (Or BFalse BFalse) = Some (BoolV false).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: TYPE MISMATCHES (Error Handling)                        *)
-(* ================================================================ *)
+(** * PART 2: TYPE MISMATCHES (Error Handling) *)
 
 Example ex6_type_error_add :
   eval (Plus BTrue (Num 3)) = None.
@@ -68,9 +64,7 @@ Proof.
   right. exists n1, n2. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 3: CONDITIONALS                                            *)
-(* ================================================================ *)
+(** * PART 3: CONDITIONALS *)
 
 Example ex10_if_true_takes_then :
   eval (IfThenElse BTrue (Num 42) (Num 99)) = Some (NumV 42).
@@ -94,9 +88,7 @@ Example ex13_nested_if :
   = Some (NumV 2).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 4: COMPARISON OPERATIONS                                   *)
-(* ================================================================ *)
+(** * PART 4: COMPARISON OPERATIONS *)
 
 Example ex14_less_than_true :
   eval (LessThan (Num 3) (Num 5)) = Some (BoolV true).
@@ -114,9 +106,7 @@ Example ex17_equal_false :
   eval (Equal (Num 3) (Num 5)) = Some (BoolV false).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 5: BOOLEAN ALGEBRA                                         *)
-(* ================================================================ *)
+(** * PART 5: BOOLEAN ALGEBRA *)
 
 Lemma ex18_not_true :
   eval (Not BTrue) = Some (BoolV false).
@@ -153,9 +143,7 @@ Proof.
   rewrite Bool.orb_comm. reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 6: CONDITIONAL PROPERTIES                                  *)
-(* ================================================================ *)
+(** * PART 6: CONDITIONAL PROPERTIES *)
 
 (* NOTE: the condition must evaluate to a boolean.  Without that
    hypothesis the conditional is itself a type error and evaluates to
@@ -175,9 +163,7 @@ Lemma ex25_if_false_takes_else : forall e1 e2,
   eval (IfThenElse BFalse e1 e2) = eval e2.
 Proof. intros e1 e2. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 7: COMBINING FEATURES                                      *)
-(* ================================================================ *)
+(** * PART 7: COMBINING FEATURES *)
 
 Example ex26_complex_expr :
   eval (Plus (IfThenElse BTrue (Num 3) (Num 5)) (Num 2))
@@ -191,9 +177,7 @@ Example ex27_boolean_conditional :
   = Some (BoolV true).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 8: TYPE CONSISTENCY PROOFS                                 *)
-(* ================================================================ *)
+(** * PART 8: TYPE CONSISTENCY PROOFS *)
 
 (* The predicates is_numeric and is_boolean are defined in the lecture. *)
 
@@ -217,9 +201,7 @@ Proof.
   rewrite Hn in Hcontra. discriminate.
 Qed.
 
-(* ================================================================ *)
-(* PART 9: EQUIVALENCE PROOFS                                      *)
-(* ================================================================ *)
+(** * PART 9: EQUIVALENCE PROOFS *)
 
 (* abe_equiv is defined in the lecture. *)
 
@@ -249,9 +231,7 @@ Proof.
   destruct b1; destruct b2; reflexivity.
 Qed.
 
-(* ================================================================ *)
-(* PART 10: COMPLEXITY AND SIZE                                    *)
-(* ================================================================ *)
+(** * PART 10: COMPLEXITY AND SIZE *)
 
 (* [size] is defined in the lecture. *)
 
@@ -280,20 +260,18 @@ Proof.
   intro e. induction e; simpl; lia.
 Qed.
 
-(* ================================================================ *)
-(* PART 11: OPTIMIZATION                                           *)
-(* ================================================================ *)
+(** * PART 11: OPTIMIZATION *)
 
 (**
- * A natural-looking optimization is "double-negation elimination":
- * rewrite [Not (Not e)] to [e].  In a TYPE-CHECKED language this is
- * UNSOUND: [Not (Not (Num 5))] is a type error (None) but [Num 5] is
- * not, so they are not equivalent.  This is the same phenomenon we saw
- * with [and_true_left] in the lecture.
- *
- * The sound optimization we implement here is constant folding of [Not]
- * applied to a boolean LITERAL: [Not BTrue] becomes [BFalse] and
- * [Not BFalse] becomes [BTrue].
+A natural-looking optimization is "double-negation elimination":
+rewrite [Not (Not e)] to [e].  In a TYPE-CHECKED language this is
+UNSOUND: [Not (Not (Num 5))] is a type error (None) but [Num 5] is
+not, so they are not equivalent.  This is the same phenomenon we saw
+with [and_true_left] in the lecture.
+
+The sound optimization we implement here is constant folding of [Not]
+applied to a boolean LITERAL: [Not BTrue] becomes [BFalse] and
+[Not BFalse] becomes [BTrue].
  *)
 
 Definition fold_not (e : ABE) : ABE :=
@@ -359,9 +337,7 @@ Proof.
   - simpl. lia.
 Qed.
 
-(* ================================================================ *)
-(* PART 12: CREATIVE PROBLEMS                                      *)
-(* ================================================================ *)
+(** * PART 12: CREATIVE PROBLEMS *)
 
 (* Collect every boolean literal occurring in an expression. *)
 Fixpoint extract_booleans (e : ABE) : list ABE :=
@@ -399,9 +375,7 @@ Proof.
     apply in_app_or in Hin. destruct Hin; auto.
 Qed.
 
-(* ================================================================ *)
-(* CHALLENGE SOLUTIONS                                             *)
-(* ================================================================ *)
+(** * CHALLENGE SOLUTIONS *)
 
 (* Challenge 1: an if-then-else with identical branches is equivalent to
    that branch - PROVIDED the condition is a boolean. *)

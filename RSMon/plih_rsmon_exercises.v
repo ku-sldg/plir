@@ -1,27 +1,27 @@
 (**
- * Programming Languages in Rocq - Reader+State Monad Exercises
- * Combined Reader + State interpreter - Student Problem Set
- *
- * In these exercises you will:
- *   1. Run the combined-monad interpreter [evalRS]/[evalReaderState],
- *      exercising both static scoping (Reader) and mutable cells (State)
- *   2. Use the AGREEMENT theorem to transport results to the explicit
- *      interpreter
- *   3. Prove monad laws and effect-independence facts
- *
- * HOW TO USE THIS FILE
- * --------------------
- * Each exercise ends in [Admitted].  Replace it with a real proof ending
- * in [Qed].  The file compiles as given.
- *
- * From the lecture you have: the language [FBAES]; values [RVal] and the
- * [Store]; the explicit interpreter [evalM]/[eval]; the combined monad
- * [RS]/[retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS]
- * with [;;]; the monadic interpreter [evalRS]/[evalReaderState]; and the
- * theorems [evalRS_agrees] and [evalReaderState_agrees].
- *
- * Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
- * Solutions are in plih_rsmon_solutions.v.
+Programming Languages in Rocq - Reader+State Monad Exercises
+Combined Reader + State interpreter - Student Problem Set
+
+In these exercises you will:
+  1. Run the combined-monad interpreter [evalRS]/[evalReaderState],
+     exercising both static scoping (Reader) and mutable cells (State)
+  2. Use the AGREEMENT theorem to transport results to the explicit
+     interpreter
+  3. Prove monad laws and effect-independence facts
+
+HOW TO USE THIS FILE
+--------------------
+Each exercise ends in [Admitted].  Replace it with a real proof ending
+in [Qed].  The file compiles as given.
+
+From the lecture you have: the language [FBAES]; values [RVal] and the
+[Store]; the explicit interpreter [evalM]/[eval]; the combined monad
+[RS]/[retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS]
+with [;;]; the monadic interpreter [evalRS]/[evalReaderState]; and the
+theorems [evalRS_agrees] and [evalReaderState_agrees].
+
+Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Solutions are in plih_rsmon_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -35,9 +35,7 @@ Require Import plih_rsmon_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: RUNNING THE COMBINED INTERPRETER                       *)
-(* ================================================================ *)
+(** * PART 1: RUNNING THE COMBINED INTERPRETER *)
 
 (* [*] Pure arithmetic leaves the store empty. *)
 Example ex1_arith :
@@ -71,9 +69,7 @@ Example ex4_scope_and_state :
   = Some (NumV 7, [NumV 7]).
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 2: AGREEMENT IN ACTION                                     *)
-(* ================================================================ *)
+(** * PART 2: AGREEMENT IN ACTION *)
 
 (* [**] The combined-monad wrapper agrees with the explicit one on this
    program.  Cite [evalReaderState_agrees]. *)
@@ -94,9 +90,7 @@ Example ex7_transport : forall e v s',
   evalReaderState e = Some (v, s') -> eval e = Some (v, s').
 Proof. Admitted.
 
-(* ================================================================ *)
-(* PART 3: MONAD LAWS AND EFFECT INTERACTION                      *)
-(* ================================================================ *)
+(** * PART 3: MONAD LAWS AND EFFECT INTERACTION *)
 
 (* [*] LEFT IDENTITY: binding a pure value just runs the continuation. *)
 Example ex8_left_id : forall (A B : Type) (a : A) (f : A -> RS (Env RVal) Store B),

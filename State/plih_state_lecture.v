@@ -1,30 +1,30 @@
 (**
- * Programming Languages in Rocq - Mutable State Lecture
- * An explicit, threaded store
- *
- * Every language so far has had IMMUTABLE bindings: environments only grow
- * (via [Bind] and application), a value once stored is never changed.
- * This chapter adds real MUTATION:
- *   1. FBAES = FBAEC + reference cells: [New] (allocate), [Deref] (read),
- *      [Assign] (write), and [Seq] (evaluate for effect, keep the store).
- *   2. A STORE-THREADING interpreter [evalM]: the environment stays
- *      read-only, but the store is BOTH read and written, so it can no
- *      longer be threaded like the environment - the interpreter must
- *      RETURN a (value, store) pair and pass the new store to the next
- *      subexpression.  This plumbing is deliberately verbose.
- *   3. FUEL MONOTONICITY for the store-threading interpreter (the
- *      well-definedness metatheorem, carried over with the store).
- *   4. MUTABLE VARIABLES as a DERIVED FORM: a mutable variable is just
- *      sugar for a cell.  This gives ALIASING - two names for one cell -
- *      which immutable [Bind] can never express.
- *   5. STATE + RECURSION together: a Z-combinator loop that accumulates
- *      its result in a mutable cell.
- *
- * This mirrors the "Mutable State" unit of PLIH:
- *   https://ku-sldg.github.io/plih//state/
- *
- * The verbose store-threading here is exactly what the follow-on SMon
- * chapter cleans up with a State monad.
+Programming Languages in Rocq - Mutable State Lecture
+An explicit, threaded store
+
+Every language so far has had IMMUTABLE bindings: environments only grow
+(via [Bind] and application), a value once stored is never changed.
+This chapter adds real MUTATION:
+  1. FBAES = FBAEC + reference cells: [New] (allocate), [Deref] (read),
+     [Assign] (write), and [Seq] (evaluate for effect, keep the store).
+  2. A STORE-THREADING interpreter [evalM]: the environment stays
+     read-only, but the store is BOTH read and written, so it can no
+     longer be threaded like the environment - the interpreter must
+     RETURN a (value, store) pair and pass the new store to the next
+     subexpression.  This plumbing is deliberately verbose.
+  3. FUEL MONOTONICITY for the store-threading interpreter (the
+     well-definedness metatheorem, carried over with the store).
+  4. MUTABLE VARIABLES as a DERIVED FORM: a mutable variable is just
+     sugar for a cell.  This gives ALIASING - two names for one cell -
+     which immutable [Bind] can never express.
+  5. STATE + RECURSION together: a Z-combinator loop that accumulates
+     its result in a mutable cell.
+
+This mirrors the "Mutable State" unit of PLIH:
+  https://ku-sldg.github.io/plih//state/
+
+The verbose store-threading here is exactly what the follow-on SMon
+chapter cleans up with a State monad.
  *)
 
 From Stdlib Require Import String.
@@ -37,21 +37,19 @@ Require Import plih_rocq_state_shared.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* SECTION 1: SYNTAX - The FBAES Language                          *)
-(* ================================================================ *)
+(** * SECTION 1: SYNTAX - The FBAES Language *)
 
 (**
- * FBAES ("FBAE + State") is the Rec language extended with REFERENCE
- * CELLS - the primitive form of mutable state:
- *   - [New e]      : evaluate [e], allocate a fresh cell holding its
- *                    value, and return the cell's LOCATION;
- *   - [Deref e]    : evaluate [e] to a location and read that cell;
- *   - [Assign l e] : evaluate [l] to a location and [e] to a value,
- *                    overwrite the cell, and return the value;
- *   - [Seq a b]    : evaluate [a] for its EFFECT (the store it leaves),
- *                    discard its value, then evaluate [b].
- * Everything else is inherited from FBAEC.
+FBAES ("FBAE + State") is the Rec language extended with REFERENCE
+CELLS - the primitive form of mutable state:
+  - [New e]      : evaluate [e], allocate a fresh cell holding its
+                   value, and return the cell's LOCATION;
+  - [Deref e]    : evaluate [e] to a location and read that cell;
+  - [Assign l e] : evaluate [l] to a location and [e] to a value,
+                   overwrite the cell, and return the value;
+  - [Seq a b]    : evaluate [a] for its EFFECT (the store it leaves),
+                   discard its value, then evaluate [b].
+Everything else is inherited from FBAEC.
  *)
 Inductive FBAES : Type :=
 | Num     : nat -> FBAES
@@ -70,16 +68,14 @@ Inductive FBAES : Type :=
 | Deref   : FBAES -> FBAES
 | Assign  : FBAES -> FBAES -> FBAES.
 
-(* ================================================================ *)
-(* SECTION 2: VALUES AND THE STORE                                 *)
-(* ================================================================ *)
+(** * SECTION 2: VALUES AND THE STORE *)
 
 (**
- * Values are Rec's numbers, Booleans, and closures, plus one new kind:
- * a LOCATION [LocV n], the runtime result of [New].  A location is an
- * index into the store; it is a first-class value, so it can be bound,
- * passed to functions, and stored in other cells (that last is what makes
- * aliasing possible).
+Values are Rec's numbers, Booleans, and closures, plus one new kind:
+a LOCATION [LocV n], the runtime result of [New].  A location is an
+index into the store; it is a first-class value, so it can be bound,
+passed to functions, and stored in other cells (that last is what makes
+aliasing possible).
  *)
 Inductive RVal : Type :=
 | NumV     : nat -> RVal
@@ -88,30 +84,28 @@ Inductive RVal : Type :=
 | LocV     : nat -> RVal.
 
 (**
- * The STORE maps locations to values.  Location [n] is the [n]th element;
- * allocation appends at the end (so the fresh location is [length]), and
- * assignment overwrites in place via [update_at] (from the shared library).
+The STORE maps locations to values.  Location [n] is the [n]th element;
+allocation appends at the end (so the fresh location is [length]), and
+assignment overwrites in place via [update_at] (from the shared library).
  *)
 Definition Store := list RVal.
 
-(* ================================================================ *)
-(* SECTION 3: THE STORE-THREADING INTERPRETER                      *)
-(* ================================================================ *)
+(** * SECTION 3: THE STORE-THREADING INTERPRETER *)
 
 (**
- * The interpreter now takes a store IN and returns a (value, store) pair.
- * The ENVIRONMENT is read-only and threaded implicitly (as before); the
- * STORE is threaded EXPLICITLY, left to right: each subexpression is
- * evaluated in the store its predecessor left behind.  Even [Id], which
- * changes nothing, must pass the store along unchanged.
- *
- *   - [New e]      : evaluate [e] in store [s] to [(v, s1)], then return
- *                    location [length s1] in the extended store [s1 ++ [v]];
- *   - [Deref e]    : evaluate to [(LocV n, s1)] and read [nth_error s1 n];
- *   - [Assign l e] : evaluate [l] then [e], then [update_at] the cell;
- *   - [Seq a b]    : run [a] for its store, throw its value away, run [b].
- *
- * Fuel-driven, since FBAES still contains all of Rec's diverging terms.
+The interpreter now takes a store IN and returns a (value, store) pair.
+The ENVIRONMENT is read-only and threaded implicitly (as before); the
+STORE is threaded EXPLICITLY, left to right: each subexpression is
+evaluated in the store its predecessor left behind.  Even [Id], which
+changes nothing, must pass the store along unchanged.
+
+  - [New e]      : evaluate [e] in store [s] to [(v, s1)], then return
+                   location [length s1] in the extended store [s1 ++ [v]];
+  - [Deref e]    : evaluate to [(LocV n, s1)] and read [nth_error s1 n];
+  - [Assign l e] : evaluate [l] then [e], then [update_at] the cell;
+  - [Seq a b]    : run [a] for its store, throw its value away, run [b].
+
+Fuel-driven, since FBAES still contains all of Rec's diverging terms.
  *)
 Fixpoint evalM (fuel : nat) (env : Env RVal) (s : Store) (e : FBAES)
   : option (RVal * Store) :=
@@ -219,9 +213,7 @@ Fixpoint evalM (fuel : nat) (env : Env RVal) (s : Store) (e : FBAES)
    the observable answer. *)
 Definition eval (e : FBAES) : option (RVal * Store) := evalM 1000 nil nil e.
 
-(* ================================================================ *)
-(* SECTION 4: RUNNING THE BASICS                                   *)
-(* ================================================================ *)
+(** * SECTION 4: RUNNING THE BASICS *)
 
 (* Pure arithmetic leaves the store untouched (here, empty). *)
 Example ev_arith :
@@ -251,17 +243,15 @@ Example ev_seq_effect :
   = Some (NumV 11, [NumV 11]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 5: FUEL MONOTONICITY                                    *)
-(* ================================================================ *)
+(** * SECTION 5: FUEL MONOTONICITY *)
 
 (**
- * As in Rec, no measure bounds the fuel, so well-definedness is again
- * MONOTONICITY: more fuel never changes an answer already produced - and
- * "an answer" is now a (value, store) PAIR, so the store is preserved too.
- * The proof is Rec's, threaded through the store: each recursive subcall
- * is bumped from [k] to [k2] by the induction hypothesis, and the store
- * carried out of one subcall feeds the next.
+As in Rec, no measure bounds the fuel, so well-definedness is again
+MONOTONICITY: more fuel never changes an answer already produced - and
+"an answer" is now a (value, store) PAIR, so the store is preserved too.
+The proof is Rec's, threaded through the store: each recursive subcall
+is bumped from [k] to [k2] by the induction hypothesis, and the store
+carried out of one subcall feeds the next.
  *)
 Lemma evalM_mono : forall f1 f2 env st e p,
   f1 <= f2 -> evalM f1 env st e = Some p -> evalM f2 env st e = Some p.
@@ -338,16 +328,14 @@ Proof.
       cbn -[evalM]. exact H.
 Qed.
 
-(* ================================================================ *)
-(* SECTION 6: MUTABLE VARIABLES AS A DERIVED FORM                  *)
-(* ================================================================ *)
+(** * SECTION 6: MUTABLE VARIABLES AS A DERIVED FORM *)
 
 (**
- * We never added a "mutable variable" construct - we do not need one.  A
- * mutable variable is just a NAME bound to a reference cell.  The three
- * surface operations ELABORATE into the ref-cell core:
- *
- *   MutBind x e b  ==  Bind x (New e) b       (* x names a fresh cell *)
+We never added a "mutable variable" construct - we do not need one.  A
+mutable variable is just a NAME bound to a reference cell.  The three
+surface operations ELABORATE into the ref-cell core:
+
+  MutBind x e b  ==  Bind x (New e) b       (* x names a fresh cell *)
  *   Get x          ==  Deref (Id x)           (* read through the name *)
  *   SetVar x e     ==  Assign (Id x) e        (* write through the name *)
  *
@@ -369,9 +357,9 @@ Example ev_mutvar :
 Proof. reflexivity. Qed.
 
 (**
- * ALIASING - the thing immutable [Bind] can NEVER do.  Binding [a] to the
- * value of [Id "r"] copies the LOCATION, not the cell, so [a] and [r] name
- * the SAME cell.  A write through [r] is therefore visible through [a].
+ALIASING - the thing immutable [Bind] can NEVER do.  Binding [a] to the
+value of [Id "r"] copies the LOCATION, not the cell, so [a] and [r] name
+the SAME cell.  A write through [r] is therefore visible through [a].
  *)
 Example ev_aliasing :
   eval (MutBind "r" (Num 0)
@@ -382,9 +370,9 @@ Example ev_aliasing :
 Proof. reflexivity. Qed.
 
 (**
- * Contrast: a PLAIN (immutable) [Bind] copies the VALUE, so the two names
- * are independent - rebinding one leaves the other alone.  Aliasing is a
- * property of shared MUTABLE state, not of naming.
+Contrast: a PLAIN (immutable) [Bind] copies the VALUE, so the two names
+are independent - rebinding one leaves the other alone.  Aliasing is a
+property of shared MUTABLE state, not of naming.
  *)
 Example ev_no_aliasing_immutable :
   eval (Bind "x" (Num 0)
@@ -394,14 +382,12 @@ Example ev_no_aliasing_immutable :
   = Some (NumV 0, nil).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SECTION 7: STATE MEETS RECURSION                                *)
-(* ================================================================ *)
+(** * SECTION 7: STATE MEETS RECURSION *)
 
 (**
- * The Z (call-by-value) fixpoint combinator from the Rec chapter is an
- * ordinary term here too - FBAES contains all of FBAEC.  We restate it
- * over FBAES so we can tie state and recursion together.
+The Z (call-by-value) fixpoint combinator from the Rec chapter is an
+ordinary term here too - FBAES contains all of FBAEC.  We restate it
+over FBAES so we can tie state and recursion together.
  *)
 Definition Zc : FBAES :=
   Lambda "f"
@@ -411,12 +397,12 @@ Definition Zc : FBAES :=
             (Lambda "v" (App (App (Id "x") (Id "x")) (Id "v")))))).
 
 (**
- * A recursive loop that COUNTS DOWN from [c], bumping a shared mutable
- * cell [acc] by one on every step.  [acc] is captured from the enclosing
- * environment, so all recursive calls hit the SAME cell.
- *
- *   incTo = \rec. \c. if c = 0 then 0
- *                     else (acc := acc + 1 ; rec (c - 1))
+A recursive loop that COUNTS DOWN from [c], bumping a shared mutable
+cell [acc] by one on every step.  [acc] is captured from the enclosing
+environment, so all recursive calls hit the SAME cell.
+
+  incTo = \rec. \c. if c = 0 then 0
+                    else (acc := acc + 1 ; rec (c - 1))
  *)
 Definition incTo : FBAES :=
   Lambda "rec"
@@ -427,10 +413,10 @@ Definition incTo : FBAES :=
                (App (Id "rec") (Minus (Id "c") (Num 1)))))).
 
 (**
- * Allocate [acc := 0], run the loop 5 times via [Z], then read [acc].
- * The recursion (Z, from Rec) and the mutation (the cell) cooperate: the
- * store threads through every recursive call, so the five increments
- * accumulate to 5.
+Allocate [acc := 0], run the loop 5 times via [Z], then read [acc].
+The recursion (Z, from Rec) and the mutation (the cell) cooperate: the
+store threads through every recursive call, so the five increments
+accumulate to 5.
  *)
 Definition counterProg : FBAES :=
   MutBind "acc" (Num 0)
@@ -441,30 +427,28 @@ Example ev_counter :
   eval counterProg = Some (NumV 5, [NumV 5]).
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* SUMMARY                                                          *)
-(* ================================================================ *)
+(** * SUMMARY *)
 
 (**
- * In this lecture we:
- *   1. Extended FBAEC to FBAES with reference cells - [New], [Deref],
- *      [Assign], [Seq] - the PRIMITIVE form of mutable state, and added
- *      locations [LocV] to the value domain.
- *   2. Gave a STORE-THREADING interpreter [evalM] that returns a
- *      (value, store) pair: the environment stays read-only, but the
- *      store is read AND written, so it is threaded explicitly, left to
- *      right, through every subexpression.
- *   3. Proved FUEL MONOTONICITY for [evalM] - now preserving the store as
- *      part of the answer.
- *   4. Recovered MUTABLE VARIABLES as a DERIVED FORM ([MutBind]/[Get]/
- *      [SetVar] = sugar over cells) and saw ALIASING fall out - two names
- *      for one cell, which immutable [Bind] cannot express.
- *   5. Combined STATE and RECURSION: a Z-combinator loop accumulating into
- *      a shared cell.
- *
- * The catch: this explicit store-threading is PAINFUL - every case has to
- * name intermediate stores [s1], [s2], ... and thread them by hand, and
- * one wrong store variable is a silent bug.  The follow-on SMon chapter
- * hides all of it behind a STATE MONAD, so the interpreter reads like the
- * pure ones again while still threading the store underneath.
+In this lecture we:
+  1. Extended FBAEC to FBAES with reference cells - [New], [Deref],
+     [Assign], [Seq] - the PRIMITIVE form of mutable state, and added
+     locations [LocV] to the value domain.
+  2. Gave a STORE-THREADING interpreter [evalM] that returns a
+     (value, store) pair: the environment stays read-only, but the
+     store is read AND written, so it is threaded explicitly, left to
+     right, through every subexpression.
+  3. Proved FUEL MONOTONICITY for [evalM] - now preserving the store as
+     part of the answer.
+  4. Recovered MUTABLE VARIABLES as a DERIVED FORM ([MutBind]/[Get]/
+     [SetVar] = sugar over cells) and saw ALIASING fall out - two names
+     for one cell, which immutable [Bind] cannot express.
+  5. Combined STATE and RECURSION: a Z-combinator loop accumulating into
+     a shared cell.
+
+The catch: this explicit store-threading is PAINFUL - every case has to
+name intermediate stores [s1], [s2], ... and thread them by hand, and
+one wrong store variable is a silent bug.  The follow-on SMon chapter
+hides all of it behind a STATE MONAD, so the interpreter reads like the
+pure ones again while still threading the store underneath.
  *)

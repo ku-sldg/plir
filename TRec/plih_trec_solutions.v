@@ -1,12 +1,12 @@
 (**
- * Programming Languages in Rocq - Typed Recursion Solutions
- * Complete solutions to plih_trec_exercises.v
- *
- * The types [Ty], the term language [TFBAEC]/[subst], the checker
- * [typeof]/[typecheck], the values [TVal], the strict interpreter
- * [evalM]/[eval], [evalM_mono], [isNumV]/[isBoolV] with their
- * canonical-forms lemmas, and the sample terms [fact]/[sum]/[selfApp]/
- * [loopT] all come from the Typed Recursion lecture.
+Programming Languages in Rocq - Typed Recursion Solutions
+Complete solutions to plih_trec_exercises.v
+
+The types [Ty], the term language [TFBAEC]/[subst], the checker
+[typeof]/[typecheck], the values [TVal], the strict interpreter
+[evalM]/[eval], [evalM_mono], [isNumV]/[isBoolV] with their
+canonical-forms lemmas, and the sample terms [fact]/[sum]/[selfApp]/
+[loopT] all come from the Typed Recursion lecture.
  *)
 
 From Stdlib Require Import String.
@@ -20,9 +20,7 @@ Require Import plih_trec_lecture.
 Local Open Scope string_scope.
 Import ListNotations.
 
-(* ================================================================ *)
-(* PART 1: TYPING RECURSION                                        *)
-(* ================================================================ *)
+(** * PART 1: TYPING RECURSION *)
 
 Example ex1_ty_fact_app : typecheck (App fact (Num 3)) = Some TNum.
 Proof. reflexivity. Qed.
@@ -38,9 +36,7 @@ Example ex4_ty_ctx :
   typeof (extend "g" (TArr TNum TNum) nil) (App (Id "g") (Num 1)) = Some TNum.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 2: RUNNING RECURSION                                       *)
-(* ================================================================ *)
+(** * PART 2: RUNNING RECURSION *)
 
 Example ex5_fact3 : eval (App fact (Num 3)) = Some (NumV 6).
 Proof. reflexivity. Qed.
@@ -51,9 +47,7 @@ Proof. reflexivity. Qed.
 Example ex7_loop_diverges : evalM 200 nil loopT = None.
 Proof. reflexivity. Qed.
 
-(* ================================================================ *)
-(* PART 3: METATHEORY                                              *)
-(* ================================================================ *)
+(** * PART 3: METATHEORY *)
 
 Example ex8_more_fuel : forall f env e v,
   evalM f env e = Some v -> evalM (f + 7) env e = Some v.
