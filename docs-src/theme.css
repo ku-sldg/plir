@@ -43,15 +43,24 @@ h1.libtitle {
   font-size: 1.4rem; color: var(--muted); font-weight: 600;
   border-bottom: 1px solid var(--border); padding-bottom: .4rem; margin-bottom: 1.2rem;
 }
-.doc { font-size: 1.02rem; color: #232323; margin: 1.1rem 0; }
+/* #main .doc / .section selectors below override coqdoc's base, which
+   paints doc blocks (#90bdff) and section headings blue -- match its
+   specificity and clear the background. */
+#main .doc { font-size: 1.02rem; color: #232323; margin: 1.1rem 0;
+             max-width: none; background: transparent; padding: 0;
+             font-family: inherit; line-height: 1.65; }
 .doc .paragraph { margin: .8rem 0; }         /* coqdoc's paragraph breaks */
 .doc ul, .doc ol { margin: .5rem 0 .9rem; padding-left: 1.5rem; }
 .doc li { margin: .2rem 0; }
 .doc li .paragraph { margin: .15rem 0; }     /* tighten spacing inside list items */
-h1.section { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 .5rem;
+#main h1.section, #main h2.section, #main h3.section, #main h4.section {
+  background: transparent; padding-left: 0; }
+#main h1.section { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 .5rem;
              border-bottom: 2px solid var(--border); padding-bottom: .25rem; }
-h2.section { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 1.6rem 0 .4rem; }
-h3.section { font-size: 1.08rem; font-weight: 700; margin: 1.3rem 0 .3rem; }
+#main h2.section { font-size: 1.25rem; font-weight: 700; color: var(--accent);
+             margin: 1.6rem 0 .4rem; padding-top: 0; padding-bottom: 0; }
+#main h3.section { font-size: 1.08rem; font-weight: 700; margin: 1.3rem 0 .3rem;
+             padding-top: 0; padding-bottom: 0; }
 
 /* --- code: sits directly on the white page, like a clean listing --- */
 .code {
@@ -69,6 +78,9 @@ h3.section { font-size: 1.08rem; font-weight: 700; margin: 1.3rem 0 .3rem; }
   padding: .04rem .32rem;
   font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: .86rem;
 }
+/* coqdoc's base `.doc .inlinecode` forces 120%; keep interpolated [def]
+   links the same size as the surrounding prose. */
+#main .doc .inlinecode, #main .doc .inlinecode .id { font-size: .92em; }
 /* light syntax accents (coqdoc marks the kind in the title attribute) */
 .code .id[title="keyword"], .inlinecode .id[title="keyword"] { color: var(--accent); font-weight: 600; }
 .code .comment { color: var(--muted); font-style: italic; }
