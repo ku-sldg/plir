@@ -61,6 +61,9 @@ rocq doc --html --toc --no-index --utf8 --interpolate --no-externals --no-lib-na
   -d "$OUT" "${QARGS[@]}" "${FILES[@]}"
 
 # --- layer the theme on top of coqdoc's default stylesheet ---
+# Drop coqdoc's stock `#header {...}` rules: our nav is `#topnav`, so those
+# selectors are dead here and their bare border-style trips CSS linters.
+perl -0pi -e 's/#header[^{}]*\{[^{}]*\}\s*//g' "$OUT/coqdoc.css"
 cat "$SRC/theme.css" >> "$OUT/coqdoc.css"
 
 # --- landing page (index.html) ---
