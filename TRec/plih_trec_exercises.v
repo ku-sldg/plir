@@ -26,7 +26,7 @@ NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
 literal fuel forces the kernel to unroll [evalM] and can blow up.  A
 literal fuel is fine only on a CONCRETE closed term.
 
-Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Difficulty: ★ trivial, ★★ a lemma citation, ★★★ short proof.
 Solutions are in plih_trec_solutions.v.
  *)
 
@@ -43,21 +43,21 @@ Import ListNotations.
 
 (** * PART 1: TYPING RECURSION *)
 
-(* [*] Applying factorial to a number has type [TNum]. *)
+(* ★ Applying factorial to a number has type [TNum]. *)
 Example ex1_ty_fact_app : typecheck (App fact (Num 3)) = Some TNum.
 Proof. Admitted.
 
-(* [*] [Fix] needs a [T -> T] argument: a [Nat -> Bool] function is
+(* ★ [Fix] needs a [T -> T] argument: a [Nat -> Bool] function is
    rejected (domain and range disagree). *)
 Example ex2_reject_fix_mismatch :
   typecheck (Fix (Lambda "x" TNum (IsZero (Id "x")))) = None.
 Proof. Admitted.
 
-(* [*] Self-application is still untypable - [Fix] is the only loop. *)
+(* ★ Self-application is still untypable - [Fix] is the only loop. *)
 Example ex3_reject_selfApp : typecheck (selfApp TNum) = None.
 Proof. Admitted.
 
-(* [*] Type checking under a nonempty context: with [g : Nat -> Nat]
+(* ★ Type checking under a nonempty context: with [g : Nat -> Nat]
    in scope, [g 1] has type [TNum]. *)
 Example ex4_ty_ctx :
   typeof (extend "g" (TArr TNum TNum) nil) (App (Id "g") (Num 1)) = Some TNum.
@@ -65,33 +65,33 @@ Proof. Admitted.
 
 (** * PART 2: RUNNING RECURSION *)
 
-(* [*] Factorial actually computes: 3! = 6. *)
+(* ★ Factorial actually computes: 3! = 6. *)
 Example ex5_fact3 : eval (App fact (Num 3)) = Some (NumV 6).
 Proof. Admitted.
 
-(* [*] Summation: 0..4 = 10. *)
+(* ★ Summation: 0..4 = 10. *)
 Example ex6_sum4 : eval (App sum (Num 4)) = Some (NumV 10).
 Proof. Admitted.
 
-(* [*] A well-typed term can DIVERGE now: [loopT] exhausts the fuel. *)
+(* ★ A well-typed term can DIVERGE now: [loopT] exhausts the fuel. *)
 Example ex7_loop_diverges : evalM 200 nil loopT = None.
 Proof. Admitted.
 
 (** * PART 3: METATHEORY *)
 
-(* [**] Adding fuel cannot change an answer.  Cite [evalM_mono]; keep the
+(* ★★ Adding fuel cannot change an answer.  Cite [evalM_mono]; keep the
    fuel a VARIABLE. *)
 Example ex8_more_fuel : forall f env e v,
   evalM f env e = Some v -> evalM (f + 7) env e = Some v.
 Proof. Admitted.
 
-(* [**] Whenever [Mult _ _] produces a value, it is a number.  Cite
+(* ★★ Whenever [Mult _ _] produces a value, it is a number.  Cite
    [mult_yields_num]. *)
 Example ex9_mult_num : forall f env a b v,
   evalM f env (Mult a b) = Some v -> isNumV v = true.
 Proof. Admitted.
 
-(* [***] The strict interpreter is deterministic for fixed fuel. *)
+(* ★★★ The strict interpreter is deterministic for fixed fuel. *)
 Example ex10_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. Admitted.

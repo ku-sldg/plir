@@ -56,7 +56,7 @@ while IFS='|' read -r dir stem group title desc; do
 done <<< "$TABLE"
 
 echo "coqdoc: rendering ${#FILES[@]} student-facing files -> $OUT/"
-rocq doc --html --toc --no-index --utf8 --interpolate --no-externals --no-lib-name \
+rocq doc --html --toc --no-index --utf8 --interpolate --parse-comments --no-externals --no-lib-name \
   --with-header "$SRC/header.html" --with-footer "$SRC/footer.html" \
   -d "$OUT" "${QARGS[@]}" "${FILES[@]}"
 

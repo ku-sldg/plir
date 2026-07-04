@@ -20,8 +20,8 @@ Helper functions needed by some exercises (size, depth, optimize,
 fold_constants, simplify) are PROVIDED below - the exercise is to
 prove the lemmas about them.
 
-Difficulty: [*] trivial, [**] easy induction, [***] case analysis,
-[****] harder.  Complete solutions are in plih_ae_solutions.v.
+Difficulty: ★ trivial, ★★ easy induction, ★★★ case analysis,
+★★★★ harder.  Complete solutions are in plih_ae_solutions.v.
  *)
 
 From Stdlib Require Import List.
@@ -32,86 +32,86 @@ Require Import plih_ae_lecture.
 
 (** * WARM-UP: DIRECT EVALUATION *)
 
-(* Exercise 1 [*]: Basic evaluation *)
+(* Exercise 1 ★: Basic evaluation *)
 Example ex1_eval_num : eval (Num 42) = 42.
 Proof. Admitted.
 
-(* Exercise 2 [*]: Evaluate simple addition *)
+(* Exercise 2 ★: Evaluate simple addition *)
 Example ex2_eval_plus : eval (Plus (Num 3) (Num 5)) = 8.
 Proof. Admitted.
 
-(* Exercise 3 [*]: Evaluate nested expression *)
+(* Exercise 3 ★: Evaluate nested expression *)
 Example ex3_eval_nested :
   eval (Plus (Plus (Num 1) (Num 2)) (Num 3)) = 6.
 Proof. Admitted.
 
-(* Exercise 4 [*]: Evaluate with subtraction *)
+(* Exercise 4 ★: Evaluate with subtraction *)
 Example ex4_eval_minus :
   eval (Minus (Num 10) (Num 3)) = 7.
 Proof. Admitted.
 
-(* Exercise 5 [*]: Evaluate complex expression *)
+(* Exercise 5 ★: Evaluate complex expression *)
 Example ex5_eval_complex :
   eval (Plus (Minus (Num 20) (Num 5)) (Num 10)) = 25.
 Proof. Admitted.
 
 (** * PART 1: SIMPLE LEMMAS *)
 
-(* Exercise 6 [*]: Plus distributes into eval *)
+(* Exercise 6 ★: Plus distributes into eval *)
 Lemma ex6_eval_plus_distributes : forall e1 e2,
   eval (Plus e1 e2) = eval e1 + eval e2.
 Proof. Admitted.
 
-(* Exercise 7 [*]: Minus distributes into eval *)
+(* Exercise 7 ★: Minus distributes into eval *)
 Lemma ex7_eval_minus_distributes : forall e1 e2,
   eval (Minus e1 e2) = eval e1 - eval e2.
 Proof. Admitted.
 
-(* Exercise 8 [**]: Commutativity of Plus.  Hint: simpl then lia. *)
+(* Exercise 8 ★★: Commutativity of Plus.  Hint: simpl then lia. *)
 Lemma ex8_plus_commutative : forall e1 e2,
   eval (Plus e1 e2) = eval (Plus e2 e1).
 Proof. Admitted.
 
 (** * PART 2: SIMPLE INDUCTION PROOFS *)
 
-(* Exercise 9 [**]: Zero is a left identity for plus *)
+(* Exercise 9 ★★: Zero is a left identity for plus *)
 Lemma ex9_zero_left_identity : forall e,
   eval (Plus (Num 0) e) = eval e.
 Proof. Admitted.
 
-(* Exercise 10 [**]: Every expression evaluates to some number *)
+(* Exercise 10 ★★: Every expression evaluates to some number *)
 Lemma ex10_eval_is_nat : forall e,
   exists n, eval e = n.
 Proof. Admitted.
 
-(* Exercise 11 [**]: eval is always non-negative (trivial for nat) *)
+(* Exercise 11 ★★: eval is always non-negative (trivial for nat) *)
 Lemma ex11_eval_nonneg : forall e,
   0 <= eval e.
 Proof. Admitted.
 
-(* Exercise 12 [***]: eval is never negative (another phrasing) *)
+(* Exercise 12 ★★★: eval is never negative (another phrasing) *)
 Lemma ex12_eval_is_positive : forall e,
   eval e >= 0.
 Proof. Admitted.
 
 (** * PART 3: PROPERTIES OF OPERATIONS *)
 
-(* Exercise 13 [**]: Adding 0 on the right does nothing *)
+(* Exercise 13 ★★: Adding 0 on the right does nothing *)
 Lemma ex13_plus_zero_right : forall e,
   eval (Plus e (Num 0)) = eval e.
 Proof. Admitted.
 
-(* Exercise 14 [**]: Subtracting an expression from itself gives zero *)
+(* Exercise 14 ★★: Subtracting an expression from itself gives zero *)
 Lemma ex14_minus_self : forall e,
   eval (Minus e e) = 0.
 Proof. Admitted.
 
-(* Exercise 15 [***]: Plus is associative *)
+(* Exercise 15 ★★★: Plus is associative *)
 Lemma ex15_plus_associative : forall e1 e2 e3,
   eval (Plus (Plus e1 e2) e3) = eval (Plus e1 (Plus e2 e3)).
 Proof. Admitted.
 
-(* Exercise 16 [***]: Iterated subtraction.
+(* Exercise 16 ★★★: Iterated subtraction.
    Hint: in Rocq nat, a - b = 0 when a < b.  destruct the [<?] test. *)
 Lemma ex16_minus_twice : forall e1 e2 e3,
   eval (Minus (Minus e1 e2) e3) =
@@ -120,17 +120,17 @@ Proof. Admitted.
 
 (** * PART 4: INEQUALITIES *)
 
-(* Exercise 17 [**]: Plus does not decrease the value *)
+(* Exercise 17 ★★: Plus does not decrease the value *)
 Lemma ex17_plus_increases : forall e1 e2,
   eval (Plus e1 e2) >= eval e1.
 Proof. Admitted.
 
-(* Exercise 18 [**]: Minus does not increase the value *)
+(* Exercise 18 ★★: Minus does not increase the value *)
 Lemma ex18_minus_decreases : forall e1 e2,
   eval (Minus e1 e2) <= eval e1.
 Proof. Admitted.
 
-(* Exercise 19 [***]: Adding two positive values gives something > 1 *)
+(* Exercise 19 ★★★: Adding two positive values gives something > 1 *)
 Lemma ex19_plus_both_pos : forall e1 e2,
   eval e1 > 0 -> eval e2 > 0 -> eval (Plus e1 e2) > 1.
 Proof. Admitted.
@@ -145,12 +145,12 @@ Fixpoint size (e : AE) : nat :=
   | Minus a b => 1 + size a + size b
   end.
 
-(* Exercise 20 [**]: Size is always positive *)
+(* Exercise 20 ★★: Size is always positive *)
 Lemma ex20_size_positive : forall e,
   size e > 0.
 Proof. Admitted.
 
-(* Exercise 21 [***]: Size of a Plus *)
+(* Exercise 21 ★★★: Size of a Plus *)
 Lemma ex21_size_of_plus : forall e1 e2,
   size (Plus e1 e2) = 1 + size e1 + size e2.
 Proof. Admitted.
@@ -163,12 +163,12 @@ Fixpoint depth (e : AE) : nat :=
   | Minus a b => 1 + Nat.max (depth a) (depth b)
   end.
 
-(* Exercise 22 [**]: Depth of a number *)
+(* Exercise 22 ★★: Depth of a number *)
 Lemma ex22_depth_num : forall n,
   depth (Num n) = 0.
 Proof. Admitted.
 
-(* Exercise 23 [****]: Size is bounded by depth.  A classic result;
+(* Exercise 23 ★★★★: Size is bounded by depth.  A classic result;
    you will likely need a strengthened induction hypothesis such as
    [S (size e) <= 2 ^ (depth e + 1)].  Useful lemmas:
    Nat.pow_le_mono_r and Nat.pow_add_r. *)
@@ -190,12 +190,12 @@ Fixpoint optimize (e : AE) : AE :=
   | Minus a b => Minus (optimize a) (optimize b)
   end.
 
-(* Exercise 24 [***]: Optimization preserves meaning *)
+(* Exercise 24 ★★★: Optimization preserves meaning *)
 Lemma ex24_optimize_correct : forall e,
   eval (optimize e) = eval e.
 Proof. Admitted.
 
-(* Exercise 25 [***]: Optimization does not increase size *)
+(* Exercise 25 ★★★: Optimization does not increase size *)
 Lemma ex25_optimize_reduces_size : forall e,
   size (optimize e) <= size e.
 Proof. Admitted.
@@ -204,22 +204,22 @@ Proof. Admitted.
 
 (* [ae_equiv e1 e2] is defined in the lecture as [eval e1 = eval e2]. *)
 
-(* Exercise 26 [*]: Reflexivity of equivalence *)
+(* Exercise 26 ★: Reflexivity of equivalence *)
 Lemma ex26_equiv_refl : forall e,
   ae_equiv e e.
 Proof. Admitted.
 
-(* Exercise 27 [*]: Symmetry of equivalence *)
+(* Exercise 27 ★: Symmetry of equivalence *)
 Lemma ex27_equiv_sym : forall e1 e2,
   ae_equiv e1 e2 -> ae_equiv e2 e1.
 Proof. Admitted.
 
-(* Exercise 28 [**]: Transitivity of equivalence *)
+(* Exercise 28 ★★: Transitivity of equivalence *)
 Lemma ex28_equiv_trans : forall e1 e2 e3,
   ae_equiv e1 e2 -> ae_equiv e2 e3 -> ae_equiv e1 e3.
 Proof. Admitted.
 
-(* Exercise 29 [**]: Different syntaxes can be equivalent *)
+(* Exercise 29 ★★: Different syntaxes can be equivalent *)
 Lemma ex29_equiv_example :
   ae_equiv (Plus (Num 1) (Num 2)) (Plus (Num 2) (Num 1)).
 Proof. Admitted.
@@ -242,12 +242,12 @@ Fixpoint fold_constants (e : AE) : AE :=
       end
   end.
 
-(* Exercise 30 [***]: Constant folding preserves meaning *)
+(* Exercise 30 ★★★: Constant folding preserves meaning *)
 Lemma ex30_fold_constants_correct : forall e,
   eval (fold_constants e) = eval e.
 Proof. Admitted.
 
-(* Exercise 31 [****]: A "trivial" property - try to prove it without
+(* Exercise 31 ★★★★: A "trivial" property - try to prove it without
    just calling reflexivity. *)
 Lemma ex31_double : forall e,
   eval e + eval e = 2 * eval e.

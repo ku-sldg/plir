@@ -25,7 +25,7 @@ NOTE ON FUEL.  Keep fuel a VARIABLE whenever the term is abstract - a
 literal fuel forces the kernel to unroll [evalM] and can blow up.  A
 literal fuel is fine only on a CONCRETE closed term.
 
-Difficulty: [*] trivial, [**] a lemma citation, [***] short proof.
+Difficulty: ★ trivial, ★★ a lemma citation, ★★★ short proof.
 Solutions are in plih_state_solutions.v.
  *)
 
@@ -42,15 +42,15 @@ Import ListNotations.
 
 (** * PART 1: RUNNING THE INTERPRETER *)
 
-(* [*] Pure arithmetic leaves the store empty. *)
+(* ★ Pure arithmetic leaves the store empty. *)
 Example ex1_arith : eval (Plus (Num 2) (Num 3)) = Some (NumV 5, nil).
 Proof. Admitted.
 
-(* [*] Allocation returns a location and grows the store. *)
+(* ★ Allocation returns a location and grows the store. *)
 Example ex2_new : eval (New (Num 9)) = Some (LocV 0, [NumV 9]).
 Proof. Admitted.
 
-(* [*] A cell round-trip: allocate 0, write 42, read it back. *)
+(* ★ A cell round-trip: allocate 0, write 42, read it back. *)
 Example ex3_roundtrip :
   eval (Bind "r" (New (Num 0))
           (Seq (Assign (Id "r") (Num 42))
@@ -58,7 +58,7 @@ Example ex3_roundtrip :
   = Some (NumV 42, [NumV 42]).
 Proof. Admitted.
 
-(* [*] ALIASING: [a] is bound to [r]'s location, so a write through [a]
+(* ★ ALIASING: [a] is bound to [r]'s location, so a write through [a]
    is visible when reading through [r]. *)
 Example ex4_aliasing :
   eval (MutBind "r" (Num 5)
@@ -68,7 +68,7 @@ Example ex4_aliasing :
   = Some (NumV 8, [NumV 8]).
 Proof. Admitted.
 
-(* [*] DISTINCT cells are independent: writing [p] does not disturb [q]. *)
+(* ★ DISTINCT cells are independent: writing [p] does not disturb [q]. *)
 Example ex5_two_cells :
   eval (Bind "p" (New (Num 1))
           (Bind "q" (New (Num 2))
@@ -79,7 +79,7 @@ Proof. Admitted.
 
 (** * PART 2: DERIVED FORMS AND VALUE LAWS *)
 
-(* [*] A mutable variable updated in place. *)
+(* ★ A mutable variable updated in place. *)
 Example ex6_mutvar :
   eval (MutBind "n" (Num 10)
           (Seq (SetVar "n" (Minus (Get "n") (Num 3)))
@@ -87,12 +87,12 @@ Example ex6_mutvar :
   = Some (NumV 7, [NumV 7]).
 Proof. Admitted.
 
-(* [*] A numeral evaluates to itself and leaves the store alone. *)
+(* ★ A numeral evaluates to itself and leaves the store alone. *)
 Example ex7_num : forall k env st n,
   evalM (S k) env st (Num n) = Some (NumV n, st).
 Proof. Admitted.
 
-(* [***] Looking up an identifier returns its value with the store
+(* ★★★ Looking up an identifier returns its value with the store
    unchanged.  Hint: [simpl] then [rewrite] the lookup hypothesis. *)
 Example ex8_id : forall k env st x v,
   lookup x env = Some v ->
@@ -101,24 +101,24 @@ Proof. Admitted.
 
 (** * PART 3: METATHEORY AND THE STORE *)
 
-(* [**] Adding fuel cannot change an answer.  Cite [evalM_mono].  Keep the
+(* ★★ Adding fuel cannot change an answer.  Cite [evalM_mono].  Keep the
    fuel a VARIABLE - do not instantiate it to a literal. *)
 Example ex9_more_fuel : forall f env st e p,
   evalM f env st e = Some p -> evalM (f + 10) env st e = Some p.
 Proof. Admitted.
 
-(* [***] The store-threading interpreter is deterministic for fixed fuel. *)
+(* ★★★ The store-threading interpreter is deterministic for fixed fuel. *)
 Example ex10_deterministic : forall f env st e r1 r2,
   evalM f env st e = r1 -> evalM f env st e = r2 -> r1 = r2.
 Proof. Admitted.
 
-(* [**] An in-place write preserves the length of the store.  Cite
+(* ★★ An in-place write preserves the length of the store.  Cite
    [update_at_length]. *)
 Example ex11_write_length : forall n v (xs ys : Store),
   update_at n v xs = Some ys -> length ys = length xs.
 Proof. Admitted.
 
-(* [**] Reading the location a fresh [New] returns (namely [length xs])
+(* ★★ Reading the location a fresh [New] returns (namely [length xs])
    yields the value just allocated.  Cite [nth_error_snoc]. *)
 Example ex12_fresh_read : forall (xs : Store) (v : RVal),
   nth_error (xs ++ [v])%list (length xs) = Some v.

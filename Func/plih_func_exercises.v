@@ -23,8 +23,8 @@ come from the shared library.
 The functions [constFun], [Result], [forget] and [evalErr] are
 PROVIDED below; the exercises are to prove properties about them.
 
-Difficulty: [*] trivial, [**] a lemma citation, [***] short proof,
-[****] induction.  Solutions are in plih_func_solutions.v.
+Difficulty: ★ trivial, ★★ a lemma citation, ★★★ short proof,
+★★★★ induction.  Solutions are in plih_func_solutions.v.
  *)
 
 From Stdlib Require Import String.
@@ -40,44 +40,44 @@ Import ListNotations.
 
 (** * WARM-UP: RUNNING THE INTERPRETER *)
 
-(* Exercise 1 [*] *)
+(* Exercise 1 ★ *)
 Example ex1_apply_id : eval (App idFun (Num 5)) = Some (NumV 5).
 Proof. Admitted.
 
-(* Exercise 2 [*] *)
+(* Exercise 2 ★ *)
 Example ex2_apply_inc : eval (App incFun (Num 10)) = Some (NumV 11).
 Proof. Admitted.
 
-(* Exercise 3 [*] *)
+(* Exercise 3 ★ *)
 Example ex3_curry : eval (App (App addFun (Num 2)) (Num 3)) = Some (NumV 5).
 Proof. Admitted.
 
-(* Exercise 4 [*] *)
+(* Exercise 4 ★ *)
 Example ex4_free : eval (Id "q") = None.
 Proof. Admitted.
 
-(* Exercise 5 [*] *)
+(* Exercise 5 ★ *)
 Example ex5_bind_fun :
   eval (Bind "f" incFun (App (Id "f") (Num 41))) = Some (NumV 42).
 Proof. Admitted.
 
 (** * PART 1: EQUATIONS AND VALUES *)
 
-(* Exercise 6 [*] *)
+(* Exercise 6 ★ *)
 Lemma ex6_evalM_num : forall k env n, evalM (S k) env (Num n) = Some (NumV n).
 Proof. Admitted.
 
-(* Exercise 7 [*] *)
+(* Exercise 7 ★ *)
 Lemma ex7_evalM_lambda : forall k env i b,
   evalM (S k) env (Lambda i b) = Some (ClosureV i b env).
 Proof. Admitted.
 
-(* Exercise 8 [*] *)
+(* Exercise 8 ★ *)
 Lemma ex8_evalM_id : forall k env x,
   evalM (S k) env (Id x) = lookup x env.
 Proof. Admitted.
 
-(* Exercise 9 [*]: a lambda evaluated in the empty environment captures
+(* Exercise 9 ★: a lambda evaluated in the empty environment captures
    [nil]. *)
 Lemma ex9_closure_captures :
   eval (Lambda "x" (Id "x")) = Some (ClosureV "x" (Id "x") nil).
@@ -85,12 +85,12 @@ Proof. Admitted.
 
 (** * PART 2: FUEL MONOTONICITY AND DETERMINISM *)
 
-(* Exercise 10 [*]: Hint: [evalM_mono]. *)
+(* Exercise 10 ★: Hint: [evalM_mono]. *)
 Lemma ex10_mono : forall f1 f2 env e v,
   f1 <= f2 -> evalM f1 env e = Some v -> evalM f2 env e = Some v.
 Proof. Admitted.
 
-(* Exercise 11 [*]: the answer does not depend on the exact (sufficient)
+(* Exercise 11 ★: the answer does not depend on the exact (sufficient)
    amount of fuel.  Hint: [split]; each is [reflexivity].  (The GENERAL
    statement, for an arbitrary term, is challenge 1 - it must keep the
    fuel a VARIABLE, since a literal fuel on an abstract term would make
@@ -100,12 +100,12 @@ Lemma ex11_fuel_irrelevant :
   evalM 100 nil (App (App addFun (Num 3)) (Num 4)) = Some (NumV 7).
 Proof. Admitted.
 
-(* Exercise 12 [*]: Hint: [evalM_deterministic]. *)
+(* Exercise 12 ★: Hint: [evalM_deterministic]. *)
 Lemma ex12_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. Admitted.
 
-(* Exercise 13 [****]: prove the dynamic interpreter is monotone in
+(* Exercise 13 ★★★★: prove the dynamic interpreter is monotone in
    fuel, mirroring the proof of [evalM_mono] (induction on [f1], then
    [destruct f2] and case-split on [e]). *)
 Lemma ex13_evalDyn_mono : forall f1 f2 env e v,
@@ -114,23 +114,23 @@ Proof. Admitted.
 
 (** * PART 3: STATIC vs DYNAMIC SCOPING *)
 
-(* Exercise 14 [*]: the closure interpreter is STATIC (answers 4). *)
+(* Exercise 14 ★: the closure interpreter is STATIC (answers 4). *)
 Lemma ex14_scope_static : eval scopeTest = Some (NumV 4).
 Proof. Admitted.
 
-(* Exercise 15 [*]: the environment-less interpreter is DYNAMIC
+(* Exercise 15 ★: the environment-less interpreter is DYNAMIC
    (answers 5). *)
 Lemma ex15_scope_dynamic : evalDyn 100 nil scopeTest = Some (DNumV 5).
 Proof. Admitted.
 
-(* Exercise 16 [*]: the two disciplines observably disagree. *)
+(* Exercise 16 ★: the two disciplines observably disagree. *)
 Lemma ex16_scope_differs :
   eval scopeTest = Some (NumV 4) /\ evalDyn 100 nil scopeTest = Some (DNumV 5).
 Proof. Admitted.
 
 (** * PART 4: CURRYING *)
 
-(* Exercise 17 [**]: partial application returns a closure capturing [x]. *)
+(* Exercise 17 ★★: partial application returns a closure capturing [x]. *)
 Lemma ex17_partial :
   eval (App addFun (Num 7))
   = Some (ClosureV "y" (Plus (Id "x") (Id "y")) (extend "x" (NumV 7) nil)).
@@ -138,18 +138,18 @@ Proof. Admitted.
 
 Definition constFun : FBAE := Lambda "x" (Lambda "y" (Id "x")).
 
-(* Exercise 18 [*] *)
+(* Exercise 18 ★ *)
 Lemma ex18_const :
   eval (App (App constFun (Num 1)) (Num 2)) = Some (NumV 1).
 Proof. Admitted.
 
 (** * PART 5: DIVERGENCE, STRICT BINDING *)
 
-(* Exercise 19 [*]: [omega] exhausts the fuel. *)
+(* Exercise 19 ★: [omega] exhausts the fuel. *)
 Lemma ex19_omega : eval omega = None.
 Proof. Admitted.
 
-(* Exercise 20 [*]: strict binding of a divergent expression diverges,
+(* Exercise 20 ★: strict binding of a divergent expression diverges,
    even though the body never uses it. *)
 Lemma ex20_strict : eval (Bind "z" omega (Num 5)) = None.
 Proof. Admitted.
@@ -208,12 +208,12 @@ Fixpoint evalErr (fuel : nat) (env : Env FBAEVal) (e : FBAE) : Result :=
       end
   end.
 
-(* Exercise 21 [*] *)
+(* Exercise 21 ★ *)
 Lemma ex21_evalErr_num : forall f env n,
   evalErr (S f) env (Num n) = inr (NumV n).
 Proof. Admitted.
 
-(* Exercise 22 [****]: [evalErr] refines [evalM].  Induction on fuel;
+(* Exercise 22 ★★★★: [evalErr] refines [evalM].  Induction on fuel;
    the [Plus]/[Minus]/[App] cases rewrite with the IH then case-split on
    the recursive [Result]s. *)
 Lemma ex22_forget_evalErr : forall f env e,
@@ -222,14 +222,14 @@ Proof. Admitted.
 
 (** * CHALLENGE PROBLEMS *)
 
-(* Challenge 1 [**]: an answer found with some fuel survives any larger
+(* Challenge 1 ★★: an answer found with some fuel survives any larger
    amount of fuel.  Keep the fuel a VARIABLE (a literal fuel on an
    abstract term would make Rocq unroll [evalM]).  Hint: [evalM_mono]. *)
 Lemma challenge1_eval_stable : forall e v f1 f2,
   f1 <= f2 -> evalM f1 nil e = Some v -> evalM f2 nil e = Some v.
 Proof. Admitted.
 
-(* Challenge 2 [***]: whenever the error interpreter yields a value, the
+(* Challenge 2 ★★★: whenever the error interpreter yields a value, the
    pure interpreter agrees.  Hint: [ex22_forget_evalErr]. *)
 Lemma challenge2_evalErr_sound : forall f env e v,
   evalErr f env e = inr v -> evalM f env e = Some v.
