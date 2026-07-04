@@ -53,16 +53,20 @@ h1.section { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 .5rem;
 h2.section { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 1.6rem 0 .4rem; }
 h3.section { font-size: 1.08rem; font-weight: 700; margin: 1.3rem 0 .3rem; }
 
-/* --- code: consecutive .code divs form a continuous band --- */
+/* --- code: sits directly on the white page, like a clean listing --- */
 .code {
-  background: var(--code-bg);
-  padding: .15rem 1rem; margin: 0;
+  background: transparent;
+  padding: 0 0 0 1rem; margin: 0;
+  border-left: 3px solid rgba(11, 85, 99, .22);   /* soft teal accent marks a listing */
   font-family: "SFMono-Regular", Menlo, Consolas, "JetBrains Mono", monospace;
-  font-size: .88rem; line-height: 1.5; overflow-x: auto;
+  font-size: .875rem; line-height: 1.6; overflow-x: auto;
+  color: #24292f;
 }
+/* Empty spacer .code divs coqdoc emits between prose blocks collapse away. */
+.doc + .code, .code:blank { padding-top: 0; }
 .inlinecode, .doc tt, .doc code {
-  background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px;
-  padding: .02rem .3rem;
+  background: var(--code-bg); border-radius: 4px;
+  padding: .04rem .32rem;
   font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: .86rem;
 }
 /* light syntax accents (coqdoc marks the kind in the title attribute) */
