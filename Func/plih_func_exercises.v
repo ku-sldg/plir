@@ -235,6 +235,35 @@ Lemma challenge2_evalErr_sound : forall f env e v,
   evalErr f env e = inr v -> evalM f env e = Some v.
 Proof. Admitted.
 
+(** * PART 7: CONCRETE SYNTAX *)
+
+(**
+The lecture added a notation-based parser: [lambda ID in body] for
+functions, JUXTAPOSITION [f a] for application (left-associative,
+binding tightest), plus [bind]/[+]/[-] and the numeral/string
+coercions.  We open its scope to use it here.
+ *)
+
+Open Scope fbae_scope.
+
+(* Exercise 23 ★: a function value parses to [Lambda]. *)
+Example ex23_parse_lambda : <{ lambda "x" in "x" }> = Lambda "x" (Id "x").
+Proof. Admitted.
+
+(* Exercise 24 ★: application is [App]. *)
+Example ex24_parse_app : <{ "f" "x" }> = App (Id "f") (Id "x").
+Proof. Admitted.
+
+(* Exercise 25 ★★: apply a literal function and evaluate. *)
+Example ex25_eval_app :
+  eval <{ (lambda "x" in "x" + 1) 4 }> = Some (NumV 5).
+Proof. Admitted.
+
+(* Exercise 26 ★★: currying by juxtaposition - [f 3 4] is [(f 3) 4]. *)
+Example ex26_eval_curry :
+  eval <{ (lambda "x" in lambda "y" in "x" + "y") 3 4 }> = Some (NumV 7).
+Proof. Admitted.
+
 (** * SUBMISSION GUIDELINES *)
 
 (**

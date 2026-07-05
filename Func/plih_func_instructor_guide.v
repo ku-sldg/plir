@@ -58,6 +58,20 @@ HOUR 2 - Divergence and fuel.  [subst_grows], [omega]; why no measure
 HOUR 3 - Closures and static scoping.  [FBAEVal], [evalM]; trace a
   returned function; contrast [evalDyn] on [scopeTest] (4 vs 5).
 HOUR 4 - Currying, strict/lazy, and the error interpreter [evalErr].
+HOUR 5 - Concrete syntax (Section 12).
+  Objectives: extend the parser with functions; understand APPLICATION
+  BY JUXTAPOSITION and its precedence.
+  Strategy:
+    - Reuse the IDs recipe (two coercions + [bind]); add [lambda ID in
+      body] and the juxtaposition rule [f a] = [App f a] at the tightest
+      level (1), left-associative.
+    - Work [f a b] = [(f a) b] and [f a + b] = [(f a) + b] by hand, then
+      confirm by [reflexivity]; reproduce [addFun] concretely and curry
+      it: [(lambda "x" in lambda "y" in "x" + "y") 3 4].
+  Common mistakes: forgetting that application binds TIGHTER than the
+  operators (so [f x + 1] is [(f x) + 1], not [f (x + 1)]); and
+  forgetting the quotes on identifiers.
+  Assign: exercises 23-26.
  *)
 
 (** * PART 4: COMMON STUDENT MISTAKES *)

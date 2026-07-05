@@ -263,3 +263,25 @@ Proof.
   pose proof (ex22_forget_evalErr f env e) as Hf.
   rewrite H in Hf. simpl in Hf. symmetry. exact Hf.
 Qed.
+
+(** * PART 7: CONCRETE SYNTAX *)
+
+Open Scope fbae_scope.
+
+(* Exercise 23: the concrete form is definitionally the abstract tree. *)
+Example ex23_parse_lambda : <{ lambda "x" in "x" }> = Lambda "x" (Id "x").
+Proof. reflexivity. Qed.
+
+(* Exercise 24: juxtaposition is [App]. *)
+Example ex24_parse_app : <{ "f" "x" }> = App (Id "f") (Id "x").
+Proof. reflexivity. Qed.
+
+(* Exercise 25: [eval] consumes the same tree the notation elaborates to. *)
+Example ex25_eval_app :
+  eval <{ (lambda "x" in "x" + 1) 4 }> = Some (NumV 5).
+Proof. reflexivity. Qed.
+
+(* Exercise 26: [f 3 4] is [(f 3) 4], so both arguments are applied. *)
+Example ex26_eval_curry :
+  eval <{ (lambda "x" in lambda "y" in "x" + "y") 3 4 }> = Some (NumV 7).
+Proof. reflexivity. Qed.

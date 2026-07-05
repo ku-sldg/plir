@@ -847,6 +847,98 @@ are the subject of the next chapter:
   https://ku-sldg.github.io/plih//funs/7-Untyped-Recursion.html
  *)
 
+(** * SECTION 12: CONCRETE SYNTAX - A NOTATION PARSER *)
+
+(**
+Section 1 gave FBAE's concrete grammar informally.  We now make it
+real, as in the earlier chapters, so that
+
+  <{ bind "f" = lambda "x" in "x" + 1 in "f" ("f" 0) }>
+
+elaborates directly into the abstract tree.  FBAE adds two forms to the
+BAE grammar: a function value [lambda ID in body], and APPLICATION,
+written by JUXTAPOSITION - [f a] means [App f a], left-associative and
+binding tighter than any operator, exactly as in ML or Haskell.
+ *)
+
+Coercion Num : nat >-> FBAE.
+Coercion Id  : string >-> FBAE.
+
+Declare Custom Entry fbae.
+Declare Scope fbae_scope.
+Delimit Scope fbae_scope with fbae.
+
+Notation "<{ e }>" := e (e custom fbae at level 99) : fbae_scope.
+Notation "( x )" := x (in custom fbae, x at level 99) : fbae_scope.
+Notation "x" := x (in custom fbae at level 0, x constr at level 0) : fbae_scope.
+
+(**
+APPLICATION binds tightest (level 1), so [f a b] is [(f a) b] and
+[f a + b] is [(f a) + b].  The operators and binders sit at the same
+levels as before, with [lambda ID in body] and [bind ID = e1 in e2]
+extending as far to the right as possible.
+ *)
+
+Notation "f x" := (App f x) (in custom fbae at level 1, left associativity) : fbae_scope.
+Notation "x + y" := (Plus x y)  (in custom fbae at level 50, left associativity) : fbae_scope.
+Notation "x - y" := (Minus x y) (in custom fbae at level 50, left associativity) : fbae_scope.
+Notation "'lambda' v 'in' e" := (Lambda v e)
+  (in custom fbae at level 90, v constr at level 0, e custom fbae at level 99) : fbae_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom fbae at level 89, v constr at level 0,
+   e1 custom fbae at level 99, e2 custom fbae at level 99) : fbae_scope.
+
+Open Scope fbae_scope.
+
+(**
+As always the notation is only sugar, so every parse is [reflexivity].
+ *)
+
+(* The Section 1 definitions, written concretely. *)
+Example idFun_concrete : <{ lambda "x" in "x" }> = idFun.
+Proof. reflexivity. Qed.
+
+Example incFun_concrete : <{ lambda "x" in "x" + 1 }> = incFun.
+Proof. reflexivity. Qed.
+
+Example apply_id_concrete : <{ (lambda "x" in "x") 7 }> = apply_id.
+Proof. reflexivity. Qed.
+
+(* Application is left-associative juxtaposition. *)
+Example parse_app_assoc : <{ "f" "x" "y" }> = App (App (Id "f") (Id "x")) (Id "y").
+Proof. reflexivity. Qed.
+
+(* Application binds tighter than [+]. *)
+Example parse_app_prec : <{ "f" "x" + 1 }> = Plus (App (Id "f") (Id "x")) (Num 1).
+Proof. reflexivity. Qed.
+
+(* Currying, concretely (compare [addFun]). *)
+Example addFun_concrete :
+  <{ lambda "x" in lambda "y" in "x" + "y" }> = addFun.
+Proof. reflexivity. Qed.
+
+(**
+[eval] is oblivious to the notation - it consumes the same tree.
+ *)
+
+Example eval_concrete_inc : eval <{ (lambda "x" in "x" + 1) 4 }> = Some (NumV 5).
+Proof. reflexivity. Qed.
+
+Example eval_concrete_curry :
+  eval <{ (lambda "x" in lambda "y" in "x" + "y") 3 4 }> = Some (NumV 7).
+Proof. reflexivity. Qed.
+
+Example eval_concrete_bind_fun :
+  eval <{ bind "f" = lambda "x" in "x" + 1 in "f" ("f" 0) }> = Some (NumV 2).
+Proof. reflexivity. Qed.
+
+(**
+Metavariables of type [FBAE] may appear inside the brackets, so laws
+can be stated concretely.  Here application is exactly [App].
+ *)
+Lemma app_concrete : forall f a, <{ f a }> = App f a.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -873,6 +965,9 @@ In this lecture we:
   8. Previewed RECURSION: fixpoint combinators ([Y]/[Z]) are definable
      from [Lambda]/[App], but productive recursion needs a CONDITIONAL
      FBAE lacks - delivered in the Untyped Recursion chapter (Rec/).
+  9. Added CONCRETE SYNTAX with a notation-based parser: [lambda ID in
+     body] for functions and JUXTAPOSITION [f a] for application, so
+     [<{ (lambda "x" in "x" + 1) 4 }>] elaborates to the abstract tree.
 
 Next: UNTYPED RECURSION adds a conditional and runs the Y/Z combinators
 for real (Rec/).  Then TYPED functions rule out the stuck/divergent

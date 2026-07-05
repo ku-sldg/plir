@@ -79,10 +79,15 @@ LAYER 2: Lecture (plih_func_lecture.v)
   Section 7: Static vs dynamic scoping ([evalDyn]; 4 vs 5)
   Section 8: Currying
   Section 9: Divergence ([omega]); strict vs lazy binding
+  (Elaboration and the recursion teaser follow; the lecture closes with)
+  Section 12: Concrete syntax - a notation-based parser with
+    [lambda ID in body] and JUXTAPOSITION [f a] for application, so
+    [<{ (lambda "x" in "x" + 1) 4 }>] elaborates to the abstract tree
 
 LAYER 3: Exercises (plih_func_exercises.v)
-  22 exercises + 2 challenges, including an error-reporting
-  interpreter [evalErr] that distinguishes "out of gas" from "stuck".
+  22 exercises + 2 challenges + 4 concrete-syntax exercises, including an
+  error-reporting interpreter [evalErr] that distinguishes "out of gas"
+  from "stuck".
 
 LAYER 4: Solutions (plih_func_solutions.v)
 
