@@ -408,3 +408,27 @@ Lemma challenge4_type_error_propagates : forall e1 e2,
 Proof.
   intros e1 e2 H. simpl. rewrite H. reflexivity.
 Qed.
+
+(** * PART 13: CONCRETE SYNTAX *)
+
+Open Scope abe_scope.
+
+(* ex41: the concrete form is definitionally the abstract tree. *)
+Example ex41_parse_and : <{ true && false }> = And BTrue BFalse.
+Proof. reflexivity. Qed.
+
+(* ex42: [&&] (level 80) binds tighter than [||] (level 85). *)
+Example ex42_bool_precedence :
+  <{ false || true && true }> = Or BFalse (And BTrue BTrue).
+Proof. reflexivity. Qed.
+
+(* ex43: [eval] consumes the same tree the notation elaborates to. *)
+Example ex43_eval_if :
+  eval <{ if 3 < 5 then 1 + 2 else 10 }> = Some (NumV 3).
+Proof. reflexivity. Qed.
+
+(* ex44: [if true then t else f] elaborates to [IfThenElse BTrue t f],
+   which [eval] reduces to [eval t]. *)
+Lemma ex44_if_true : forall t f,
+  eval <{ if true then t else f }> = eval t.
+Proof. intros t f. reflexivity. Qed.

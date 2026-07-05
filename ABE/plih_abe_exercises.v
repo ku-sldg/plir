@@ -335,6 +335,40 @@ Lemma challenge4_type_error_propagates : forall e1 e2,
   eval (Plus e1 e2) = None.
 Proof. Admitted.
 
+(** * PART 13: CONCRETE SYNTAX *)
+
+(**
+The lecture added a notation-based parser so that [<{ ... }>] elaborates
+to an abstract [ABE] tree.  We open its scope to use it here.  Recall
+the grammar: numerals are [Num]; [true]/[false] are the booleans; the
+operators are [+] [-] [<] [=] [~] [&&] [||] and [if _ then _ else _],
+with [&&] binding tighter than [||] and arithmetic tighter than
+comparison.
+ *)
+
+Open Scope abe_scope.
+
+(* ex41: a bare boolean connective parses to the abstract tree. *)
+Example ex41_parse_and : <{ true && false }> = And BTrue BFalse.
+Proof. Admitted.
+
+(* ex42: precedence - [&&] binds tighter than [||], so write the tree
+   that [<{ ... }>] denotes and prove them equal. *)
+Example ex42_bool_precedence :
+  <{ false || true && true }> = Or BFalse (And BTrue BTrue).
+Proof. Admitted.
+
+(* ex43: evaluation is oblivious to the notation. *)
+Example ex43_eval_if :
+  eval <{ if 3 < 5 then 1 + 2 else 10 }> = Some (NumV 3).
+Proof. Admitted.
+
+(* ex44: a law stated in concrete syntax.  ([ABE] metavariables are
+   allowed inside the brackets.)  Hint: [reflexivity]. *)
+Lemma ex44_if_true : forall t f,
+  eval <{ if true then t else f }> = eval t.
+Proof. Admitted.
+
 (** * SUBMISSION GUIDELINES *)
 
 (**

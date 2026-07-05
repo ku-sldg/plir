@@ -51,11 +51,16 @@ LAYER 2: Lecture (plih_ae_lecture.v)
   Section 7: Inequalities
   Section 8: Optimization (optimize_zero) and its correctness
   Section 9: Decidability (ae_eq_dec) and its correctness
+  Section 10: Concrete syntax - a notation-based parser so that
+              [<{ 1 + (2 + 3) }>] elaborates to the abstract AE tree
+              (coercion + custom grammar entry, after Software
+              Foundations' Imp)
 
 LAYER 3: Exercises (plih_ae_exercises.v)
-  31 exercises + 2 challenges, graduated in difficulty, each an
-  [Admitted] stub for the student to complete.  Helper functions
-  (size, depth, optimize, fold_constants, simplify) are provided.
+  31 exercises + 2 challenges + 4 concrete-syntax exercises, graduated
+  in difficulty, each an [Admitted] stub for the student to complete.
+  Helper functions (size, depth, optimize, fold_constants, simplify)
+  are provided.
 
 LAYER 4: Solutions (plih_ae_solutions.v)
   Complete proofs for every exercise and challenge.  Solutions are

@@ -281,6 +281,36 @@ Lemma challenge2_simplify_correct : forall e,
   eval (simplify e) = eval e.
 Proof. Admitted.
 
+(** * CONCRETE SYNTAX *)
+
+(**
+The lecture added a notation-based parser so that [<{ ... }>] elaborates
+to an abstract [AE] tree.  We open its scope to use it here.  Recall the
+grammar: numerals are [Num], [+] is [Plus], [-] is [Minus], both
+left-associative, and parentheses group.
+ *)
+
+Open Scope ae_scope.
+
+(* Exercise 32 ★: the concrete form is the abstract tree. *)
+Example ex32_parse : <{ 7 + 2 }> = Plus (Num 7) (Num 2).
+Proof. Admitted.
+
+(* Exercise 33 ★: evaluation ignores the notation. *)
+Example ex33_eval_concrete : eval <{ 6 - 4 }> = 2.
+Proof. Admitted.
+
+(* Exercise 34 ★★: [-] is left-associative, so write the tree it denotes
+   and prove they are equal. *)
+Example ex34_left_assoc : <{ 9 - 3 - 2 }> = Minus (Minus (Num 9) (Num 3)) (Num 2).
+Proof. Admitted.
+
+(* Exercise 35 ★★: a law stated in concrete syntax.  ([AE] metavariables
+   are allowed inside the brackets.) *)
+Lemma ex35_minus_self : forall e,
+  eval <{ e - e }> = 0.
+Proof. Admitted.
+
 (** * SUBMISSION GUIDELINES *)
 
 (**

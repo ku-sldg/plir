@@ -438,6 +438,121 @@ Proof.
     -- simpl. rewrite IHe2_1. rewrite IHe2_2. reflexivity.
 Qed.
 
+(** * SECTION 10: CONCRETE SYNTAX - A NOTATION PARSER *)
+
+(**
+Every AE term so far has been written in ABSTRACT syntax - the raw
+constructors [Num], [Plus], [Minus].  That is precise but verbose:
+[Plus (Num 1) (Plus (Num 2) (Num 3))] is a mouthful for "1 + (2 + 3)".
+Section 1 even warned that we were "NOT implementing parsing from
+text".  We can now lift that restriction.
+
+Following Software Foundations' treatment of Imp, we give AE a layer of
+CONCRETE syntax so that
+
+  <{ 1 + (2 + 3) }>
+
+parses directly into the abstract tree [Plus (Num 1) (Plus (Num 2)
+(Num 3))].  The parser is built entirely from Rocq NOTATIONS - there is
+no separate lexer or parser generator, and the whole thing elaborates
+away, so a concrete term is DEFINITIONALLY EQUAL to the abstract tree
+it denotes.  Three ingredients do the work.
+ *)
+
+(**
+INGREDIENT 1 - a COERCION from [nat] to [AE].  Inside concrete syntax a
+bare numeral like [3] should stand for [Num 3].  A coercion tells Rocq
+to insert [Num] automatically wherever an [AE] is expected but a [nat]
+is supplied.
+ *)
+
+Coercion Num : nat >-> AE.
+
+(**
+INGREDIENT 2 - a private GRAMMAR ENTRY.  [<{ ... }>] switches Rocq's
+parser into a custom grammar called [ae] in which we control precedence
+and associativity.  Ordinary Rocq syntax (including [nat] [+] and [-])
+is left untouched OUTSIDE the brackets.
+ *)
+
+Declare Custom Entry ae.
+Declare Scope ae_scope.
+Delimit Scope ae_scope with ae.
+
+(**
+The entry needs three structural notations: the [<{ }>] delimiters that
+open it, grouping parentheses, and an "escape hatch" that drops back to
+an ordinary Rocq term (this is what lets numerals and [AE] variables
+appear inside the brackets).
+ *)
+
+Notation "<{ e }>" := e (e custom ae at level 99) : ae_scope.
+Notation "( x )" := x (in custom ae, x at level 99) : ae_scope.
+Notation "x" := x (in custom ae at level 0, x constr at level 0) : ae_scope.
+
+(**
+INGREDIENT 3 - one notation per operator, each carrying its precedence.
+[+] and [-] are left-associative at the same level, matching the way we
+read the surface language.
+ *)
+
+Notation "x + y" := (Plus x y)  (in custom ae at level 50, left associativity) : ae_scope.
+Notation "x - y" := (Minus x y) (in custom ae at level 50, left associativity) : ae_scope.
+
+Open Scope ae_scope.
+
+(**
+That is the entire "parser".  Because the notation is just sugar, every
+example below is proved by [reflexivity]: the concrete form and the
+abstract tree are the same term.
+ *)
+
+Example parse_plus : <{ 3 + 4 }> = Plus (Num 3) (Num 4).
+Proof. reflexivity. Qed.
+
+Example parse_minus : <{ 10 - 2 }> = Minus (Num 10) (Num 2).
+Proof. reflexivity. Qed.
+
+(* Left-associativity: [1 + 2 + 3] groups as [(1 + 2) + 3]. *)
+Example parse_assoc : <{ 1 + 2 + 3 }> = Plus (Plus (Num 1) (Num 2)) (Num 3).
+Proof. reflexivity. Qed.
+
+(* Parentheses override the default grouping. *)
+Example parse_paren : <{ 1 + (2 + 3) }> = Plus (Num 1) (Plus (Num 2) (Num 3)).
+Proof. reflexivity. Qed.
+
+(* The examples from Section 1, now written concretely. *)
+Example ae_example_2_concrete : <{ 3 + 4 }> = ae_example_2.
+Proof. reflexivity. Qed.
+
+Example ae_example_4_concrete : <{ 1 + (2 + 3) }> = ae_example_4.
+Proof. reflexivity. Qed.
+
+(**
+[eval] is oblivious to the notation - it consumes exactly the same tree
+whether we wrote it abstractly or concretely.
+ *)
+
+Example eval_concrete_1 : eval <{ 3 + 4 }> = 7.
+Proof. reflexivity. Qed.
+
+Example eval_concrete_2 : eval <{ (10 - 2) + 5 }> = 13.
+Proof. reflexivity. Qed.
+
+(**
+Metavariables of type [AE] may appear inside the brackets too, so we
+can even state general laws in concrete syntax.  Compare with
+[plus_commutative] from Section 3.
+ *)
+
+Lemma plus_commutative_concrete : forall e1 e2,
+  eval <{ e1 + e2 }> = eval <{ e2 + e1 }>.
+Proof.
+  intros e1 e2.
+  simpl.
+  apply Nat.add_comm.
+Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -451,6 +566,8 @@ In this lecture, we:
    - Non-negativity of evaluation
 4. Proved correctness of optimizations
 5. Proved correctness of decision procedures
+6. Added CONCRETE SYNTAX with a notation-based parser, so that
+   [<{ 1 + (2 + 3) }>] elaborates to the abstract AE tree
 
 Key insight: By formalizing our language and interpreter in Rocq,
 we can prove properties that would be difficult or impossible

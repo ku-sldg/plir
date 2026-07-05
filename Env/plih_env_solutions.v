@@ -203,3 +203,17 @@ Proof.
   intros e1 e2. rewrite (evalE_agrees_eval e1), (evalE_agrees_eval e2).
   reflexivity.
 Qed.
+
+(** * PART 6: CONCRETE SYNTAX (INHERITED) *)
+
+Open Scope bae_scope.
+
+(* Exercise 23: the concrete program runs under [evalEnv] by computation. *)
+Example ex23_evalE_concrete :
+  evalEnv <{ bind "x" = 3 in "x" + "x" }> = Some 6.
+Proof. reflexivity. Qed.
+
+(* Exercise 24: the two interpreters agree on every term. *)
+Example ex24_agree_concrete :
+  evalEnv <{ bind "x" = 4 in "x" - 1 }> = eval <{ bind "x" = 4 in "x" - 1 }>.
+Proof. apply evalEnv_agrees_eval. Qed.

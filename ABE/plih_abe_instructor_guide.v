@@ -66,6 +66,23 @@ HOUR 2 - Boolean operations and conditionals.
  *       boolean_never_fails by induction on the derivation.
  *     - Stress that this is the seed of a type-soundness theorem.
  *   Assign: exercises 26-40 and the challenges.
+ *
+ * HOUR 4 - Concrete syntax (Section 11).
+ *   Objectives: distinguish concrete from abstract syntax; build a parser
+ *   from Rocq notations alone; understand PRECEDENCE and associativity.
+ *   Strategy:
+ *     - Reuse the AE recipe (coercion + custom entry) but note the larger
+ *       grammar: [true]/[false] keywords, [+ - < = ~ && ||] and
+ *       [if _ then _ else _].
+ *     - Draw the precedence ladder (arithmetic 50 < comparison 70 < ~ 75
+ *       < && 80 < || 85 < if 89); higher level = looser binding.  Work
+ *       [1 + 2 < 4] and [a || b && c] by hand, then confirm by
+ *       [reflexivity].
+ *     - Emphasize [<{ e }>] and its abstract tree are the SAME term, so
+ *       [eval] is unchanged.
+ *   Common mistake: expecting an operator with no notation to parse
+ *   inside [<{ }>]; only the operators above are in the grammar.
+ *   Assign: exercises 41-44.
  *)
 
 (** * PART 3: COMMON STUDENT MISTAKES *)

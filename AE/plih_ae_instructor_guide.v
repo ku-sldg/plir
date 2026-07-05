@@ -65,7 +65,21 @@ HOUR 5 - Optimization and open problems.
   in the Plus case; discuss when an optimization is valid.  Then
   have students attempt constant folding (exercise 30).
 
-Total: ~3 hours instruction + ~2 hours problem solving.
+HOUR 6 - Concrete syntax (Section 10).
+  Objectives: distinguish concrete from abstract syntax; see that a
+  parser can be built from Rocq notations alone.
+  Activities: walk through the three ingredients - the [Coercion
+  Num : nat >-> AE], the [Declare Custom Entry ae] grammar with the
+  [<{ }>] / parenthesis / escape-hatch notations, and one notation per
+  operator carrying its precedence.  Emphasize that [<{ 3 + 4 }>] and
+  [Plus (Num 3) (Num 4)] are the SAME term (every example closes by
+  [reflexivity]), so [eval] is unchanged.  Contrast with a real lexer
+  + parser, which this replaces at the meta level.  Then have students
+  do concrete-syntax exercises 32-35.
+  Common mistake: expecting an operator that has no notation (e.g. [*])
+  to parse inside [<{ }>]; only [+] and [-] are in the grammar.
+
+Total: ~3.5 hours instruction + ~2 hours problem solving.
  *)
 
 (** * PART 3: COMMON STUDENT MISTAKES *)

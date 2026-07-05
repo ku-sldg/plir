@@ -274,6 +274,49 @@ Lemma evalE_bind_num : forall env x n b,
   evalE env (Bind x (Num n) b) = evalE (extend x n env) b.
 Proof. reflexivity. Qed.
 
+(** * SECTION 8: CONCRETE SYNTAX (INHERITED) *)
+
+(**
+Environments changed only HOW we evaluate, not the language itself, so
+BAE keeps exactly the surface syntax introduced in the IDs chapter.
+Because [plih_rocq_env_shared] re-exports the IDs lecture, the whole
+concrete-syntax parser - the [<{ ... }>] notation, the [nat] -> [Num]
+and [string] -> [Id] coercions, and the [bind ID = e1 in e2] form - is
+already in scope here.  We simply open its notation scope; there is
+nothing new to define.
+ *)
+
+Open Scope bae_scope.
+
+(**
+The very same concrete terms now drive the ENVIRONMENT interpreter.
+Here are the Section 3 tests, rewritten concretely.
+ *)
+
+Example evalE_concrete_bind :
+  evalE nil <{ bind "x" = 5 + 2 in "x" + "x" - 4 }> = Some 10.
+Proof. reflexivity. Qed.
+
+Example evalE_concrete_nested :
+  evalEnv <{ bind "x" = 4 in bind "y" = 5 in "x" + "y" - 4 }> = Some 5.
+Proof. reflexivity. Qed.
+
+Example evalE_concrete_free : evalEnv <{ "x" + 1 }> = None.
+Proof. reflexivity. Qed.
+
+Example evalE_concrete_shadow :
+  evalEnv <{ bind "x" = 1 in bind "x" = 2 in "x" }> = Some 2.
+Proof. reflexivity. Qed.
+
+(**
+And because the two interpreters AGREE (Section 6), a concrete program
+has the same meaning under either one.
+ *)
+Example agree_concrete :
+  evalEnv <{ bind "x" = 5 + 2 in "x" + "x" - 4 }>
+  = eval  <{ bind "x" = 5 + 2 in "x" + "x" - 4 }>.
+Proof. apply evalEnv_agrees_eval. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -286,6 +329,8 @@ In this lecture we:
   4. Proved the two interpreters AGREE: [evalE nil e = eval e],
      so environments change only HOW we evaluate, not WHAT we get.
   5. Transferred PROGRESS to the environment interpreter for free.
+  6. Reused the INHERITED concrete syntax, so [<{ ... }>] programs run
+     under the environment interpreter too - no new notation required.
 
 Exercises: implement an error-reporting variant, and an interpreter
 seeded with a PRELUDE (a starting environment of always-available

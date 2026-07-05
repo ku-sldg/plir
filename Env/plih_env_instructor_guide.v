@@ -55,6 +55,12 @@ HOUR 3 - The key lemma and agreement.  Walk the [Bind] case slowly;
   then assemble [evalE_agrees_eval].
 HOUR 4 - Prelude and error reporting.  Introduce a prelude
   environment; develop [evalErr] and prove it refines [evalE].
+HOUR 5 - Concrete syntax (Section 8, brief).  No new mechanism: the
+  [<{ ... }>] parser is INHERITED from IDs (re-exported through the
+  shared library), so the only new command is [Open Scope bae_scope].
+  Point out that the same concrete programs now run under [evalE], and
+  that concrete agreement goals close by [apply evalEnv_agrees_eval].
+  Assign: exercises 23-24.
  *)
 
 (** * PART 4: COMMON STUDENT MISTAKES *)

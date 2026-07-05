@@ -437,6 +437,139 @@ Proof.
   intro e. induction e; simpl; lia.
 Qed.
 
+(** * SECTION 11: CONCRETE SYNTAX - A NOTATION PARSER *)
+
+(**
+As in AE, we can give ABE a layer of CONCRETE syntax so that programs
+read the way we write them on the board, while still elaborating into
+the abstract [ABE] tree.  Following Software Foundations' Imp, the
+parser is built entirely from Rocq NOTATIONS - no separate lexer or
+parser generator - and a concrete term is DEFINITIONALLY EQUAL to the
+abstract tree it denotes.  The recipe is the same three ingredients as
+AE, but the grammar is larger: it now covers booleans, the boolean
+connectives, comparisons, and the conditional.
+ *)
+
+(**
+INGREDIENT 1 - a COERCION from [nat] to [ABE], so a bare numeral stands
+for [Num].
+ *)
+
+Coercion Num : nat >-> ABE.
+
+(**
+INGREDIENT 2 - a private grammar entry [abe], entered with [<{ ... }>],
+plus grouping parentheses and the escape hatch back to ordinary Rocq
+terms (numerals and [ABE] variables).
+ *)
+
+Declare Custom Entry abe.
+Declare Scope abe_scope.
+Delimit Scope abe_scope with abe.
+
+Notation "<{ e }>" := e (e custom abe at level 99) : abe_scope.
+Notation "( x )" := x (in custom abe, x at level 99) : abe_scope.
+Notation "x" := x (in custom abe at level 0, x constr at level 0) : abe_scope.
+
+(**
+INGREDIENT 3 - the operators.  The boolean literals [true]/[false] are
+keywords in the grammar (so they mean [BTrue]/[BFalse] rather than
+Rocq's [bool] constructors).  The remaining notations each carry a
+PRECEDENCE LEVEL; higher levels bind more loosely, so the ordering
+below reads, from tightest to loosest:
+
+  50  + -         (arithmetic)
+  70  < =         (comparisons, non-associative)
+  75  ~           (boolean negation, prefix)
+  80  &&          (conjunction)
+  85  ||          (disjunction)
+  89  if/then/else
+
+Thus [1 + 2 < 4] is [(1 + 2) < 4] and [a || b && c] is [a || (b && c)],
+matching the usual reading.
+ *)
+
+Notation "'true'"  := BTrue  (in custom abe at level 0) : abe_scope.
+Notation "'false'" := BFalse (in custom abe at level 0) : abe_scope.
+
+Notation "x + y" := (Plus x y)     (in custom abe at level 50, left associativity) : abe_scope.
+Notation "x - y" := (Minus x y)    (in custom abe at level 50, left associativity) : abe_scope.
+Notation "x < y" := (LessThan x y) (in custom abe at level 70, no associativity) : abe_scope.
+Notation "x = y" := (Equal x y)    (in custom abe at level 70, no associativity) : abe_scope.
+Notation "'~' x" := (Not x)        (in custom abe at level 75, right associativity) : abe_scope.
+Notation "x && y" := (And x y)     (in custom abe at level 80, left associativity) : abe_scope.
+Notation "x || y" := (Or x y)      (in custom abe at level 85, left associativity) : abe_scope.
+Notation "'if' c 'then' t 'else' f" := (IfThenElse c t f)
+  (in custom abe at level 89, c custom abe at level 99,
+   t custom abe at level 99, f custom abe at level 99) : abe_scope.
+
+Open Scope abe_scope.
+
+(**
+Because the notation is only sugar, every parse below is proved by
+[reflexivity].
+ *)
+
+Example parse_arith : <{ 3 + 4 }> = Plus (Num 3) (Num 4).
+Proof. reflexivity. Qed.
+
+Example parse_and : <{ true && false }> = And BTrue BFalse.
+Proof. reflexivity. Qed.
+
+Example parse_not : <{ ~ true }> = Not BTrue.
+Proof. reflexivity. Qed.
+
+Example parse_cmp : <{ 3 < 5 }> = LessThan (Num 3) (Num 5).
+Proof. reflexivity. Qed.
+
+(* Precedence: [&&] binds tighter than [||]. *)
+Example parse_bool_prec : <{ true || false && true }> = Or BTrue (And BFalse BTrue).
+Proof. reflexivity. Qed.
+
+(* Precedence: arithmetic binds tighter than comparison. *)
+Example parse_mixed_prec : <{ 1 + 2 < 4 }> = LessThan (Plus (Num 1) (Num 2)) (Num 4).
+Proof. reflexivity. Qed.
+
+(* The examples from Section 1, written concretely. *)
+Example abe_example_2_concrete : <{ true && false }> = abe_example_2.
+Proof. reflexivity. Qed.
+
+Example abe_example_3_concrete : <{ 3 < 5 }> = abe_example_3.
+Proof. reflexivity. Qed.
+
+(* A conditional with arithmetic branches (compare Section 9). *)
+Example parse_if :
+  <{ if 3 < 5 then 1 + 2 else 10 }>
+  = IfThenElse (LessThan (Num 3) (Num 5)) (Plus (Num 1) (Num 2)) (Num 10).
+Proof. reflexivity. Qed.
+
+(**
+[eval] is oblivious to the notation - it consumes exactly the same tree.
+ *)
+
+Example eval_concrete_if :
+  eval <{ if 3 < 5 then 1 + 2 else 10 }> = Some (NumV 3).
+Proof. reflexivity. Qed.
+
+Example eval_concrete_type_error :
+  eval <{ true + 3 }> = None.
+Proof. reflexivity. Qed.
+
+(**
+Metavariables of type [ABE] may appear inside the brackets, so laws can
+be stated concretely.  Compare with [de_morgan] from Section 6.
+ *)
+
+Lemma de_morgan_concrete : forall e1 e2,
+  abe_equiv <{ ~ (e1 && e2) }> <{ ~ e1 || ~ e2 }>.
+Proof.
+  intros e1 e2. unfold abe_equiv. cbn.
+  destruct (eval e1) as [ [n1|b1] | ];
+  destruct (eval e2) as [ [n2|b2] | ];
+  cbn; try reflexivity.
+  destruct b1; destruct b2; reflexivity.
+Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -449,6 +582,9 @@ In this lecture, we:
 5. Explored boolean algebra properties, including De Morgan's law.
 6. Introduced type-consistency reasoning.
 7. Proved equivalence is reflexive, symmetric, and transitive.
+8. Added CONCRETE SYNTAX with a notation-based parser covering booleans,
+   the connectives, comparisons, and the conditional, so that
+   [<{ if 3 < 5 then 1 + 2 else 10 }>] elaborates to the abstract tree.
 
 Key insight: adding booleans forces us to rethink evaluation.  We can
 no longer assume every expression evaluates to a nat - some evaluate

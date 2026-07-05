@@ -320,3 +320,24 @@ Proof.
     + apply ae_eq_dec_correct in Heq. subst. simpl. lia.
     + simpl. rewrite IHe1, IHe2. reflexivity.
 Qed.
+
+(** * CONCRETE SYNTAX *)
+
+Open Scope ae_scope.
+
+(* Exercise 32: the concrete form is definitionally the abstract tree. *)
+Example ex32_parse : <{ 7 + 2 }> = Plus (Num 7) (Num 2).
+Proof. reflexivity. Qed.
+
+(* Exercise 33: [eval] consumes the same tree the notation elaborates to. *)
+Example ex33_eval_concrete : eval <{ 6 - 4 }> = 2.
+Proof. reflexivity. Qed.
+
+(* Exercise 34: [-] is left-associative, so [9 - 3 - 2] is [(9 - 3) - 2]. *)
+Example ex34_left_assoc : <{ 9 - 3 - 2 }> = Minus (Minus (Num 9) (Num 3)) (Num 2).
+Proof. reflexivity. Qed.
+
+(* Exercise 35: unfold [eval] and let [lia] close [n - n = 0]. *)
+Lemma ex35_minus_self : forall e,
+  eval <{ e - e }> = 0.
+Proof. intro e. simpl. lia. Qed.

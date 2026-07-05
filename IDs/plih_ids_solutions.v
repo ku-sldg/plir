@@ -204,3 +204,27 @@ Theorem challenge2_progress : forall e,
 Proof.
   intros e Hc. unfold eval. apply progress_fuel; [lia | exact Hc].
 Qed.
+
+(** * PART 6: CONCRETE SYNTAX *)
+
+Open Scope bae_scope.
+
+(* Exercise 25: the concrete form is definitionally the abstract tree. *)
+Example ex25_parse_id : <{ "x" + 1 }> = Plus (Id "x") (Num 1).
+Proof. reflexivity. Qed.
+
+(* Exercise 26: [bind ID = e1 in e2] is [Bind]. *)
+Example ex26_parse_bind :
+  <{ bind "x" = 5 in "x" }> = Bind "x" (Num 5) (Id "x").
+Proof. reflexivity. Qed.
+
+(* Exercise 27: [eval] consumes the same tree the notation elaborates to. *)
+Example ex27_eval_bind :
+  eval <{ bind "x" = 3 in "x" + "x" }> = Some 6.
+Proof. reflexivity. Qed.
+
+(* Exercise 28: [bind "x" = n in "x" + "x"] reduces to [eval (Num n +
+   Num n)] = [Some (n + n)]; it computes for a symbolic [n]. *)
+Lemma ex28_bind_value : forall n : nat,
+  eval <{ bind "x" = n in "x" + "x" }> = Some (n + n).
+Proof. intro n. reflexivity. Qed.

@@ -69,10 +69,14 @@ LAYER 2: Lecture (plih_env_lecture.v)
              [evalE (extend i n env) e = evalE env (subst i (Num n) e)]
   Section 6: AGREEMENT ([evalE_evalF], [evalE_agrees_eval])
   Section 7: Properties of [evalE]
+  Section 8: Concrete syntax (INHERITED) - the [<{ ... }>] parser from
+    the IDs chapter is re-exported through the shared library, so the
+    same programs drive the environment interpreter with no new notation
 
 LAYER 3: Exercises (plih_env_exercises.v)
-  22 exercises + 2 challenges, including a PRELUDE interpreter and an
-  error-reporting interpreter [evalErr] (with [Either]-style results).
+  22 exercises + 2 challenges + 2 concrete-syntax exercises, including a
+  PRELUDE interpreter and an error-reporting interpreter [evalErr] (with
+  [Either]-style results).
 
 LAYER 4: Solutions (plih_env_solutions.v)
 

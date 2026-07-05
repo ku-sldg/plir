@@ -50,10 +50,14 @@ ABE/plih_abe_lecture.v
   - Section 8: Comparison properties
   - Section 9: Conditional semantics (lazy evaluation)
   - Section 10: Size metrics
+  - Section 11: Concrete syntax - a notation-based parser covering
+    booleans, connectives, comparisons, and the conditional, so that
+    [<{ if 3 < 5 then 1 + 2 else 10 }>] elaborates to the abstract tree
+    (coercion + custom grammar entry, after Software Foundations' Imp)
 
 ABE/plih_abe_exercises.v
-  40 exercises + 4 challenges, each stated with [Admitted] for the
-  student to complete.
+  40 exercises + 4 challenges + 4 concrete-syntax exercises, each stated
+  with [Admitted] for the student to complete.
 
 ABE/plih_abe_solutions.v
   Complete proofs of every exercise.

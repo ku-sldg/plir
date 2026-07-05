@@ -74,10 +74,15 @@ LAYER 2: Lecture (plih_ids_lecture.v)
              [free_in_subst_num], [closed_after_subst])
   Section 8: Evaluation properties ([bind_num_subst], [bind_unused])
   Section 9: Expression equivalence ([bae_equiv])
+  Section 10: Concrete syntax - a notation-based parser where numerals
+    coerce to [Num], strings to [Id], and [bind ID = e1 in e2] is
+    [Bind], so [<{ bind "x" = 5 + 2 in "x" + "x" - 4 }>] elaborates to
+    the abstract tree (after Software Foundations' Imp)
 
 LAYER 3: Exercises (plih_ids_exercises.v)
   24 exercises + 2 challenges (fuel independence; PROGRESS for
-  closed programs), graduated in difficulty, each an [Admitted] stub.
+  closed programs) + 4 concrete-syntax exercises, graduated in
+  difficulty, each an [Admitted] stub.
 
 LAYER 4: Solutions (plih_ids_solutions.v)
   Complete proofs for every exercise and challenge.

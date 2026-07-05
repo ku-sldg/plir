@@ -480,6 +480,111 @@ Example alpha_example :
             (Bind "y" (Num 3) (Plus (Id "y") (Num 1))).
 Proof. reflexivity. Qed.
 
+(** * SECTION 10: CONCRETE SYNTAX - A NOTATION PARSER *)
+
+(**
+Section 1 gave the concrete grammar of BAE informally:
+
+  t ::= NUM | ID | t + t | t - t | bind ID = t in t
+
+We can now make that grammar REAL, exactly as in AE and ABE, so that
+
+  <{ bind "x" = 5 + 2 in "x" + "x" - 4 }>
+
+elaborates directly into the abstract tree.  Following Software
+Foundations' Imp, the parser is built from Rocq NOTATIONS alone, and a
+concrete term is DEFINITIONALLY EQUAL to the abstract tree it denotes.
+
+The new wrinkle here is IDENTIFIERS.  BAE has two leaf coercions
+instead of one: a bare numeral is a [Num], and a bare STRING is an
+[Id].  So inside the brackets [3] means [Num 3] and ["x"] means
+[Id "x"].
+ *)
+
+Coercion Num : nat >-> BAE.
+Coercion Id  : string >-> BAE.
+
+(**
+The grammar entry, its delimiters, grouping, and the escape hatch back
+to ordinary Rocq terms (which, via the two coercions above, is what
+lets numerals AND string identifiers appear inside the brackets).
+ *)
+
+Declare Custom Entry bae.
+Declare Scope bae_scope.
+Delimit Scope bae_scope with bae.
+
+Notation "<{ e }>" := e (e custom bae at level 99) : bae_scope.
+Notation "( x )" := x (in custom bae, x at level 99) : bae_scope.
+Notation "x" := x (in custom bae at level 0, x constr at level 0) : bae_scope.
+
+(**
+The operators.  [+] and [-] are as before.  The binding form
+[bind ID = e1 in e2] is the concrete syntax for [Bind]: its identifier
+slot [v] is an ordinary string (a Rocq [constr]), while the bound
+expression and the body are themselves BAE terms.
+ *)
+
+Notation "x + y" := (Plus x y)  (in custom bae at level 50, left associativity) : bae_scope.
+Notation "x - y" := (Minus x y) (in custom bae at level 50, left associativity) : bae_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom bae at level 89, v constr at level 0,
+   e1 custom bae at level 99, e2 custom bae at level 99) : bae_scope.
+
+Open Scope bae_scope.
+
+(**
+Because the notation is only sugar, every parse below is proved by
+[reflexivity].
+ *)
+
+Example parse_arith : <{ 3 + 4 }> = Plus (Num 3) (Num 4).
+Proof. reflexivity. Qed.
+
+Example parse_id : <{ "x" + 1 }> = Plus (Id "x") (Num 1).
+Proof. reflexivity. Qed.
+
+(* The examples from Section 1, written concretely. *)
+Example bae_example_1_concrete :
+  <{ bind "x" = 5 + 2 in "x" + "x" - 4 }> = bae_example_1.
+Proof. reflexivity. Qed.
+
+Example bae_example_2_concrete :
+  <{ bind "x" = 4 in bind "y" = 5 in "x" + "y" - 4 }> = bae_example_2.
+Proof. reflexivity. Qed.
+
+Example bae_free_concrete : <{ "x" + 1 }> = bae_free.
+Proof. reflexivity. Qed.
+
+(**
+[eval] is oblivious to the notation - it consumes exactly the same tree.
+ *)
+
+Example eval_concrete_bind :
+  eval <{ bind "x" = 5 + 2 in "x" + "x" - 4 }> = Some 10.
+Proof. reflexivity. Qed.
+
+(* A free identifier still has no value. *)
+Example eval_concrete_free : eval <{ "x" + 1 }> = None.
+Proof. reflexivity. Qed.
+
+(* Inner bindings shadow outer ones, concretely. *)
+Example eval_concrete_shadow :
+  eval <{ bind "x" = 1 in bind "x" = 2 in "x" }> = Some 2.
+Proof. reflexivity. Qed.
+
+(**
+Metavariables may appear inside the brackets too: [v] ranges over
+[string] identifiers and [b] over [BAE] bodies.  This lets us restate
+the defining "let" equation [bind_num_subst] in concrete syntax.
+ *)
+
+Lemma bind_num_subst_concrete : forall (v : string) (n : nat) (b : BAE),
+  eval <{ bind v = n in b }> = eval (subst v (Num n) b).
+Proof.
+  intros v n b. apply bind_num_subst.
+Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -491,6 +596,9 @@ In this lecture we:
      recursive in Rocq, and drove it with a [size]-bounded fuel.
   5. Recovered clean recursive equations for [eval] and proved
      properties of substitution and evaluation.
+  6. Made the concrete grammar real with a notation-based parser, so
+     that [<{ bind "x" = 5 + 2 in "x" + "x" - 4 }>] elaborates to the
+     abstract tree (numerals coerce to [Num], strings to [Id]).
 
 Next: "Adding Environments" replaces eager substitution with a
 deferred environment, yielding a clean structural interpreter, and

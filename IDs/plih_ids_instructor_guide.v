@@ -65,7 +65,25 @@ HOUR 4 - Properties and the progress challenge.
   and [closed_after_subst]; sketch PROGRESS (closed programs never
   get stuck) as the capstone.
 
-Total: ~3 hours instruction + ~3 hours problem solving.
+HOUR 5 - Concrete syntax (Section 10).
+  Objectives: build the [<{ ... }>] parser from notations; understand
+  the TWO leaf coercions (numerals to [Num], strings to [Id]) and the
+  [bind ID = e1 in e2] binding form.
+  Strategy:
+    - Reuse the AE/ABE recipe (custom entry + escape hatch), then add
+      the second coercion and the [bind] notation.  Show that the
+      identifier slot [v] is an ordinary [string] constr, while the
+      bound expression and body are BAE terms.
+    - Reproduce [bae_example_1] concretely and confirm by [reflexivity];
+      then state [bind_num_subst] in concrete syntax.
+  Common mistake: forgetting the quotes on identifiers - inside the
+  brackets ["x"] is [Id "x"], but a bare [x] is a Rocq variable.  Also,
+  when a bound expression is a metavariable [n : nat] it needs its type
+  annotated so the [Num] coercion fires (see the lecture's
+  [bind_num_subst_concrete]).
+  Assign: exercises 25-28.
+
+Total: ~3.5 hours instruction + ~3 hours problem solving.
  *)
 
 (** * PART 4: COMMON STUDENT MISTAKES *)

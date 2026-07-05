@@ -210,6 +210,27 @@ Lemma challenge2_equiv_agree : forall e1 e2,
   eval e1 = eval e2 <-> evalE nil e1 = evalE nil e2.
 Proof. Admitted.
 
+(** * PART 6: CONCRETE SYNTAX (INHERITED) *)
+
+(**
+The [<{ ... }>] parser is inherited from the IDs chapter (re-exported
+through the shared library); we just open its scope.  These programs
+now drive the ENVIRONMENT interpreter.
+ *)
+
+Open Scope bae_scope.
+
+(* Exercise 23 ★: a concrete program under the environment interpreter. *)
+Example ex23_evalE_concrete :
+  evalEnv <{ bind "x" = 3 in "x" + "x" }> = Some 6.
+Proof. Admitted.
+
+(* Exercise 24 ★★: a concrete program means the same thing under either
+   interpreter.  Hint: [evalEnv_agrees_eval]. *)
+Example ex24_agree_concrete :
+  evalEnv <{ bind "x" = 4 in "x" - 1 }> = eval <{ bind "x" = 4 in "x" - 1 }>.
+Proof. Admitted.
+
 (** * SUBMISSION GUIDELINES *)
 
 (**

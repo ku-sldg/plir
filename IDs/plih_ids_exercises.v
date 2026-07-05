@@ -192,6 +192,35 @@ Theorem challenge2_progress : forall e,
   closed e -> exists m, eval e = Some m.
 Proof. Admitted.
 
+(** * PART 6: CONCRETE SYNTAX *)
+
+(**
+The lecture added a notation-based parser: numerals coerce to [Num],
+strings to [Id], [+]/[-] are the arithmetic operators, and
+[bind ID = e1 in e2] is [Bind].  We open its scope to use it here.
+ *)
+
+Open Scope bae_scope.
+
+(* Exercise 25 ★: an identifier use parses to [Id]. *)
+Example ex25_parse_id : <{ "x" + 1 }> = Plus (Id "x") (Num 1).
+Proof. Admitted.
+
+(* Exercise 26 ★: a binding parses to [Bind]. *)
+Example ex26_parse_bind :
+  <{ bind "x" = 5 in "x" }> = Bind "x" (Num 5) (Id "x").
+Proof. Admitted.
+
+(* Exercise 27 ★★: evaluation is oblivious to the notation. *)
+Example ex27_eval_bind :
+  eval <{ bind "x" = 3 in "x" + "x" }> = Some 6.
+Proof. Admitted.
+
+(* Exercise 28 ★★: a "let" law stated in concrete syntax. *)
+Lemma ex28_bind_value : forall n : nat,
+  eval <{ bind "x" = n in "x" + "x" }> = Some (n + n).
+Proof. Admitted.
+
 (** * SUBMISSION GUIDELINES *)
 
 (**
