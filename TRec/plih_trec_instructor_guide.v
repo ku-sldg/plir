@@ -96,6 +96,15 @@ Part 2 (ex5-ex7): run factorial/summation; observe a well-typed loop
   diverge.
 Part 3 (ex8-ex10): fuel monotonicity (variable fuel), a canonical-forms
   citation, determinism.
+Part 4 (ex11-ex14): concrete syntax (Section 9).  TFun's two notations -
+  types between [<[ ... ]>] (base [Nat]/[Bool], RIGHT-associative [->])
+  and terms between [<{ ... }>] with the ascribed lambda
+  [lambda ID : T in body] - plus this chapter's addition, the prefix
+  [fix f].  All [reflexivity].  Common mistakes: reading the arrow as
+  left-associative ([->] is right-associative); and forgetting that
+  [fix] wants the whole GENERATOR ([fix (lambda ... in ...)]), so its
+  argument almost always needs parentheses (juxtaposition application
+  binds tighter than [fix]).
 
 Grade by building plih_trec_exercises.v with the [Admitted]s replaced.
  *)

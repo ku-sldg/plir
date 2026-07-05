@@ -95,3 +95,40 @@ Proof. Admitted.
 Example ex10_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+The lecture added two notations (Section 9): types between [<[ ... ]>]
+([Nat], [Bool], the right-associative [->]), and terms between
+[<{ ... }>] - the ascribed lambda [lambda ID : T in body] plus the new
+prefix [fix f].  We open the scope to use them here.
+ *)
+
+Open Scope trec_scope.
+
+(* ★ the function arrow is right-associative. *)
+Example ex11_parse_ty :
+  <[ (Nat -> Nat) -> Nat -> Nat ]> = TArr (TArr TNum TNum) (TArr TNum TNum).
+Proof. Admitted.
+
+(* ★ [fix (lambda ...)] parses to [Fix (Lambda ...)] - this is [loopT]. *)
+Example ex12_parse_fix :
+  <{ fix (lambda "x" : Nat in "x") }> = loopT.
+Proof. Admitted.
+
+(* ★★ the checker reads the concrete factorial and predicts [Nat -> Nat]. *)
+Example ex13_typecheck_fact :
+  typecheck <{ fix (lambda "g" : Nat -> Nat in
+                      lambda "n" : Nat in
+                        if iszero "n" then 1 else "n" * ("g" ("n" - 1))) }>
+  = Some <[ Nat -> Nat ]>.
+Proof. Admitted.
+
+(* ★★ and the same concrete term runs: 4! = 24. *)
+Example ex14_eval_fact :
+  eval <{ (fix (lambda "g" : Nat -> Nat in
+                  lambda "n" : Nat in
+                    if iszero "n" then 1 else "n" * ("g" ("n" - 1)))) 4 }>
+  = Some (NumV 24).
+Proof. Admitted.

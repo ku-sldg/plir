@@ -63,3 +63,33 @@ Proof. intros f env a b v H. exact (mult_yields_num f env a b v H). Qed.
 Example ex10_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. intros f env e r1 r2 H1 H2. rewrite <- H1, <- H2. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope trec_scope.
+
+(* ex11: the arrow is right-associative. *)
+Example ex11_parse_ty :
+  <[ (Nat -> Nat) -> Nat -> Nat ]> = TArr (TArr TNum TNum) (TArr TNum TNum).
+Proof. reflexivity. Qed.
+
+(* ex12: [fix (lambda ...)] is [Fix (Lambda ...)], i.e. [loopT]. *)
+Example ex12_parse_fix :
+  <{ fix (lambda "x" : Nat in "x") }> = loopT.
+Proof. reflexivity. Qed.
+
+(* ex13: the checker consumes the concrete factorial. *)
+Example ex13_typecheck_fact :
+  typecheck <{ fix (lambda "g" : Nat -> Nat in
+                      lambda "n" : Nat in
+                        if iszero "n" then 1 else "n" * ("g" ("n" - 1))) }>
+  = Some <[ Nat -> Nat ]>.
+Proof. reflexivity. Qed.
+
+(* ex14: [eval] consumes the same tree the notation elaborates to. *)
+Example ex14_eval_fact :
+  eval <{ (fix (lambda "g" : Nat -> Nat in
+                  lambda "n" : Nat in
+                    if iszero "n" then 1 else "n" * ("g" ("n" - 1)))) 4 }>
+  = Some (NumV 24).
+Proof. reflexivity. Qed.

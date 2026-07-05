@@ -478,6 +478,111 @@ Proof.
   injection H as H; subst v. reflexivity.
 Qed.
 
+(** * SECTION 9: CONCRETE SYNTAX - TERMS AND TYPES *)
+
+(**
+The surface syntax is TFun's, unchanged: a small grammar for TYPES
+between [<[ ... ]>], and the term grammar between [<{ ... }>] with the
+ascribed lambda [lambda ID : T in body] (the one place a type appears).
+[Fix] adds no new TYPE, so the type grammar carries over verbatim; the
+term grammar gains exactly ONE notation for this chapter's one new form,
+the prefix [fix f].
+ *)
+
+Coercion Num : nat >-> TFBAEC.
+Coercion Id  : string >-> TFBAEC.
+
+(**
+THE TYPE GRAMMAR (verbatim from TFun).  [Nat] and [Bool] are the base
+types; [->] is the RIGHT-associative function arrow.
+ *)
+Declare Custom Entry ty.
+Declare Scope trec_scope.
+Delimit Scope trec_scope with trec.
+
+Notation "<[ t ]>" := t (t custom ty at level 50) : trec_scope.
+Notation "( t )" := t (in custom ty, t at level 50) : trec_scope.
+Notation "'Nat'"  := TNum  (in custom ty at level 0) : trec_scope.
+Notation "'Bool'" := TBool (in custom ty at level 0) : trec_scope.
+Notation "d -> r" := (TArr d r) (in custom ty at level 50, right associativity) : trec_scope.
+
+(**
+THE TERM GRAMMAR.  TFun's grammar - numerals/identifiers via coercion,
+[*], [+], [-], [iszero], [true]/[false], [if], [bind], JUXTAPOSITION
+application, and the ascribed [lambda ID : T in body] - plus the new
+prefix [fix f], which takes the recursion-generator (typically a
+lambda) and ties the knot.
+ *)
+Declare Custom Entry tfbaec.
+Notation "<{ e }>" := e (e custom tfbaec at level 99) : trec_scope.
+Notation "( x )" := x (in custom tfbaec, x at level 99) : trec_scope.
+Notation "x" := x (in custom tfbaec at level 0, x constr at level 0) : trec_scope.
+
+Notation "f x" := (App f x) (in custom tfbaec at level 1, left associativity) : trec_scope.
+Notation "'fix' f" := (Fix f) (in custom tfbaec at level 75, right associativity) : trec_scope.
+Notation "'iszero' x" := (IsZero x) (in custom tfbaec at level 75, right associativity) : trec_scope.
+Notation "x * y" := (Mult x y)  (in custom tfbaec at level 40, left associativity) : trec_scope.
+Notation "x + y" := (Plus x y)  (in custom tfbaec at level 50, left associativity) : trec_scope.
+Notation "x - y" := (Minus x y) (in custom tfbaec at level 50, left associativity) : trec_scope.
+Notation "'true'"  := (Boolean true)  (in custom tfbaec at level 0) : trec_scope.
+Notation "'false'" := (Boolean false) (in custom tfbaec at level 0) : trec_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom tfbaec at level 89, c custom tfbaec at level 99,
+   t custom tfbaec at level 99, f custom tfbaec at level 99) : trec_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom tfbaec at level 89, v constr at level 0,
+   e1 custom tfbaec at level 99, e2 custom tfbaec at level 99) : trec_scope.
+Notation "'lambda' v ':' T 'in' e" := (Lambda v T e)
+  (in custom tfbaec at level 90, v constr at level 0,
+   T custom ty at level 50, e custom tfbaec at level 99) : trec_scope.
+
+Open Scope trec_scope.
+
+(**
+Types parse as in TFun, arrows right-associating.
+ *)
+Example parse_ty_right_assoc :
+  <[ (Nat -> Nat) -> Nat -> Nat ]> = TArr (TArr TNum TNum) (TArr TNum TNum).
+Proof. reflexivity. Qed.
+
+(**
+The Section 6 recursion, written concretely.  [factGen] is an ordinary
+ascribed lambda; [fact] is [fix] of it.
+ *)
+Example factGen_concrete :
+  <{ lambda "g" : Nat -> Nat in
+       lambda "n" : Nat in
+         if iszero "n" then 1 else "n" * ("g" ("n" - 1)) }> = factGen.
+Proof. reflexivity. Qed.
+
+Example fact_concrete :
+  <{ fix (lambda "g" : Nat -> Nat in
+            lambda "n" : Nat in
+              if iszero "n" then 1 else "n" * ("g" ("n" - 1))) }> = fact.
+Proof. reflexivity. Qed.
+
+(**
+The checker and the interpreter both read the same concrete term: the
+factorial generator type-checks at [Nat -> Nat] and runs.
+ *)
+Example typecheck_fact_concrete :
+  typecheck <{ fix (lambda "g" : Nat -> Nat in
+                      lambda "n" : Nat in
+                        if iszero "n" then 1 else "n" * ("g" ("n" - 1))) }>
+  = Some <[ Nat -> Nat ]>.
+Proof. reflexivity. Qed.
+
+Example eval_fact_concrete :
+  eval <{ (fix (lambda "g" : Nat -> Nat in
+                  lambda "n" : Nat in
+                    if iszero "n" then 1 else "n" * ("g" ("n" - 1)))) 5 }>
+  = Some (NumV 120).
+Proof. reflexivity. Qed.
+
+(* The well-typed-but-divergent loop, concretely: [fix] of the identity. *)
+Example loopT_concrete : <{ fix (lambda "x" : Nat in "x") }> = loopT.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -493,6 +598,9 @@ In this lecture we:
   5. Made the bargain explicit and machine-checked: self-application is
      still rejected (safety kept), but [Fix] lets a well-typed term
      DIVERGE ([loopT]) - normalization is deliberately traded away.
+  6. Added CONCRETE SYNTAX (Section 9): TFun's type grammar
+     [<[ Nat -> Bool ]>] and term grammar [<{ ... }>], extended with the
+     prefix [fix f] for the fixed-point form.
 
 Next: the course turns to modeling evaluation itself as a MONAD (the
 Reader/Either interpreters), and then to STATE.

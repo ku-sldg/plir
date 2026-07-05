@@ -77,6 +77,9 @@ type system still rules out every stuck (type-error) program.
   [ill_selfApp], [ill_fix_mismatch] -- safety kept (S7)
   [loopT], [loopT_diverges]         -- normalization lost (S7)
   [iszero_yields_bool], [mult_yields_num] -- canonical-forms slices (S8)
+  concrete syntax     -- two notations (Section 9): TFun's type grammar
+    [<[ Nat -> Bool ]>] and term grammar [<{ ... }>], extended with the
+    prefix [fix f] (exercises 11-14)
  *)
 
 (** * WHERE THIS GOES NEXT *)
