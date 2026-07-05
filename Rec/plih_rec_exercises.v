@@ -91,3 +91,33 @@ Proof. Admitted.
 Example ex10_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+FBAEC has its own notation-based parser (Section 8): Func's grammar plus
+[*], [true]/[false], [iszero e], and [if c then t else f].  We open its
+scope to use it here.
+ *)
+
+Open Scope fbaec_scope.
+
+(* ★ [iszero] and [if] parse to the expected tree. *)
+Example ex11_parse_if :
+  <{ if iszero 0 then 1 else 2 }> = If (IsZero (Num 0)) (Num 1) (Num 2).
+Proof. Admitted.
+
+(* ★ evaluation is oblivious to the notation. *)
+Example ex12_eval_mult : eval <{ 6 * (3 + 4) }> = Some (NumV 42).
+Proof. Admitted.
+
+(* ★★ the productive recursion of Section 7, concretely: the Z
+   combinator ties the knot and factorial runs under strict eval. *)
+Example ex13_fact_Z : eval <{ Zc factGen 5 }> = Some (NumV 120).
+Proof. Admitted.
+
+(* ★★ the recursive generator reads as on paper.  Hint: [reflexivity]. *)
+Example ex14_sumGen_concrete :
+  <{ lambda "g" in lambda "z" in
+       if iszero "z" then "z" else "z" + "g" ("z" - 1) }> = sumGen.
+Proof. Admitted.

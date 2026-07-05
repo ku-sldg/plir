@@ -80,6 +80,9 @@ NEW HERE:
   [sum_Z_strict], [fact_Z_strict]  -- Z runs recursion under strict eval
   [sum_Y_lazy], [fact_Y_lazy]      -- Y runs recursion under lazy eval
   [sum_Y_strict_diverges]          -- strict Y loops
+  concrete syntax  -- FBAEC's own <{ }> parser (Section 8): Func's
+    grammar plus [*], [true]/[false], [iszero e], [if c then t else f],
+    so [sumGen]/[factGen] read as on paper (exercises 11-14)
  *)
 
 (** * WHERE THIS GOES NEXT *)

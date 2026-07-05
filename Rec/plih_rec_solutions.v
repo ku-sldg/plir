@@ -65,3 +65,26 @@ Qed.
 Example ex10_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. intros f env e r1 r2 H1 H2. rewrite <- H1, <- H2. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope fbaec_scope.
+
+(* ex11: the concrete form is definitionally the abstract tree. *)
+Example ex11_parse_if :
+  <{ if iszero 0 then 1 else 2 }> = If (IsZero (Num 0)) (Num 1) (Num 2).
+Proof. reflexivity. Qed.
+
+(* ex12: [eval] consumes the same tree the notation elaborates to. *)
+Example ex12_eval_mult : eval <{ 6 * (3 + 4) }> = Some (NumV 42).
+Proof. reflexivity. Qed.
+
+(* ex13: [Zc]/[factGen] are ordinary terms, applied by juxtaposition. *)
+Example ex13_fact_Z : eval <{ Zc factGen 5 }> = Some (NumV 120).
+Proof. reflexivity. Qed.
+
+(* ex14: the generator elaborates to exactly [sumGen]. *)
+Example ex14_sumGen_concrete :
+  <{ lambda "g" in lambda "z" in
+       if iszero "z" then "z" else "z" + "g" ("z" - 1) }> = sumGen.
+Proof. reflexivity. Qed.

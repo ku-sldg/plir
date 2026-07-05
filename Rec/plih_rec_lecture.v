@@ -379,6 +379,101 @@ Example fact_Y_lazy :
   evalLazy (App (App Yc factGen) (Num 5)) = Some (LNumV 120).
 Proof. reflexivity. Qed.
 
+(** * SECTION 8: CONCRETE SYNTAX - A NOTATION PARSER *)
+
+(**
+FBAEC keeps the whole FBAE surface syntax and adds four forms, so it
+needs its OWN parser (the notation is tied to the FBAEC type, not
+FBAE's).  It is Func's grammar - numerals/identifiers via coercion,
+[+]/[-], [bind ID = e1 in e2], [lambda ID in body], and APPLICATION BY
+JUXTAPOSITION [f a] - extended with multiplication [*], the Boolean
+literals [true]/[false], the numeric test [iszero e], and the
+conditional [if c then t else f].
+ *)
+
+Coercion Num : nat >-> FBAEC.
+Coercion Id  : string >-> FBAEC.
+
+Declare Custom Entry fbaec.
+Declare Scope fbaec_scope.
+Delimit Scope fbaec_scope with fbaec.
+
+Notation "<{ e }>" := e (e custom fbaec at level 99) : fbaec_scope.
+Notation "( x )" := x (in custom fbaec, x at level 99) : fbaec_scope.
+Notation "x" := x (in custom fbaec at level 0, x constr at level 0) : fbaec_scope.
+
+(**
+Precedence, tightest to loosest: application (1), [*] (40), [+]/[-]
+(50), [iszero] (75), then the [if]/[bind]/[lambda] binders.  So
+[iszero z] in [z * g (z-1)] and [z + g (z-1)] all group the way the
+recursive generators below expect.
+ *)
+
+Notation "f x" := (App f x) (in custom fbaec at level 1, left associativity) : fbaec_scope.
+Notation "'iszero' x" := (IsZero x) (in custom fbaec at level 75, right associativity) : fbaec_scope.
+Notation "x * y" := (Mult x y)  (in custom fbaec at level 40, left associativity) : fbaec_scope.
+Notation "x + y" := (Plus x y)  (in custom fbaec at level 50, left associativity) : fbaec_scope.
+Notation "x - y" := (Minus x y) (in custom fbaec at level 50, left associativity) : fbaec_scope.
+Notation "'true'"  := (Boolean true)  (in custom fbaec at level 0) : fbaec_scope.
+Notation "'false'" := (Boolean false) (in custom fbaec at level 0) : fbaec_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom fbaec at level 89, c custom fbaec at level 99,
+   t custom fbaec at level 99, f custom fbaec at level 99) : fbaec_scope.
+Notation "'lambda' v 'in' e" := (Lambda v e)
+  (in custom fbaec at level 90, v constr at level 0, e custom fbaec at level 99) : fbaec_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom fbaec at level 89, v constr at level 0,
+   e1 custom fbaec at level 99, e2 custom fbaec at level 99) : fbaec_scope.
+
+Open Scope fbaec_scope.
+
+(**
+As always the notation is only sugar, so every parse is [reflexivity].
+ *)
+
+Example parse_arith : <{ 6 * (3 + 4) }> = Mult (Num 6) (Plus (Num 3) (Num 4)).
+Proof. reflexivity. Qed.
+
+Example parse_iszero : <{ iszero 0 }> = IsZero (Num 0).
+Proof. reflexivity. Qed.
+
+Example parse_if :
+  <{ if iszero 0 then 1 else true + 2 }>
+  = If (IsZero (Num 0)) (Num 1) (Plus (Boolean true) (Num 2)).
+Proof. reflexivity. Qed.
+
+(**
+The real payoff is READABILITY of the recursive generators.  Here are
+[sumGen] and [factGen] from Section 7, now written the way the chapter
+states them on paper.
+ *)
+
+Example sumGen_concrete :
+  <{ lambda "g" in lambda "z" in
+       if iszero "z" then "z" else "z" + "g" ("z" - 1) }> = sumGen.
+Proof. reflexivity. Qed.
+
+Example factGen_concrete :
+  <{ lambda "g" in lambda "z" in
+       if iszero "z" then 1 else "z" * "g" ("z" - 1) }> = factGen.
+Proof. reflexivity. Qed.
+
+(**
+Because the fixpoint combinators [Yc]/[Zc] and the generators are
+ordinary FBAEC terms, they are just names inside the brackets, applied
+by juxtaposition.  The productive-recursion runs from Section 7 read as
+plainly as [Z sumGen 5].
+ *)
+
+Example sum_Z_concrete : eval <{ Zc sumGen 5 }> = Some (NumV 15).
+Proof. reflexivity. Qed.
+
+Example fact_Z_concrete : eval <{ Zc factGen 5 }> = Some (NumV 120).
+Proof. reflexivity. Qed.
+
+Example fact_Y_lazy_concrete : evalLazy <{ Yc factGen 5 }> = Some (LNumV 120).
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -393,6 +488,9 @@ In this lecture we:
   4. Ran PRODUCTIVE recursion to real answers: summation (0..5 = 15)
      and factorial (5! = 120), with Z under strict [evalM] and Y under
      lazy [evalL], while strict Y diverges.
+  5. Added CONCRETE SYNTAX (its own parser, since FBAEC is a new type):
+     Func's grammar plus [*], [true]/[false], [iszero e], and
+     [if c then t else f], so [sumGen]/[factGen] read as on paper.
 
 The catch: [omega] and [Y] show the untyped language is still Turing
 powerful, so [evalM] is inescapably PARTIAL (the fuel can run out).

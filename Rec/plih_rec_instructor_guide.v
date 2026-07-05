@@ -80,6 +80,14 @@ Part 2 (ex7-ex8) - value and branch laws; [ex8] needs a [destruct] on
   the fuel because the condition needs a step of its own.
 Part 3 (ex9-ex10) - fuel monotonicity (cite [evalM_mono], keep fuel a
   variable) and determinism.
+Part 4 (ex11-ex14) - concrete syntax (Section 8).  FBAEC gets its OWN
+  parser because it is a new type; it is Func's grammar plus [*],
+  [true]/[false], [iszero e], and [if c then t else f].  All
+  [reflexivity]: parsing [if]/[iszero], evaluating through the notation,
+  and (the highlight) reproducing [sumGen] and running [Zc factGen 5]
+  concretely - the recursive generators finally read as on paper.
+  Common mistake: application binds TIGHTER than [*]/[+], so [g z - 1]
+  is [(g z) - 1]; write [g (z - 1)] as in the generators.
 
 Grade by building plih_rec_exercises.v with the [Admitted]s replaced.
  *)
