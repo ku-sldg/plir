@@ -134,3 +134,35 @@ Proof. Admitted.
 Example challenge2_twice_eval :
   eval (App (App twice inc) (Num 5)) = Some (NumV 7).
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+The lecture added two notations (Section 8): types between [<[ ... ]>]
+([Nat], [Bool], and the right-associative arrow [->]), and terms
+between [<{ ... }>] with the ascribed lambda [lambda ID : T in body].
+We open the scope to use them here.
+ *)
+
+Open Scope tfun_scope.
+
+(* ★ the function arrow is right-associative. *)
+Example ex13_parse_ty :
+  <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. Admitted.
+
+(* ★ a typed function value parses to [Lambda] with its ascribed type. *)
+Example ex14_parse_lambda :
+  <{ lambda "x" : Nat in "x" + 1 }> = Lambda "x" TNum (Plus (Id "x") (Num 1)).
+Proof. Admitted.
+
+(* ★★ the checker reads the concrete term and predicts its type. *)
+Example ex15_typecheck_concrete :
+  typecheck <{ lambda "f" : Nat -> Nat in "f" 0 }>
+  = Some <[ (Nat -> Nat) -> Nat ]>.
+Proof. Admitted.
+
+(* ★★ a well-typed application evaluates. *)
+Example ex16_eval_concrete :
+  eval <{ (lambda "x" : Nat in "x" * 2) 4 }> = Some (NumV 8).
+Proof. Admitted.

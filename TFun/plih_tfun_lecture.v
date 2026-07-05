@@ -461,6 +461,121 @@ Proof.
   injection H as H; subst v. reflexivity.
 Qed.
 
+(** * SECTION 8: CONCRETE SYNTAX - TERMS AND TYPES *)
+
+(**
+Typing adds one thing to the surface syntax: a type ASCRIPTION on the
+lambda parameter, classically written [v : T].  This is the ONLY place
+a type appears in a term - [Lambda] is the only constructor carrying a
+[Ty] (a [Bind]'s type is inferred, not written), so [v : T] is needed
+exactly there.
+
+To support it we build TWO notations: a small grammar for TYPES, and
+the FBAEC term grammar from Rec with [lambda ID in body] replaced by
+[lambda ID : T in body].
+ *)
+
+Coercion Num : nat >-> TFBAEC.
+Coercion Id  : string >-> TFBAEC.
+
+(**
+THE TYPE GRAMMAR.  Types are written between [<[ ... ]>]: [Nat] and
+[Bool] are the base types, and [->] is the function arrow,
+RIGHT-associative (so [Nat -> Nat -> Nat] is [Nat -> (Nat -> Nat)], a
+function returning a function), matching the usual convention.
+ *)
+
+Declare Custom Entry ty.
+Declare Scope tfun_scope.
+Delimit Scope tfun_scope with tfun.
+
+Notation "<[ t ]>" := t (t custom ty at level 50) : tfun_scope.
+Notation "( t )" := t (in custom ty, t at level 50) : tfun_scope.
+Notation "'Nat'"  := TNum  (in custom ty at level 0) : tfun_scope.
+Notation "'Bool'" := TBool (in custom ty at level 0) : tfun_scope.
+Notation "d -> r" := (TArr d r) (in custom ty at level 50, right associativity) : tfun_scope.
+
+(**
+THE TERM GRAMMAR.  Exactly Rec's FBAEC grammar - numerals/identifiers
+via coercion, [*], [+], [-], [iszero], [true]/[false], [if], [bind], and
+JUXTAPOSITION application - with the one change that a function value
+now carries its parameter type: [lambda ID : T in body].
+ *)
+
+Declare Custom Entry tfbaec.
+Notation "<{ e }>" := e (e custom tfbaec at level 99) : tfun_scope.
+Notation "( x )" := x (in custom tfbaec, x at level 99) : tfun_scope.
+Notation "x" := x (in custom tfbaec at level 0, x constr at level 0) : tfun_scope.
+
+Notation "f x" := (App f x) (in custom tfbaec at level 1, left associativity) : tfun_scope.
+Notation "'iszero' x" := (IsZero x) (in custom tfbaec at level 75, right associativity) : tfun_scope.
+Notation "x * y" := (Mult x y)  (in custom tfbaec at level 40, left associativity) : tfun_scope.
+Notation "x + y" := (Plus x y)  (in custom tfbaec at level 50, left associativity) : tfun_scope.
+Notation "x - y" := (Minus x y) (in custom tfbaec at level 50, left associativity) : tfun_scope.
+Notation "'true'"  := (Boolean true)  (in custom tfbaec at level 0) : tfun_scope.
+Notation "'false'" := (Boolean false) (in custom tfbaec at level 0) : tfun_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom tfbaec at level 89, c custom tfbaec at level 99,
+   t custom tfbaec at level 99, f custom tfbaec at level 99) : tfun_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom tfbaec at level 89, v constr at level 0,
+   e1 custom tfbaec at level 99, e2 custom tfbaec at level 99) : tfun_scope.
+Notation "'lambda' v ':' T 'in' e" := (Lambda v T e)
+  (in custom tfbaec at level 90, v constr at level 0,
+   T custom ty at level 50, e custom tfbaec at level 99) : tfun_scope.
+
+Open Scope tfun_scope.
+
+(**
+Types parse as expected, including right-associative arrows.
+ *)
+
+Example parse_ty_base : <[ Nat ]> = TNum.
+Proof. reflexivity. Qed.
+
+Example parse_ty_arrow : <[ Nat -> Nat ]> = TArr TNum TNum.
+Proof. reflexivity. Qed.
+
+Example parse_ty_right_assoc : <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. reflexivity. Qed.
+
+Example parse_ty_higher : <[ (Nat -> Nat) -> Bool ]> = TArr (TArr TNum TNum) TBool.
+Proof. reflexivity. Qed.
+
+(**
+And terms, with the type ascription on the parameter.  The Section 6
+definitions, written concretely.
+ *)
+
+Example inc_concrete : <{ lambda "x" : Nat in "x" + 1 }> = inc.
+Proof. reflexivity. Qed.
+
+Example higher_order_concrete :
+  <{ lambda "f" : Nat -> Nat in "f" 0 }>
+  = Lambda "f" (TArr TNum TNum) (App (Id "f") (Num 0)).
+Proof. reflexivity. Qed.
+
+(**
+The type checker and the interpreter both read the same concrete terms;
+a well-typed program has the predicted type and runs.
+ *)
+
+Example typecheck_concrete :
+  typecheck <{ lambda "x" : Nat in "x" + 1 }> = Some <[ Nat -> Nat ]>.
+Proof. reflexivity. Qed.
+
+Example typecheck_app_concrete :
+  typecheck <{ (lambda "x" : Nat in "x" + 1) 4 }> = Some <[ Nat ]>.
+Proof. reflexivity. Qed.
+
+Example eval_concrete :
+  eval <{ (lambda "x" : Nat in "x" + 1) 4 }> = Some (NumV 5).
+Proof. reflexivity. Qed.
+
+(* And the classic stuck term is still rejected, concretely. *)
+Example ill_typed_concrete : typecheck <{ true + 1 }> = None.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -477,6 +592,9 @@ In this lecture we:
   5. Stated TYPE SOUNDNESS and witnessed it: good programs run to a
      value of the predicted type; bad programs never type-check.  We
      proved the canonical-forms slices for the base types.
+  6. Added CONCRETE SYNTAX in two parts: a type grammar [<[ Nat -> Bool ]>]
+     and the term grammar with the classical ascription
+     [lambda ID : T in body] - the one place a type is written.
 
 The catch: typing is now so strict that RECURSION is gone - the Y and Z
 combinators relied on self-application, which no longer type-checks.

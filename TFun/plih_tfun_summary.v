@@ -86,6 +86,9 @@ checker.
   [evalM_mono]        -- fuel monotonicity (Section 5)
   [inc], [selfApp]    -- sample terms; [selfApp] is the rejected one
   [iszero_yields_bool], [plus_yields_num] -- canonical-forms slices (Sec 7)
+  concrete syntax     -- two notations (Section 8): types [<[ Nat -> Bool ]>]
+    and terms [<{ ... }>] with the ascribed lambda [lambda ID : T in body],
+    the one place a type is written (exercises 13-16)
  *)
 
 (** * WHERE THIS GOES NEXT *)

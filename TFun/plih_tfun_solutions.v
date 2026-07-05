@@ -102,3 +102,28 @@ Proof. reflexivity. Qed.
 Example challenge2_twice_eval :
   eval (App (App twice inc) (Num 5)) = Some (NumV 7).
 Proof. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope tfun_scope.
+
+(* ex13: the arrow is right-associative. *)
+Example ex13_parse_ty :
+  <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. reflexivity. Qed.
+
+(* ex14: [lambda ID : T in body] is [Lambda] with its ascribed type. *)
+Example ex14_parse_lambda :
+  <{ lambda "x" : Nat in "x" + 1 }> = Lambda "x" TNum (Plus (Id "x") (Num 1)).
+Proof. reflexivity. Qed.
+
+(* ex15: the checker consumes the concrete term. *)
+Example ex15_typecheck_concrete :
+  typecheck <{ lambda "f" : Nat -> Nat in "f" 0 }>
+  = Some <[ (Nat -> Nat) -> Nat ]>.
+Proof. reflexivity. Qed.
+
+(* ex16: [eval] consumes the same tree the notation elaborates to. *)
+Example ex16_eval_concrete :
+  eval <{ (lambda "x" : Nat in "x" * 2) 4 }> = Some (NumV 8).
+Proof. reflexivity. Qed.

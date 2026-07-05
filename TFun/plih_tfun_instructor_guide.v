@@ -92,6 +92,15 @@ Part 3 (ex9-ex12) - metatheory: [Ty_eqb] soundness (cite [Ty_eqb_eq]),
   determinism.
 Challenges - [twice]: its function type, and soundness in miniature
   ([twice inc 5] type-checks at [TNum] and evaluates to [NumV 7]).
+Part 4 (ex13-ex16) - concrete syntax (Section 8).  TWO notations: types
+  between [<[ ... ]>] (base [Nat]/[Bool] and the RIGHT-associative arrow
+  [->]) and terms between [<{ ... }>] with the ascribed lambda
+  [lambda ID : T in body].  Emphasize that [v : T] is the ONLY type
+  ascription in the term language, because [Lambda] is the only
+  constructor carrying a [Ty].  All [reflexivity].
+  Common mistakes: writing the type outside its brackets (types live in
+  [<[ ]>], not [<{ }>]); and reading [Nat -> Nat -> Nat] left-associated
+  (the arrow is RIGHT-associative: [Nat -> (Nat -> Nat)]).
 
 Grade by building plih_tfun_exercises.v with the [Admitted]s replaced.
  *)
