@@ -76,3 +76,20 @@ Proof. reflexivity. Qed.
 Example ex11_three_channels : forall (env : Env RVal) (s s' : Store),
   runRSE (x <- askRSE ;; _ <- putRSE s' ;; retRSE x) env s = inr (env, s').
 Proof. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope rsemon_scope.
+
+Example ex12_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. reflexivity. Qed.
+
+Example ex13_roundtrip :
+  evalRSErr <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = inr (NumV 6, [NumV 6]).
+Proof. reflexivity. Qed.
+
+Example ex14_descriptive_error :
+  evalRSErr <{ !"x" }> = inl "unbound identifier".
+Proof. reflexivity. Qed.

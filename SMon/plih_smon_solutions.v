@@ -71,3 +71,22 @@ Proof. reflexivity. Qed.
 Example ex10_put_get : forall (s0 s' : Store),
   runState (bindS (putS s') (fun _ => getS)) s0 = Some (s', s').
 Proof. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope smon_scope.
+
+Example ex11_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. reflexivity. Qed.
+
+Example ex12_roundtrip :
+  evalStore <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = Some (NumV 6, [NumV 6]).
+Proof. reflexivity. Qed.
+
+Example ex13_counter :
+  evalStore <{ bind "c" = new 0 in
+                 "c" := !"c" + 1 ; "c" := !"c" + 1 ; !"c" }>
+  = Some (NumV 2, [NumV 2]).
+Proof. reflexivity. Qed.

@@ -71,6 +71,12 @@ Part 2 (ex4-ex5): use [typeofR_agrees]/[typecheckR_agrees] to relate the
   monadic and direct checkers.
 Part 3 (ex6-ex8): small Reader laws - left identity (reduction), and the
   defining behaviors of [askR] and [localR].
+Part 4 (ex9-ex11): concrete syntax (Section 6).  TRec's two notations -
+  types [<[ ... ]>] (right-associative [->]) and terms [<{ ... }>] with
+  the ascribed lambda [lambda ID : T in body] and prefix [fix] - read
+  through the MONADIC checker [typecheckR].  All [reflexivity].  Common
+  mistakes: reading [->] as left-associative, and forgetting [fix] wants
+  its whole generator in parens.
 
 Grade by building plih_rmon_exercises.v with the [Admitted]s replaced.
  *)

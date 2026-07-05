@@ -89,6 +89,11 @@ Part 2 (ex5-ex7) - agreement in action: cite [evalReaderState_agrees] /
   [evalRS_agrees], and transport a result with [rewrite <- ...].
 Part 3 (ex8-ex10) - left identity, [askRS] purity, and put-then-get in
   the combined monad; all [reflexivity].
+Part 4 (ex11-ex13) - concrete syntax (Section 7): the State chapter's
+  FBAES parser, read through the combined-monad [evalReaderState].  All
+  [reflexivity].  Same precedence reminders as State: [!] tighter than
+  [+], [;] loosest and right-associative.  ex13 exercises static scoping
+  and state together in the concrete syntax.
 
 Grade by building plih_rsmon_exercises.v with the [Admitted]s replaced.
  *)

@@ -89,6 +89,12 @@ Part 2 (ex6-ex8) - refinement in action: cite [evalRSErr_refines] /
   ([rewrite <- ...], then the hypothesis).
 Part 3 (ex9-ex11) - left identity, Either short-circuit, and the
   three-channel independence fact; all [reflexivity].
+Part 4 (ex12-ex14) - concrete syntax (Section 7): the State chapter's
+  FBAES parser, read through [evalRSErr].  All [reflexivity].  ex13 is a
+  success on [inr]; ex14 shows a concrete stuck program landing on [inl]
+  with a descriptive message - the chapter's payoff in the surface
+  syntax.  Same precedence reminders: [!] tighter than [+], [;] loosest
+  and right-associative.
 
 Grade by building plih_rsemon_exercises.v with the [Admitted]s replaced.
  *)

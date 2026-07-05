@@ -100,3 +100,32 @@ Proof. Admitted.
 Example ex10_put_get : forall (s0 s' : Store),
   runState (bindS (putS s') (fun _ => getS)) s0 = Some (s', s').
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+[FBAES] gets the same notation parser as the State chapter: Rec's
+grammar plus [new e], [! e], [l := e], [a ; b].  Read the concrete
+programs through the MONADIC interpreter [evalStore].  Recall [!] binds
+tighter than [+], and [;] is loosest and right-associative.
+ *)
+
+Open Scope smon_scope.
+
+(* ★ dereference binds tighter than [+]. *)
+Example ex11_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. Admitted.
+
+(* ★★ the concrete cell round-trip runs under the monadic interpreter. *)
+Example ex12_roundtrip :
+  evalStore <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = Some (NumV 6, [NumV 6]).
+Proof. Admitted.
+
+(* ★★ a concrete counter under [evalStore]: bump the same cell twice. *)
+Example ex13_counter :
+  evalStore <{ bind "c" = new 0 in
+                 "c" := !"c" + 1 ; "c" := !"c" + 1 ; !"c" }>
+  = Some (NumV 2, [NumV 2]).
+Proof. Admitted.

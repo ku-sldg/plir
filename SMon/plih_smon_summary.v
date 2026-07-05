@@ -85,6 +85,9 @@ NEW HERE:
   [evalS_agrees]      -- HEADLINE: monadic = explicit (Section 5)
   [evalStore_agrees]  -- the same, lifted to the top-level wrappers
   [left_id_S], [get_put_S] -- monad laws holding definitionally
+  concrete syntax     -- the State chapter's FBAES notation parser
+    ([new e]/[! e]/[l := e]/[a ; b]), read via [evalStore] (Section 7,
+    exercises 11-13)
  *)
 
 (** * WHERE THIS GOES NEXT *)

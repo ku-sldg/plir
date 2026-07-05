@@ -515,6 +515,67 @@ Lemma channels_independent : forall (env : Env RVal) (s : Store),
   = inr ((env, s), s).
 Proof. reflexivity. Qed.
 
+(** * SECTION 7: CONCRETE SYNTAX *)
+
+(**
+[FBAES] is again the State chapter's language, so it gets the SAME
+notation parser: Rec's FBAEC grammar plus [new e], [! e], [l := e],
+[a ; b].  Read through [evalRSErr], a concrete success lands on the
+[inr] side as before - and a stuck concrete program now lands on [inl]
+with a DESCRIPTIVE message, the whole point of this chapter.
+ *)
+
+Coercion Num : nat >-> FBAES.
+Coercion Id  : string >-> FBAES.
+
+Declare Custom Entry fbaes.
+Declare Scope rsemon_scope.
+Delimit Scope rsemon_scope with rsemon.
+
+Notation "<{ e }>" := e (e custom fbaes at level 99) : rsemon_scope.
+Notation "( x )" := x (in custom fbaes, x at level 99) : rsemon_scope.
+Notation "x" := x (in custom fbaes at level 0, x constr at level 0) : rsemon_scope.
+
+Notation "f x" := (App f x) (in custom fbaes at level 1, left associativity) : rsemon_scope.
+Notation "'!' e" := (Deref e) (in custom fbaes at level 1, e custom fbaes at level 0) : rsemon_scope.
+Notation "'new' e" := (New e) (in custom fbaes at level 75, right associativity) : rsemon_scope.
+Notation "'iszero' x" := (IsZero x) (in custom fbaes at level 75, right associativity) : rsemon_scope.
+Notation "x * y" := (Mult x y)  (in custom fbaes at level 40, left associativity) : rsemon_scope.
+Notation "x + y" := (Plus x y)  (in custom fbaes at level 50, left associativity) : rsemon_scope.
+Notation "x - y" := (Minus x y) (in custom fbaes at level 50, left associativity) : rsemon_scope.
+Notation "'true'"  := (Boolean true)  (in custom fbaes at level 0) : rsemon_scope.
+Notation "'false'" := (Boolean false) (in custom fbaes at level 0) : rsemon_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom fbaes at level 89, c custom fbaes at level 99,
+   t custom fbaes at level 99, f custom fbaes at level 99) : rsemon_scope.
+Notation "'lambda' v 'in' e" := (Lambda v e)
+  (in custom fbaes at level 90, v constr at level 0, e custom fbaes at level 99) : rsemon_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom fbaes at level 89, v constr at level 0,
+   e1 custom fbaes at level 99, e2 custom fbaes at level 99) : rsemon_scope.
+Notation "l ':=' e" := (Assign l e)
+  (in custom fbaes at level 85, e custom fbaes at level 84, no associativity) : rsemon_scope.
+Notation "a ';' b" := (Seq a b)
+  (in custom fbaes at level 90, right associativity) : rsemon_scope.
+
+Open Scope rsemon_scope.
+
+(* A concrete success: the value and store on the [inr] side. *)
+Example evRSE_roundtrip_concrete :
+  evalRSErr <{ bind "r" = new 0 in "r" := 7 ; !"r" }> = inr (NumV 7, [NumV 7]).
+Proof. reflexivity. Qed.
+
+(* A concrete stuck program: a descriptive message on the [inl] side. *)
+Example evRSE_type_error_concrete :
+  evalRSErr <{ true + 1 }> = inl "plus: operands must be numbers".
+Proof. reflexivity. Qed.
+
+(* And [forget] collapses the concrete success back to the explicit [eval]. *)
+Example evRSE_forget_concrete :
+  forget (evalRSErr <{ bind "r" = new 0 in "r" := 7 ; !"r" }>)
+  = eval  <{ bind "r" = new 0 in "r" := 7 ; !"r" }>.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -532,6 +593,10 @@ In this lecture we:
   4. Proved REFINEMENT [forget (evalRSE fuel e env s) = evalM fuel env s e]
      (corollary [evalRSErr_refines] for the wrappers): the messages add
      information without changing behavior.
+  5. Added CONCRETE SYNTAX (Section 7): the State chapter's FBAES parser
+     ([new e]/[! e]/[l := e]/[a ; b]), read through [evalRSErr] - a
+     success on [inr], a stuck program on [inl] with a descriptive
+     message.
 
 This is the capstone of the monad arc.  Reader (RMon) hid a context,
 Either (EMon) added messages, State (SMon) hid a store, RSMon combined

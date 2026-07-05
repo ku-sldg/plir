@@ -77,3 +77,24 @@ Proof. reflexivity. Qed.
 Example ex10_put_get : forall (env : Env RVal) (s0 s' : Store),
   runRS (bindRS (putRS s') (fun _ => getRS)) env s0 = Some (s', s').
 Proof. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope rsmon_scope.
+
+Example ex11_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. reflexivity. Qed.
+
+Example ex12_roundtrip :
+  evalReaderState <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = Some (NumV 6, [NumV 6]).
+Proof. reflexivity. Qed.
+
+Example ex13_scope_and_state :
+  evalReaderState
+    <{ bind "r" = new 1 in
+         bind "f" = (lambda "n" in "r" := !"r" + "n") in
+           "f" 10 ; !"r" }>
+  = Some (NumV 11, [NumV 11]).
+Proof. reflexivity. Qed.

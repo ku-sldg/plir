@@ -61,6 +61,9 @@ is unchanged; only the CHECKER is restructured.)
   [typeofR]/[typecheckR]   -- the monadic checker
   [typeofR_agrees]         -- typeofR e ctx = typeof ctx e  (headline)
   [typecheckR_agrees]      -- typecheckR e = typecheck e
+  concrete syntax          -- TRec's type grammar [<[ Nat -> Bool ]>] and
+    term grammar [<{ ... }>] (ascribed lambda + prefix [fix]), read via
+    [typecheckR] (Section 6, exercises 9-11)
  *)
 
 (** * WHERE THIS GOES NEXT *)

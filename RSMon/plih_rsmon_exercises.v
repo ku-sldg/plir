@@ -107,3 +107,35 @@ Proof. Admitted.
 Example ex10_put_get : forall (env : Env RVal) (s0 s' : Store),
   runRS (bindRS (putRS s') (fun _ => getRS)) env s0 = Some (s', s').
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+[FBAES] gets the State chapter's notation parser (Rec's grammar plus
+[new e], [! e], [l := e], [a ; b]).  Read the concrete programs through
+the combined-monad interpreter [evalReaderState].  Recall [!] binds
+tighter than [+], and [;] is loosest and right-associative.
+ *)
+
+Open Scope rsmon_scope.
+
+(* ★ dereference binds tighter than [+]. *)
+Example ex11_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. Admitted.
+
+(* ★★ the concrete round-trip runs under the combined-monad interpreter. *)
+Example ex12_roundtrip :
+  evalReaderState <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = Some (NumV 6, [NumV 6]).
+Proof. Admitted.
+
+(* ★★ static scoping and state together, concretely: the closure captures
+   cell [r], and its write is visible afterward. *)
+Example ex13_scope_and_state :
+  evalReaderState
+    <{ bind "r" = new 1 in
+         bind "f" = (lambda "n" in "r" := !"r" + "n") in
+           "f" 10 ; !"r" }>
+  = Some (NumV 11, [NumV 11]).
+Proof. Admitted.

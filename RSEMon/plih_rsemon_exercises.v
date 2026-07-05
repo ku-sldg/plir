@@ -105,3 +105,31 @@ Proof. Admitted.
 Example ex11_three_channels : forall (env : Env RVal) (s s' : Store),
   runRSE (x <- askRSE ;; _ <- putRSE s' ;; retRSE x) env s = inr (env, s').
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+[FBAES] gets the State chapter's notation parser (Rec's grammar plus
+[new e], [! e], [l := e], [a ; b]).  Read the concrete programs through
+[evalRSErr]: a success lands on [inr], a stuck program on [inl] with a
+descriptive message.  Recall [!] binds tighter than [+], and [;] is
+loosest and right-associative.
+ *)
+
+Open Scope rsemon_scope.
+
+(* ★ dereference binds tighter than [+]. *)
+Example ex12_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. Admitted.
+
+(* ★★ a concrete cell round-trip succeeds on the [inr] side. *)
+Example ex13_roundtrip :
+  evalRSErr <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = inr (NumV 6, [NumV 6]).
+Proof. Admitted.
+
+(* ★★ a concrete stuck program lands on [inl] with a descriptive message. *)
+Example ex14_descriptive_error :
+  evalRSErr <{ !"x" }> = inl "unbound identifier".
+Proof. Admitted.

@@ -89,6 +89,11 @@ Part 2 (ex4-ex6) - agreement in action: cite [evalStore_agrees] /
   [evalS_agrees], and transport a result with [rewrite <- ...].
 Part 3 (ex7-ex10) - the monad laws (left identity, fail short-circuit,
   put-put, put-then-get), all [reflexivity].
+Part 4 (ex11-ex13) - concrete syntax (Section 7): the State chapter's
+  FBAES parser reused here, read through the MONADIC [evalStore].  All
+  [reflexivity].  Same two precedence reminders as State: [!] binds
+  tighter than [+], and [;] is loosest and right-associative.  (The
+  term-level [;] is unrelated to the monadic [;;] on [State] values.)
 
 Grade by building plih_smon_exercises.v with the [Admitted]s replaced.
  *)

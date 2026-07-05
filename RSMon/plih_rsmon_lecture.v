@@ -467,6 +467,66 @@ Lemma local_scoped : forall (env : Env RVal) (s : Store) i (v : RVal),
   runRS (localRS (extend i v) askRS) env s = Some (extend i v env, s).
 Proof. reflexivity. Qed.
 
+(** * SECTION 7: CONCRETE SYNTAX *)
+
+(**
+[FBAES] is unchanged from the State chapter, so it gets the SAME notation
+parser: Rec's FBAEC grammar plus [new e], [! e], [l := e], [a ; b].
+Read through the combined-monad interpreter [evalReaderState], the
+concrete programs give the same answers - both the environment and the
+store are threaded by the monad now, but the surface is identical.
+ *)
+
+Coercion Num : nat >-> FBAES.
+Coercion Id  : string >-> FBAES.
+
+Declare Custom Entry fbaes.
+Declare Scope rsmon_scope.
+Delimit Scope rsmon_scope with rsmon.
+
+Notation "<{ e }>" := e (e custom fbaes at level 99) : rsmon_scope.
+Notation "( x )" := x (in custom fbaes, x at level 99) : rsmon_scope.
+Notation "x" := x (in custom fbaes at level 0, x constr at level 0) : rsmon_scope.
+
+Notation "f x" := (App f x) (in custom fbaes at level 1, left associativity) : rsmon_scope.
+Notation "'!' e" := (Deref e) (in custom fbaes at level 1, e custom fbaes at level 0) : rsmon_scope.
+Notation "'new' e" := (New e) (in custom fbaes at level 75, right associativity) : rsmon_scope.
+Notation "'iszero' x" := (IsZero x) (in custom fbaes at level 75, right associativity) : rsmon_scope.
+Notation "x * y" := (Mult x y)  (in custom fbaes at level 40, left associativity) : rsmon_scope.
+Notation "x + y" := (Plus x y)  (in custom fbaes at level 50, left associativity) : rsmon_scope.
+Notation "x - y" := (Minus x y) (in custom fbaes at level 50, left associativity) : rsmon_scope.
+Notation "'true'"  := (Boolean true)  (in custom fbaes at level 0) : rsmon_scope.
+Notation "'false'" := (Boolean false) (in custom fbaes at level 0) : rsmon_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom fbaes at level 89, c custom fbaes at level 99,
+   t custom fbaes at level 99, f custom fbaes at level 99) : rsmon_scope.
+Notation "'lambda' v 'in' e" := (Lambda v e)
+  (in custom fbaes at level 90, v constr at level 0, e custom fbaes at level 99) : rsmon_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom fbaes at level 89, v constr at level 0,
+   e1 custom fbaes at level 99, e2 custom fbaes at level 99) : rsmon_scope.
+Notation "l ':=' e" := (Assign l e)
+  (in custom fbaes at level 85, e custom fbaes at level 84, no associativity) : rsmon_scope.
+Notation "a ';' b" := (Seq a b)
+  (in custom fbaes at level 90, right associativity) : rsmon_scope.
+
+Open Scope rsmon_scope.
+
+(* The Section 4 programs, concretely, through the combined-monad interpreter. *)
+Example evRS_roundtrip_concrete :
+  evalReaderState <{ bind "r" = new 0 in "r" := 7 ; !"r" }> = Some (NumV 7, [NumV 7]).
+Proof. reflexivity. Qed.
+
+(* Static scoping AND mutable state, concretely: the closure captures cell
+   [r] from its definition environment, and its write persists. *)
+Example evRS_scope_and_state_concrete :
+  evalReaderState
+    <{ bind "r" = new 1 in
+         bind "f" = (lambda "n" in "r" := !"r" + "n") in
+           "f" 10 ; !"r" }>
+  = Some (NumV 11, [NumV 11]).
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -483,6 +543,9 @@ In this lecture we:
   4. Proved AGREEMENT [evalRS fuel e env s = evalM fuel env s e] in a
      single induction (corollary [evalReaderState_agrees] for the
      wrappers), and checked the monad laws / effect-independence.
+  5. Added CONCRETE SYNTAX (Section 7): the State chapter's FBAES parser
+     ([new e]/[! e]/[l := e]/[a ; b]), read through the combined-monad
+     interpreter [evalReaderState].
 
 This is the culmination of the monad arc: RMon hid a context, SMon hid a
 store, and here BOTH are hidden at once by stacking their operations in

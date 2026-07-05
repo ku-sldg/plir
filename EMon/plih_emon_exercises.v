@@ -78,3 +78,30 @@ Proof. Admitted.
 (* ★ [askE] hands back the environment it is run in. *)
 Example ex8_ask : forall (E : Type) (e : E), runE askE e = inr e.
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+The typed language gets TRec's two notations: types between [<[ ... ]>]
+([Nat], [Bool], the right-associative [->]) and terms between
+[<{ ... }>] with the ascribed lambda [lambda ID : T in body] and the
+prefix [fix f].  Read the concrete terms through the MESSAGE-CARRYING
+checker [typecheckE]: success on [inr], a descriptive message on [inl].
+ *)
+
+Open Scope emon_scope.
+
+(* ★ the function arrow is right-associative. *)
+Example ex9_parse_ty :
+  <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. Admitted.
+
+(* ★★ a well-typed concrete program succeeds on the [inr] side. *)
+Example ex10_typecheck_ok :
+  typecheckE <{ (lambda "x" : Nat in "x" + 1) 4 }> = inr TNum.
+Proof. Admitted.
+
+(* ★★ a stuck concrete program lands on [inl] with a descriptive message. *)
+Example ex11_typecheck_msg :
+  typecheckE <{ if 1 then 2 else 3 }> = inl "if: condition must be a Boolean".
+Proof. Admitted.

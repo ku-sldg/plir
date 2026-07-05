@@ -69,6 +69,11 @@ Part 1 (ex1-ex3): run [typecheckE] - a success and two explanatory
 Part 2 (ex4-ex5): use [typeofE_refines]/[typecheckE_refines].
 Part 3 (ex6-ex8): monad laws - left identity, error short-circuit, and
   [askE]'s defining behavior.
+Part 4 (ex9-ex11): concrete syntax (Section 6).  TRec's two notations -
+  types [<[ ... ]>] (right-associative [->]) and terms [<{ ... }>] with
+  the ascribed lambda and prefix [fix] - read through the
+  MESSAGE-CARRYING [typecheckE].  ex10 succeeds on [inr]; ex11 shows a
+  concrete stuck program on [inl] with its message.  All [reflexivity].
 
 Grade by building plih_emon_exercises.v with the [Admitted]s replaced.
  *)

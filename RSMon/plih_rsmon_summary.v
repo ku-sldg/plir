@@ -86,6 +86,9 @@ NEW HERE:
   [evalRS_agrees]                -- HEADLINE: monadic = explicit (S5)
   [evalReaderState_agrees]       -- lifted to the top-level wrappers
   [left_id_RS], [ask_get_comm], [local_scoped] -- laws / independence (S6)
+  concrete syntax     -- the State chapter's FBAES notation parser
+    ([new e]/[! e]/[l := e]/[a ; b]), read via [evalReaderState]
+    (Section 7, exercises 11-13)
  *)
 
 (** * WHERE THIS GOES NEXT *)

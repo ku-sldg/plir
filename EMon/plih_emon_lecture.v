@@ -308,6 +308,75 @@ Proof. reflexivity. Qed.
 Example em_forget_bad : forget (typecheckE (Id "y")) = None.
 Proof. reflexivity. Qed.
 
+(** * SECTION 6: CONCRETE SYNTAX *)
+
+(**
+The typed language is the same as TRec's, so it gets the SAME two
+notations: a type grammar between [<[ ... ]>] (base [Nat]/[Bool] and the
+right-associative arrow [->]) and the term grammar between [<{ ... }>]
+with the ascribed lambda [lambda ID : T in body] and the prefix
+[fix f].  Through the MESSAGE-CARRYING checker [typecheckE], a good
+concrete program yields [inr <type>], and a bad one yields [inl
+<message>].
+ *)
+
+Coercion Num : nat >-> TFBAEC.
+Coercion Id  : string >-> TFBAEC.
+
+Declare Custom Entry ty.
+Declare Scope emon_scope.
+Delimit Scope emon_scope with emon.
+
+Notation "<[ t ]>" := t (t custom ty at level 50) : emon_scope.
+Notation "( t )" := t (in custom ty, t at level 50) : emon_scope.
+Notation "'Nat'"  := TNum  (in custom ty at level 0) : emon_scope.
+Notation "'Bool'" := TBool (in custom ty at level 0) : emon_scope.
+Notation "d -> r" := (TArr d r) (in custom ty at level 50, right associativity) : emon_scope.
+
+Declare Custom Entry tfbaec.
+Notation "<{ e }>" := e (e custom tfbaec at level 99) : emon_scope.
+Notation "( x )" := x (in custom tfbaec, x at level 99) : emon_scope.
+Notation "x" := x (in custom tfbaec at level 0, x constr at level 0) : emon_scope.
+
+Notation "f x" := (App f x) (in custom tfbaec at level 1, left associativity) : emon_scope.
+Notation "'fix' f" := (Fix f) (in custom tfbaec at level 75, right associativity) : emon_scope.
+Notation "'iszero' x" := (IsZero x) (in custom tfbaec at level 75, right associativity) : emon_scope.
+Notation "x * y" := (Mult x y)  (in custom tfbaec at level 40, left associativity) : emon_scope.
+Notation "x + y" := (Plus x y)  (in custom tfbaec at level 50, left associativity) : emon_scope.
+Notation "x - y" := (Minus x y) (in custom tfbaec at level 50, left associativity) : emon_scope.
+Notation "'true'"  := (Boolean true)  (in custom tfbaec at level 0) : emon_scope.
+Notation "'false'" := (Boolean false) (in custom tfbaec at level 0) : emon_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom tfbaec at level 89, c custom tfbaec at level 99,
+   t custom tfbaec at level 99, f custom tfbaec at level 99) : emon_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom tfbaec at level 89, v constr at level 0,
+   e1 custom tfbaec at level 99, e2 custom tfbaec at level 99) : emon_scope.
+Notation "'lambda' v ':' T 'in' e" := (Lambda v T e)
+  (in custom tfbaec at level 90, v constr at level 0,
+   T custom ty at level 50, e custom tfbaec at level 99) : emon_scope.
+
+Open Scope emon_scope.
+
+(* A concrete success: the checker returns the type on the [inr] side. *)
+Example em_ok_concrete :
+  typecheckE <{ (lambda "x" : Nat in "x" + 1) 4 }> = inr TNum.
+Proof. reflexivity. Qed.
+
+(* A concrete rejection: a descriptive message on the [inl] side. *)
+Example em_msg_concrete :
+  typecheckE <{ true + 1 }> = inl "plus: operands must be numbers".
+Proof. reflexivity. Qed.
+
+(* [fix] still checks through the message-carrying checker. *)
+Example em_fix_concrete :
+  typecheckE <{ fix (lambda "g" : Nat -> Nat in
+                       lambda "n" : Nat in
+                         if iszero "n" then 1
+                         else "n" * ("g" ("n" - 1))) }>
+  = inr <[ Nat -> Nat ]>.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -321,6 +390,10 @@ In this lecture we:
   4. Proved REFINEMENT ([forget (typeofE e ctx) = typeof ctx e]): the
      message-carrying checker decides exactly the same programs; the
      messages are extra information, not a change of behavior.
+  5. Added CONCRETE SYNTAX (Section 6): TRec's type grammar
+     [<[ Nat -> Bool ]>] and term grammar [<{ ... }>] (ascribed lambda
+     and prefix [fix]), read through [typecheckE] - success on [inr], a
+     descriptive message on [inl].
 
 This completes the monadic-interpreter arc: the Reader monad removed the
 context plumbing, and the Either monad turned silent failure into

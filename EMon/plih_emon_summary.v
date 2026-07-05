@@ -58,6 +58,9 @@ not behavior - a REFINEMENT of the plain [option] checker.
   [forget]                 -- erase a message: [string + A] -> [option A]
   [typeofE_refines]        -- forget (typeofE e ctx) = typeof ctx e
   [typecheckE_refines]     -- forget (typecheckE e) = typecheck e
+  concrete syntax          -- TRec's type grammar [<[ Nat -> Bool ]>] and
+    term grammar [<{ ... }>] (ascribed lambda + prefix [fix]), read via
+    [typecheckE] - [inr] type / [inl] message (Section 6, exercises 9-11)
  *)
 
 (** * THE MONADIC ARC, COMPLETE *)

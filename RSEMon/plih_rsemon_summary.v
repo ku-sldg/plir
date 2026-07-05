@@ -86,6 +86,9 @@ NEW HERE:
   [evalRSE_refines]              -- HEADLINE: forget o monadic = explicit
   [evalRSErr_refines]            -- lifted to the top-level wrappers
   [left_id_RSE], [throw_short_circuits], [channels_independent] -- laws
+  concrete syntax     -- the State chapter's FBAES notation parser
+    ([new e]/[! e]/[l := e]/[a ; b]), read via [evalRSErr] - success on
+    [inr], stuck on [inl] with a message (Section 7, exercises 12-14)
  *)
 
 (** * WHERE THIS GOES NEXT *)

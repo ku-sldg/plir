@@ -443,6 +443,71 @@ extensionality - it needs to reduce a [match m s] whose scrutinee is
 abstract - so we omit it, as in the Reader/Either chapters.)
  *)
 
+(** * SECTION 7: CONCRETE SYNTAX *)
+
+(**
+[FBAES] is the same reference-cell language as the State chapter, so it
+gets the SAME notation parser: Rec's FBAEC grammar plus the four state
+forms [new e], [! e], [l := e], and [a ; b].  (The term-level [;]
+between [<{ ... }>] is unrelated to the monadic [;;] on [State] values.)
+Reading the concrete programs through the MONADIC interpreter
+[evalStore] gives the same answers as the explicit one - the surface
+never changed, only the interpreter's internals did.
+ *)
+
+Coercion Num : nat >-> FBAES.
+Coercion Id  : string >-> FBAES.
+
+Declare Custom Entry fbaes.
+Declare Scope smon_scope.
+Delimit Scope smon_scope with smon.
+
+Notation "<{ e }>" := e (e custom fbaes at level 99) : smon_scope.
+Notation "( x )" := x (in custom fbaes, x at level 99) : smon_scope.
+Notation "x" := x (in custom fbaes at level 0, x constr at level 0) : smon_scope.
+
+Notation "f x" := (App f x) (in custom fbaes at level 1, left associativity) : smon_scope.
+Notation "'!' e" := (Deref e) (in custom fbaes at level 1, e custom fbaes at level 0) : smon_scope.
+Notation "'new' e" := (New e) (in custom fbaes at level 75, right associativity) : smon_scope.
+Notation "'iszero' x" := (IsZero x) (in custom fbaes at level 75, right associativity) : smon_scope.
+Notation "x * y" := (Mult x y)  (in custom fbaes at level 40, left associativity) : smon_scope.
+Notation "x + y" := (Plus x y)  (in custom fbaes at level 50, left associativity) : smon_scope.
+Notation "x - y" := (Minus x y) (in custom fbaes at level 50, left associativity) : smon_scope.
+Notation "'true'"  := (Boolean true)  (in custom fbaes at level 0) : smon_scope.
+Notation "'false'" := (Boolean false) (in custom fbaes at level 0) : smon_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom fbaes at level 89, c custom fbaes at level 99,
+   t custom fbaes at level 99, f custom fbaes at level 99) : smon_scope.
+Notation "'lambda' v 'in' e" := (Lambda v e)
+  (in custom fbaes at level 90, v constr at level 0, e custom fbaes at level 99) : smon_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom fbaes at level 89, v constr at level 0,
+   e1 custom fbaes at level 99, e2 custom fbaes at level 99) : smon_scope.
+Notation "l ':=' e" := (Assign l e)
+  (in custom fbaes at level 85, e custom fbaes at level 84, no associativity) : smon_scope.
+Notation "a ';' b" := (Seq a b)
+  (in custom fbaes at level 90, right associativity) : smon_scope.
+
+Open Scope smon_scope.
+
+(* The Section 4 programs, concretely, through the monadic interpreter. *)
+Example evS_roundtrip_concrete :
+  evalStore <{ bind "r" = new 0 in "r" := 7 ; !"r" }> = Some (NumV 7, [NumV 7]).
+Proof. reflexivity. Qed.
+
+Example evS_aliasing_concrete :
+  evalStore <{ bind "r" = new 0 in
+                 bind "a" = "r" in "r" := 99 ; !"a" }>
+  = Some (NumV 99, [NumV 99]).
+Proof. reflexivity. Qed.
+
+(* And agreement means the concrete program runs identically under the
+   explicit reference interpreter. *)
+Example evS_matches_reference :
+  evalStore <{ bind "c" = new 0 in "c" := !"c" + 1 ; "c" := !"c" + 1 ; !"c" }>
+  = eval    <{ bind "c" = new 0 in "c" := !"c" + 1 ; "c" := !"c" + 1 ; !"c" }>.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -458,6 +523,9 @@ In this lecture we:
      [evalStore_agrees] lifts this to the top-level wrappers).
   5. Checked the monad laws that hold definitionally (left identity,
      get-after-put).
+  6. Added CONCRETE SYNTAX (Section 7): the same FBAES notation parser as
+     the State chapter ([new e]/[! e]/[l := e]/[a ; b]), read through the
+     monadic interpreter [evalStore].
 
 This closes the mutable-state arc: the State chapter showed WHAT
 mutation means (an explicitly threaded store); this chapter shows how to

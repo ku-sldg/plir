@@ -78,3 +78,35 @@ Proof. Admitted.
 Example ex8_local : forall (E A : Type) (g : E -> E) (m : Reader E A) (e : E),
   runR (localR g m) e = runR m (g e).
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+The typed language gets TRec's two notations: types between [<[ ... ]>]
+([Nat], [Bool], the right-associative [->]) and terms between
+[<{ ... }>] with the ascribed lambda [lambda ID : T in body] and the
+prefix [fix f].  Read the concrete terms through the MONADIC checker
+[typecheckR].
+ *)
+
+Open Scope rmon_scope.
+
+(* ★ the function arrow is right-associative. *)
+Example ex9_parse_ty :
+  <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. Admitted.
+
+(* ★★ the monadic checker reads the concrete term and predicts its type. *)
+Example ex10_typecheck_concrete :
+  typecheckR <{ lambda "f" : Nat -> Nat in "f" 0 }>
+  = Some <[ (Nat -> Nat) -> Nat ]>.
+Proof. Admitted.
+
+(* ★★ [fix] of the factorial generator checks at [Nat -> Nat]. *)
+Example ex11_typecheck_fix :
+  typecheckR <{ fix (lambda "g" : Nat -> Nat in
+                       lambda "n" : Nat in
+                         if iszero "n" then 1
+                         else "n" * ("g" ("n" - 1))) }>
+  = Some <[ Nat -> Nat ]>.
+Proof. Admitted.

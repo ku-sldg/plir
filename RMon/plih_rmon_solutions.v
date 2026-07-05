@@ -54,3 +54,24 @@ Proof. reflexivity. Qed.
 Example ex8_local : forall (E A : Type) (g : E -> E) (m : Reader E A) (e : E),
   runR (localR g m) e = runR m (g e).
 Proof. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope rmon_scope.
+
+Example ex9_parse_ty :
+  <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. reflexivity. Qed.
+
+Example ex10_typecheck_concrete :
+  typecheckR <{ lambda "f" : Nat -> Nat in "f" 0 }>
+  = Some <[ (Nat -> Nat) -> Nat ]>.
+Proof. reflexivity. Qed.
+
+Example ex11_typecheck_fix :
+  typecheckR <{ fix (lambda "g" : Nat -> Nat in
+                       lambda "n" : Nat in
+                         if iszero "n" then 1
+                         else "n" * ("g" ("n" - 1))) }>
+  = Some <[ Nat -> Nat ]>.
+Proof. reflexivity. Qed.

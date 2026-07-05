@@ -53,3 +53,19 @@ Proof. reflexivity. Qed.
 
 Example ex8_ask : forall (E : Type) (e : E), runE askE e = inr e.
 Proof. reflexivity. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope emon_scope.
+
+Example ex9_parse_ty :
+  <[ Nat -> Nat -> Nat ]> = TArr TNum (TArr TNum TNum).
+Proof. reflexivity. Qed.
+
+Example ex10_typecheck_ok :
+  typecheckE <{ (lambda "x" : Nat in "x" + 1) 4 }> = inr TNum.
+Proof. reflexivity. Qed.
+
+Example ex11_typecheck_msg :
+  typecheckE <{ if 1 then 2 else 3 }> = inl "if: condition must be a Boolean".
+Proof. reflexivity. Qed.
