@@ -84,6 +84,8 @@ NEW HERE:
   [ev_aliasing]  -- two names, one cell (Section 6)
   [Zc]/[incTo]/[counterProg] -- state meets recursion (Section 7)
   [update_at], [update_at_length], [nth_error_snoc] -- store plumbing
+  concrete syntax -- FBAES notation parser (Section 8): Rec's grammar
+    plus [new e], [! e], [l := e], [a ; b] (exercises 13-16)
  *)
 
 (** * WHERE THIS GOES NEXT *)

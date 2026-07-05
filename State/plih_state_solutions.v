@@ -92,3 +92,31 @@ Proof. intros n v xs ys H. exact (update_at_length n v xs ys H). Qed.
 Example ex12_fresh_read : forall (xs : Store) (v : RVal),
   nth_error (xs ++ [v])%list (length xs) = Some v.
 Proof. intros xs v. apply nth_error_snoc. Qed.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+Open Scope state_scope.
+
+(* ex13: [!] binds tighter than [+]. *)
+Example ex13_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. reflexivity. Qed.
+
+(* ex14: [;] is right-associative. *)
+Example ex14_seq_assoc :
+  <{ !"a" ; !"b" ; !"c" }>
+  = Seq (Deref (Id "a")) (Seq (Deref (Id "b")) (Deref (Id "c"))).
+Proof. reflexivity. Qed.
+
+(* ex15: the concrete round-trip evaluates. *)
+Example ex15_roundtrip :
+  eval <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = Some (NumV 6, [NumV 6]).
+Proof. reflexivity. Qed.
+
+(* ex16: bump the same cell twice, read it. *)
+Example ex16_counter :
+  eval <{ bind "c" = new 0 in
+            "c" := !"c" + 1 ; "c" := !"c" + 1 ; !"c" }>
+  = Some (NumV 2, [NumV 2]).
+Proof. reflexivity. Qed.

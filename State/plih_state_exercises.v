@@ -123,3 +123,39 @@ Proof. Admitted.
 Example ex12_fresh_read : forall (xs : Store) (v : RVal),
   nth_error (xs ++ [v])%list (length xs) = Some v.
 Proof. Admitted.
+
+(** * PART 4: CONCRETE SYNTAX *)
+
+(**
+The lecture added a notation parser (Section 8): Rec's FBAEC grammar
+plus [new e], [! e], [l := e], and [a ; b].  We open the scope to use
+them.  Recall [!] binds tighter than [+], and [;] is loosest and
+right-associative.
+ *)
+
+Open Scope state_scope.
+
+(* ★ dereference binds tighter than arithmetic: [! "r" + 1] is
+   [(! "r") + 1]. *)
+Example ex13_deref_prec :
+  <{ ! "r" + 1 }> = Plus (Deref (Id "r")) (Num 1).
+Proof. Admitted.
+
+(* ★ sequence is right-associative. *)
+Example ex14_seq_assoc :
+  <{ !"a" ; !"b" ; !"c" }>
+  = Seq (Deref (Id "a")) (Seq (Deref (Id "b")) (Deref (Id "c"))).
+Proof. Admitted.
+
+(* ★★ the concrete cell round-trip runs. *)
+Example ex15_roundtrip :
+  eval <{ bind "r" = new 5 in "r" := !"r" + 1 ; !"r" }>
+  = Some (NumV 6, [NumV 6]).
+Proof. Admitted.
+
+(* ★★ a concrete mutable counter: bump the same cell twice, read it. *)
+Example ex16_counter :
+  eval <{ bind "c" = new 0 in
+            "c" := !"c" + 1 ; "c" := !"c" + 1 ; !"c" }>
+  = Some (NumV 2, [NumV 2]).
+Proof. Admitted.

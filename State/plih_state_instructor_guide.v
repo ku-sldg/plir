@@ -96,6 +96,13 @@ Part 2 (ex6-ex8) - derived forms and value laws; [ex8] needs a [simpl]
 Part 3 (ex9-ex12) - fuel monotonicity (cite [evalM_mono], keep fuel a
   variable), determinism, and the two store lemmas [update_at_length]
   and [nth_error_snoc].
+Part 4 (ex13-ex16) - concrete syntax (Section 8).  The FBAES notation
+  parser: Rec's grammar plus [new e], [! e], [l := e], [a ; b].  All
+  [reflexivity].  Emphasize the two precedence facts students trip on:
+  [!] binds TIGHTER than [+] (so [! "r" + 1] is [(! "r") + 1]), and [;]
+  is the LOOSEST, RIGHT-associative operator (so [a ; b ; c] is
+  [a ; (b ; c)]).  Note that [x := e] and [! x] ARE the mutable-variable
+  operations from Section 6 - no separate sugar is needed.
 
 Grade by building plih_state_exercises.v with the [Admitted]s replaced.
  *)

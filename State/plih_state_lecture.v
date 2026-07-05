@@ -427,6 +427,100 @@ Example ev_counter :
   eval counterProg = Some (NumV 5, [NumV 5]).
 Proof. reflexivity. Qed.
 
+(** * SECTION 8: CONCRETE SYNTAX - A NOTATION PARSER *)
+
+(**
+FBAES is a new type, so - as in Rec - it gets its OWN notation parser:
+Rec's FBAEC grammar (numerals/identifiers via coercion, arithmetic,
+Booleans, [if], [lambda], [bind], juxtaposition application) plus FOUR
+state forms.  The state notations are chosen to read like ML/imperative
+code:
+
+  - [new e]   : allocate a cell ([New]);
+  - [! e]     : dereference/read ([Deref]) - binds TIGHTER than [+], so
+                [! "acc" + 1] is [(! "acc") + 1], not [! ("acc" + 1)];
+  - [l := e]  : assign ([Assign]); with an identifier on the left,
+                [x := e] is exactly the mutable-variable write [SetVar];
+  - [a ; b]   : sequence ([Seq]), the LOOSEST operator and
+                right-associative, so [a ; b ; c] is [a ; (b ; c)].
+ *)
+
+Coercion Num : nat >-> FBAES.
+Coercion Id  : string >-> FBAES.
+
+Declare Custom Entry fbaes.
+Declare Scope state_scope.
+Delimit Scope state_scope with state.
+
+Notation "<{ e }>" := e (e custom fbaes at level 99) : state_scope.
+Notation "( x )" := x (in custom fbaes, x at level 99) : state_scope.
+Notation "x" := x (in custom fbaes at level 0, x constr at level 0) : state_scope.
+
+Notation "f x" := (App f x) (in custom fbaes at level 1, left associativity) : state_scope.
+Notation "'!' e" := (Deref e) (in custom fbaes at level 1, e custom fbaes at level 0) : state_scope.
+Notation "'new' e" := (New e) (in custom fbaes at level 75, right associativity) : state_scope.
+Notation "'iszero' x" := (IsZero x) (in custom fbaes at level 75, right associativity) : state_scope.
+Notation "x * y" := (Mult x y)  (in custom fbaes at level 40, left associativity) : state_scope.
+Notation "x + y" := (Plus x y)  (in custom fbaes at level 50, left associativity) : state_scope.
+Notation "x - y" := (Minus x y) (in custom fbaes at level 50, left associativity) : state_scope.
+Notation "'true'"  := (Boolean true)  (in custom fbaes at level 0) : state_scope.
+Notation "'false'" := (Boolean false) (in custom fbaes at level 0) : state_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom fbaes at level 89, c custom fbaes at level 99,
+   t custom fbaes at level 99, f custom fbaes at level 99) : state_scope.
+Notation "'lambda' v 'in' e" := (Lambda v e)
+  (in custom fbaes at level 90, v constr at level 0, e custom fbaes at level 99) : state_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom fbaes at level 89, v constr at level 0,
+   e1 custom fbaes at level 99, e2 custom fbaes at level 99) : state_scope.
+Notation "l ':=' e" := (Assign l e)
+  (in custom fbaes at level 85, e custom fbaes at level 84, no associativity) : state_scope.
+Notation "a ';' b" := (Seq a b)
+  (in custom fbaes at level 90, right associativity) : state_scope.
+
+Open Scope state_scope.
+
+(**
+Dereference binds tighter than arithmetic, and sequence is the loosest,
+right-associative operator.
+ *)
+Example parse_deref_prec :
+  <{ "acc" := ! "acc" + 1 }>
+  = Assign (Id "acc") (Plus (Deref (Id "acc")) (Num 1)).
+Proof. reflexivity. Qed.
+
+Example parse_seq_assoc :
+  <{ "a" := 1 ; "b" := 2 ; !"a" }>
+  = Seq (Assign (Id "a") (Num 1))
+        (Seq (Assign (Id "b") (Num 2)) (Deref (Id "a"))).
+Proof. reflexivity. Qed.
+
+(**
+The Section 4 cell round-trip, written concretely.  A [bind] body (level
+99) absorbs a whole sequence with no extra parentheses.
+ *)
+Example roundtrip_concrete :
+  <{ bind "r" = new 0 in "r" := 7 ; !"r" }>
+  = Bind "r" (New (Num 0))
+      (Seq (Assign (Id "r") (Num 7)) (Deref (Id "r"))).
+Proof. reflexivity. Qed.
+
+Example roundtrip_runs :
+  eval <{ bind "r" = new 0 in "r" := 7 ; !"r" }> = Some (NumV 7, [NumV 7]).
+Proof. reflexivity. Qed.
+
+(**
+Because [x := e] is [Assign (Id x) e] and [!x] is [Deref (Id x)], the
+mutable-variable operations of Section 6 need no special sugar - they
+ARE the concrete syntax.  The [incTo] loop body reads directly.
+ *)
+Example incTo_concrete :
+  <{ lambda "rec" in lambda "c" in
+       if iszero "c" then 0
+       else ("acc" := !"acc" + 1 ; "rec" ("c" - 1)) }>
+  = incTo.
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -445,6 +539,10 @@ In this lecture we:
      for one cell, which immutable [Bind] cannot express.
   5. Combined STATE and RECURSION: a Z-combinator loop accumulating into
      a shared cell.
+  6. Added CONCRETE SYNTAX (Section 8): Rec's FBAEC parser plus the four
+     state forms [new e], [! e], [l := e], [a ; b] - reading like ML,
+     with [!] binding tighter than arithmetic and [;] the loosest,
+     right-associative operator.
 
 The catch: this explicit store-threading is PAINFUL - every case has to
 name intermediate stores [s1], [s2], ... and thread them by hand, and
