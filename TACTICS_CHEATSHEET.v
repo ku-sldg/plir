@@ -1,8 +1,9 @@
 (**
- * ROCQ TACTICS CHEAT SHEET for AE Module
+ * ROCQ TACTICS CHEAT SHEET
  * ================================================================
  *
- * Quick reference for the tactics used in Arithmetic Expressions.
+ * Quick reference for the tactics used across all PLIH chapters.
+ * Covers AE through RSEMon; earlier chapters are simpler subsets.
  *
  * Recall the AE type and interpreter from the lecture:
  *
@@ -280,6 +281,79 @@
  *)
 
 (* ================================================================ *)
+(* OPTION & CONSTRUCTOR TACTICS                                     *)
+(* ================================================================ *)
+
+(**
+ * discriminate
+ * ---------
+ * Refute a hypothesis that equates two distinct constructors.
+ *
+ * Context: H : Some x = None   (or  H : NumV n = BoolV b, etc.)
+ * After 'discriminate.':
+ *   Proof complete! (the hypothesis is absurd)
+ *
+ * Use: After 'destruct (f x) as [v |] eqn:E' when one branch of
+ *      'f x = None' contradicts a hypothesis saying it succeeded.
+ *      Also: 'simpl in H. discriminate.' when the hypothesis only
+ *      becomes contradictory after one reduction step.
+ *
+ * Common idiom: 'try discriminate.' dispatches all the impossible
+ *      branches at once after a uniform destruct over constructors.
+ *)
+
+(**
+ * injection H as H
+ * ---------
+ * Extract the argument of a constructor equality.
+ *
+ * Context: H : Some v = Some w   (or  H : NumV n = NumV m)
+ * After 'injection H as H.':
+ *   Context: H : v = w
+ *
+ * Use: When you know two wrapped values are equal and need the
+ *      inner equality.  Almost always followed by 'subst.':
+ *
+ *   injection H as H; subst v.
+ *
+ *      After which v is replaced by w everywhere in the context.
+ *)
+
+(**
+ * subst x   /   subst
+ * ---------
+ * Replace a variable by its definition using an equality hypothesis.
+ *
+ * Context: H : x = expr
+ * After 'subst x.' (or plain 'subst'):
+ *   Every occurrence of x in the goal and context becomes expr,
+ *   and H is consumed.
+ *
+ * Use: After 'injection H as H.' when the inner equality identifies
+ *      a variable.  'subst' with no argument substitutes every
+ *      variable that has a unique equality hypothesis.
+ *)
+
+(**
+ * destruct (f x) as [v |] eqn:E   (option case split)
+ * ---------
+ * Case-split on whether an option-returning function succeeded.
+ *
+ * After 'destruct (f x) as [v |] eqn:E.':
+ *   Subgoal 1:  E : f x = Some v   (success branch)
+ *   Subgoal 2:  E : f x = None     (failure branch)
+ *
+ * Use: The single most common pattern once eval returns
+ *      'option Value'.  Name the equation E so you can rewrite
+ *      with it or feed it to 'discriminate'.
+ *
+ * Variant for match on a nested result:
+ *   destruct (evalM k env e) as [[n | b | i bd ce] |] eqn:E; try discriminate.
+ *   -- one branch per constructor of Value, plus the None branch;
+ *      'try discriminate' kills the off-type constructors at once.
+ *)
+
+(* ================================================================ *)
 (* TACTICS FOR LOGICAL CONNECTIVES                                  *)
 (* ================================================================ *)
 
@@ -363,6 +437,163 @@
  *)
 
 (* ================================================================ *)
+(* WORKING WITH HYPOTHESES                                          *)
+(* ================================================================ *)
+
+(**
+ * simpl in H   /   simpl in *
+ * ---------
+ * Simplify a hypothesis (or all hypotheses and the goal).
+ *
+ * Context: H : eval (Num 5) = v
+ * After 'simpl in H.':
+ *   Context: H : Some (NumV 5) = v
+ *
+ * Use: When 'discriminate' or 'injection' needs the hypothesis to be
+ *      reduced first.  'simpl in *' normalises everywhere at once.
+ *
+ * Common idiom: 'simpl in H; discriminate.' refutes a hypothesis
+ *      that only becomes contradictory after one reduction step.
+ *)
+
+(**
+ * apply L in H
+ * ---------
+ * Use a lemma L to transform hypothesis H forward.
+ *
+ * Context: H : P /\ Q
+ *          (and library lemma andb_true_iff : A && B = true <-> A = true /\ B = true)
+ * After 'apply andb_true_iff in H. destruct H as [Ha Hb].':
+ *   Context: Ha : A = true   Hb : B = true
+ *
+ * Use: Forward reasoning.  Common with 'andb_true_iff', 'orb_false_iff',
+ *      'String.eqb_eq', 'String.eqb_neq', 'Nat.ltb_lt', 'Nat.eqb_eq'.
+ *)
+
+(**
+ * rewrite H in H2   /   rewrite H in *
+ * ---------
+ * Substitute equals-for-equals inside a hypothesis (or everywhere).
+ *
+ * Context: H : eval e = Some v    H2 : P (eval e)
+ * After 'rewrite H in H2.':
+ *   Context: H2 : P (Some v)
+ *
+ * Use: When the evidence you need is in a hypothesis, not the goal.
+ *      'rewrite H in *' updates both the goal and every hypothesis
+ *      simultaneously (useful but can be noisy).
+ *)
+
+(**
+ * pose proof (L args) as H
+ * ---------
+ * Add a fact to the context without changing the goal.
+ *
+ * After 'pose proof (size_pos e) as Hpos.':
+ *   Context: Hpos : 0 < size e
+ *   Goal:    unchanged
+ *
+ * Use: To introduce a library result or IH application into context
+ *      before you can use it.  Often paired with 'lia'.
+ *)
+
+(**
+ * unfold f in *   /   unfold f in H
+ * ---------
+ * Expand a Definition in hypotheses (or a specific hypothesis).
+ *
+ * Use: Same as 'unfold f' for the goal, but targets hypotheses.
+ *      'unfold ae_equiv in *.' is the canonical first step when
+ *      an equivalence relation defined by 'Definition' appears in
+ *      both a hypothesis and the goal.
+ *)
+
+(* ================================================================ *)
+(* CONTROLLED REDUCTION                                             *)
+(* ================================================================ *)
+
+(**
+ * cbn [f]   /   cbn -[f]
+ * ---------
+ * Perform beta/iota reduction, unfolding only (or everything except)
+ * the named definitions.
+ *
+ * cbn [evalM]:
+ *   Unfolds one top-level call to evalM and reduces, while leaving
+ *   recursive calls to evalM as-is.  Use this to expose the match
+ *   on a single constructor without unwinding the whole interpreter.
+ *
+ * cbn -[evalM]:
+ *   Reduce all beta/iota redexes EXCEPT inside evalM.  This is the
+ *   workhorse after rewriting the IH in a monotonicity proof: it
+ *   peels one layer of the outer wrapper (a pair, a monad action)
+ *   so the next 'destruct' or 'exact H' can fire.
+ *
+ * Use: Wherever 'simpl' is too aggressive (it unrolls everything) or
+ *      too weak (it stops at a match it cannot reduce).
+ *)
+
+(**
+ * cbv beta iota delta [ops]
+ * ---------
+ * Unfold exactly the listed definitions and perform all beta/iota
+ * steps, leaving everything else alone.
+ *
+ * Example:
+ *   cbv beta iota delta [bindS retS getS putS failS].
+ *
+ * Use: For monad-law proofs where you need the monad operations to
+ *      compute down to their underlying pair/option/function
+ *      manipulations, but you do not want to unfold the semantic
+ *      function 'evalM' itself.  This is more surgical than 'simpl'
+ *      and avoids the performance trap of unrolling large fixpoints.
+ *)
+
+(**
+ * cbn [forget]
+ * ---------
+ * Project the success branch of a Reader+State+Either computation,
+ * discarding the error channel.  Appears in the RSEMon refinement
+ * proof after each 'destruct (evalRSE ...)' to expose what the
+ * forget-map produces on the Success/Error cases.
+ *
+ * Idiom:
+ *   destruct (evalRSE k e env s) as [msg | [v s']];
+ *   cbn [forget]; try reflexivity.
+ *
+ * Use: Refinement theorems (evalRSE_refines) only.
+ *)
+
+(**
+ * eapply L
+ * ---------
+ * Like 'apply', but leaves unresolved arguments as metavariables to
+ * be filled in later (often by the next tactic or by unification).
+ *
+ * Example:
+ *   eapply evalM_app_closure.
+ *   -- Rocq figures out the closure components from the goal.
+ *
+ * Use: When 'apply L' fails because one or more of L's arguments
+ *      cannot be inferred from the goal alone.  The unknowns appear
+ *      as '?x' and must be resolved before 'Qed'.
+ *)
+
+(**
+ * ltac:(tac)
+ * ---------
+ * Run a tactic inline, as a term, inside a larger expression.
+ *
+ * Example:
+ *   rewrite (IH k2 env e (NumV a) ltac:(lia) El).
+ *   -- 'ltac:(lia)' produces the proof of the arithmetic side-
+ *      condition (k2 < k1, or 0 < k2, etc.) on the spot.
+ *
+ * Use: When a lemma requires a proof as one of its arguments and that
+ *      proof is trivial arithmetic.  Avoids a separate 'assert'.
+ *)
+
+(* ================================================================ *)
 (* COMMON PROOF PATTERNS                                            *)
 (* ================================================================ *)
 
@@ -440,6 +671,163 @@
  *     (* now H1 : fact1 x is available *)
  *     ...
  *   Qed.
+ *)
+
+(**
+ * PATTERN 6: Prove a property about an option-returning evaluator
+ * ================================================================
+ *
+ * Goal: eval e = Some v -> isNumV v = true
+ * (where eval returns 'option Value')
+ *
+ *   Proof.
+ *     intros [| k] env e v H; simpl in H; [discriminate |].
+ *     destruct (evalM k env e1) as [[n | b | i bd ce] |] eqn:E1;
+ *       try discriminate.
+ *     injection H as H; subst v.
+ *     reflexivity.
+ *   Qed.
+ *
+ * Key steps:
+ *   1. 'simpl in H' exposes the constructor match inside eval.
+ *   2. 'destruct ... eqn:E; try discriminate' kills impossible branches.
+ *   3. 'injection H as H; subst v' extracts the exact value.
+ *)
+
+(**
+ * PATTERN 7: Prove an inductive predicate with 'simpl. rewrite H1, H2.'
+ * ================================================================
+ *
+ * Goal: exists n, eval (Plus a b) = Some (NumV n)
+ * Given: IH1 : exists n1, eval a = Some (NumV n1)
+ *        IH2 : exists n2, eval b = Some (NumV n2)
+ *
+ *   Proof.
+ *     destruct IH1 as [n1 H1]. destruct IH2 as [n2 H2].
+ *     exists (n1 + n2).
+ *     simpl. rewrite H1, H2. reflexivity.
+ *   Qed.
+ *
+ * Key: 'simpl' opens the match; 'rewrite H1, H2' fills in the
+ *      known option results so the remaining goal is 'reflexivity'.
+ *)
+
+(**
+ * PATTERN 8: Fuel monotonicity proof
+ * ================================================================
+ *
+ * Goal: forall f1 f2 env e v, f1 <= f2 -> evalM f1 env e = Some v
+ *                                       -> evalM f2 env e = Some v
+ *
+ *   Proof.
+ *     induction f1 as [| k IH]; intros f2 env e v Hle H.
+ *     - simpl in H. discriminate.       (* 0 fuel never succeeds *)
+ *     - destruct f2 as [| k2]; [lia |].
+ *       destruct e; simpl in H |- *.
+ *       + (* leaf constructor *) exact H.
+ *       + (* binary constructor *)
+ *         destruct (evalM k env e1) as [...] eqn:El; try discriminate.
+ *         rewrite (IH k2 env e1 _ ltac:(lia) El).
+ *         cbn -[evalM].
+ *         rewrite (IH k2 env e2 _ ltac:(lia) Er).
+ *         cbn -[evalM]. exact H.
+ *   Qed.
+ *
+ * Key recipe:
+ *   1. Induction on the SMALLER fuel f1.
+ *   2. Base (f1=0): 'simpl in H; discriminate' since 0 fuel yields None.
+ *   3. Step: peel f2 with 'destruct f2 as [| k2]'; kill f2=0 with 'lia'.
+ *   4. For each sub-computation: 'destruct ... eqn:E; try discriminate'
+ *      to get the intermediate result; apply IH with 'ltac:(lia)'; then
+ *      'cbn -[evalM]' to expose the next step without expanding evalM.
+ *)
+
+(**
+ * PATTERN 9: Monadic law proof
+ * ================================================================
+ *
+ * Goal: bindM (retM a) f = f a
+ * (where retM and bindM are defined as functions over option/state/reader/either)
+ *
+ *   Proof.
+ *     intros ctx.
+ *     cbv beta iota delta [bindM retM askM localM failM].
+ *     reflexivity.
+ *   Qed.
+ *
+ * Key: 'cbv beta iota delta [ops]' unfolds ONLY the listed monad
+ *      combinators, reducing the goal to an equality that
+ *      'reflexivity' can close.  Avoid 'simpl' here — it tends to
+ *      over-unfold and produce unreadable goals.
+ *)
+
+(**
+ * PATTERN 10: Agreement theorem
+ * ================================================================
+ *
+ * Goal: forall e env, evalMonad e env = evalDirect e env
+ * (prove that a monadic refactor computes the same answer)
+ *
+ *   Proof.
+ *     induction e; intros env.
+ *     - (* leaf *) reflexivity.
+ *     - (* unary *)
+ *       simpl. rewrite <- IHe. reflexivity.
+ *     - (* binary *)
+ *       simpl. rewrite <- IHe1, <- IHe2. reflexivity.
+ *   Qed.
+ *
+ * Key: 'simpl' unfolds both evaluators to the same shape; the IHs
+ *      close each sub-expression.  When the goal does not line up
+ *      automatically, 'unfold bindM, retM.' before 'simpl' often
+ *      helps.  See RMon/EMon/SMon/RSMon/RSEMon for real instances.
+ *)
+
+(**
+ * PATTERN 11: Refinement theorem (forget map)
+ * ================================================================
+ *
+ * Goal: forall e env s,
+ *         forget (evalRSE e env s) = evalRS e env s
+ * (prove that dropping the error channel recovers the simpler semantics)
+ *
+ *   Proof.
+ *     induction e; intros env s; simpl.
+ *     - reflexivity.
+ *     - rewrite <- IHe1.
+ *       destruct (evalRSE _ e1 env s) as [msg | [v s1]];
+ *         cbn [forget]; try reflexivity.
+ *       rewrite <- IHe2.
+ *       destruct (evalRSE _ e2 env s1) as [m2 | [v2 s2]];
+ *         cbn [forget]; reflexivity.
+ *   Qed.
+ *
+ * Key recipe:
+ *   1. 'rewrite <- IH' aligns the sub-expression before destructing.
+ *   2. 'destruct (evalRSE ...) as [msg | [v s']]' splits on error/success.
+ *   3. 'cbn [forget]' reduces the projection on each branch.
+ *   4. 'try reflexivity' closes trivial branches; non-trivial ones
+ *      recurse into the next 'destruct'.
+ *)
+
+(**
+ * PATTERN 12: String identifier case split
+ * ================================================================
+ *
+ * Goal: subst i v (Id j) = if i == j then v else Id j
+ * or any property involving identifier equality (String.eqb).
+ *
+ *   Proof.
+ *     intros i j v.
+ *     destruct (String.eqb i j) eqn:E.
+ *     - apply String.eqb_eq in E. subst. simpl. rewrite String.eqb_refl. reflexivity.
+ *     - apply String.eqb_neq in E. simpl. rewrite E. reflexivity.
+ *   Qed.
+ *
+ * Key library lemmas:
+ *   String.eqb_eq  : String.eqb x y = true  -> x = y
+ *   String.eqb_neq : String.eqb x y = false -> x <> y
+ *   String.eqb_refl : String.eqb x x = true
  *)
 
 (* ================================================================ *)
@@ -534,21 +922,46 @@
  * |- Yes -> lia
  * |- No  -> next question
  *
- * Does it depend on the structure of e : AE?
+ * Does it depend on the structure of e?
  * |- Yes, must hold for all e and needs facts about subterms
  * |   -> intro e. induction e as [...]
  * |- Yes, just a per-constructor case split
  * |   -> destruct e as [...]
  * |- No -> next question
  *
- * Is it an equivalence (ae_equiv) goal?
- * |- Yes -> unfold ae_equiv. simpl. (then reflexivity / lia)
- * |- No  -> look for a relevant lemma
+ * Is there an option-valued sub-computation to case-split?
+ * |- Yes -> destruct (evalM k env e) as [[n | b | ...] |] eqn:E;
+ * |         try discriminate.
+ * |         (then injection / subst / rewrite for the success branch)
+ * |- No  -> next question
+ *
+ * Does a hypothesis contain a contradictory equality?
+ * |- Yes, directly (Some x = None, NumV n = BoolV b)
+ * |   -> discriminate.
+ * |- Yes, but only after reduction
+ * |   -> simpl in H. discriminate.
+ * |- No -> next question
+ *
+ * Is it an equivalence (ae_equiv / abe_equiv / ...) goal?
+ * |- Yes -> unfold ae_equiv in *. simpl. (then reflexivity / lia)
+ * |- No  -> next question
+ *
+ * Is it a monadic agreement or law goal?
+ * |- Law (bind (ret a) f = f a, etc.)
+ * |   -> intros. cbv beta iota delta [bind ret ...]. reflexivity.
+ * |- Agreement (evalMonadic = evalDirect)
+ * |   -> induction e; simpl; rewrite <- IHe (or IHe1, IHe2); reflexivity.
+ * |- Refinement (forget (evalRSE ...) = evalRS ...)
+ * |   -> induction e; rewrite <- IH; destruct evalRSE; cbn [forget]; ...
+ * |- No -> next question
  *
  * Is there a relevant lemma L?
- * |- It matches the goal exactly        -> exact L   (or apply L)
- * |- It is one step of the proof         -> apply L
+ * |- It matches the goal exactly         -> exact L   (or apply L)
+ * |- It is one step of the proof          -> apply L
+ * |- It applies to a hypothesis H         -> apply L in H
  * |- You must combine it with other facts -> assert (...) by apply L; ...
+ * |- It needs an arithmetic side-condition inline
+ * |   -> rewrite (L args ltac:(lia) ...).
  *)
 
 (* ================================================================ *)
@@ -556,18 +969,31 @@
 (* ================================================================ *)
 
 (**
- * TACTIC               | USE WHEN                  | EXAMPLE
- * =====================|===========================|=========================
- * reflexivity          | both sides equal by comp. | eval (Num 5) = 5
- * simpl                | need to unfold eval       | eval (Plus ...) = ...
- * lia                  | linear arithmetic goal    | n + 5 >= n
- * intro x / intros     | goal is forall / ->       | forall x, P x
- * induction e as [...] | property for all e : AE   | forall e, 0 <= eval e
- * destruct e as [...]  | per-constructor split     | handle Num/Plus/Minus
- * destruct t eqn:E     | record result of a test   | destruct (a <? b) eqn:E
- * unfold d             | expose a Definition        | unfold ae_equiv
- * rewrite H            | substitute via equality    | rewrite Nat.add_comm
- * assert (H : P)       | need an intermediate fact  | assert (H : 0 <= eval e)
+ * TACTIC                        | USE WHEN                       | EXAMPLE
+ * ==============================|================================|============================
+ * reflexivity                   | both sides equal by comp.      | eval (Num 5) = 5
+ * simpl                         | need to unfold eval            | eval (Plus ...) = ...
+ * simpl in H                    | simplify a hypothesis          | simpl in H; discriminate
+ * lia                           | linear arithmetic goal         | n + 5 >= n
+ * intro x / intros              | goal is forall / ->            | forall x, P x
+ * induction e as [...]          | property for all e             | forall e, 0 <= eval e
+ * destruct e as [...]           | per-constructor split          | handle Num/Plus/Minus
+ * destruct (f x) as [v|] eqn:E  | option case split              | destruct (eval e) as [v|]
+ * discriminate                  | hypothesis equates two ctors   | Some x = None -> ...
+ * injection H as H; subst       | extract inner equality         | Some v = Some w -> v=w
+ * unfold d                      | expose a Definition            | unfold ae_equiv
+ * unfold d in *                 | expose Definition in hyps too  | unfold ae_equiv in *
+ * rewrite H                     | substitute via equality        | rewrite Nat.add_comm
+ * rewrite H in H2               | rewrite inside a hypothesis    | rewrite Ev in H
+ * apply L in H                  | forward reasoning from hyp     | apply andb_true_iff in H
+ * pose proof (L args) as H      | add fact to context            | pose proof (size_pos e)
+ * assert (H : P)                | need an intermediate fact      | assert (H : 0 <= eval e)
+ * cbn [f]                       | unfold only f, reduce rest     | cbn [evalM]
+ * cbn -[f]                      | reduce all except f            | cbn -[evalM]
+ * cbv beta iota delta [ops]     | unfold exact monad ops         | cbv beta iota delta [bindS]
+ * eapply L                      | apply with unresolved args     | eapply evalM_app_closure
+ * ltac:(tac)                    | tactic as inline term          | rewrite (IH _ ltac:(lia) H)
+ * try tac                       | attempt, continue on failure   | try discriminate
  *)
 
 (* ================================================================ *)
@@ -583,6 +1009,30 @@
  *        tactic to every generated subgoal -- great for uniform cases.
  * TIP 6: Check the goal after each tactic to confirm you are making
  *        progress (the IDE shows it live).
- * TIP 7: Use plih_ae_solutions.v as a reference if a proof balloons --
- *        there is usually a shorter way.
+ * TIP 7: Use plih_ae_solutions.v (and other _solutions.v files) as a
+ *        reference if a proof balloons -- there is usually a shorter way.
+ * TIP 8: When eval returns 'option Value', your first move is nearly
+ *        always 'destruct (eval ...) as [v |] eqn:E; try discriminate.'
+ *        It kills the impossible branches immediately.
+ * TIP 9: 'injection H as H; subst v.' is the idiom to extract a value
+ *        from 'Some v = Some w'; do them together, not separately.
+ * TIP 10: Prefer 'cbn [f]' over 'simpl' when you only want one
+ *         definition to unfold -- 'simpl' can cascade unpredictably.
+ * TIP 11: 'cbn -[evalM]' after rewriting an IH in a monotonicity proof
+ *         peels one wrapper layer without unrolling the interpreter.
+ *         It is the bridge between each 'destruct ... eqn:E' step.
+ * TIP 12: For monad law proofs use 'cbv beta iota delta [ops].' with
+ *         ONLY the monad combinators listed -- never 'simpl' or plain
+ *         'unfold', which can pull in evalM and blow up the goal.
+ * TIP 13: 'ltac:(lia)' lets you discharge arithmetic side-conditions
+ *         inline inside a 'rewrite (IH k2 ... ltac:(lia) ...).'
+ *         without a separate 'assert'.
+ * TIP 14: 'try tac.' after a uniform 'destruct' eliminates impossible
+ *         branches silently.  'try discriminate.' and 'try reflexivity.'
+ *         together close most of the off-type sub-goals in one shot.
+ * TIP 15: 'apply L in H.' (forward) vs 'apply L.' (backward) -- use
+ *         forward when you have the evidence and need the conclusion;
+ *         backward when you have the conclusion and need to produce
+ *         evidence.  'andb_true_iff', 'orb_false_iff', 'String.eqb_eq'
+ *         are almost always used forward.
  *)
