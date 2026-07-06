@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in Env/):
-  1. plih_rocq_env_shared.v      -- shared infra (re-exports IDs)
-  2. plih_env_lecture.v          -- lecture with the agreement proof
-  3. plih_env_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_env_solutions.v        -- complete solutions
-  5. plih_env_instructor_guide.v -- teaching guide
-  6. plih_env_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_env_shared.v      -- shared infra (re-exports IDs)#</li>#
+#<li>#plih_env_lecture.v          -- lecture with the agreement proof#</li>#
+#<li>#plih_env_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_env_solutions.v        -- complete solutions#</li>#
+#<li>#plih_env_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_env_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//ids/2-Adding-Environments.html

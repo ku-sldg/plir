@@ -6,17 +6,19 @@ The Func chapter left a cliffhanger: [omega] shows the language can
 LOOP, but FBAE has no conditional, so recursion could never TEST its
 argument and stop - nothing productive could be written.  This chapter
 fixes that and delivers real recursion:
-  1. FBAEC = FBAE + Booleans + [If]: the missing CONDITIONAL.
-  2. A STRICT (call-by-value) closure interpreter [evalM], and a LAZY
-     (call-by-name) interpreter [evalL] - both fuel-driven, as in Func.
-  3. FUEL MONOTONICITY for the strict interpreter (the well-definedness
-     metatheorem, carried over from Func with the new cases).
-  4. RECURSION with NO new construct: the Y and Z fixpoint combinators
-     as ordinary FBAEC terms.  Y is a parameterised [omega] that needs
-     LAZY evaluation; Z eta-guards the self-application so it also works
-     under STRICT evaluation.
-  5. PRODUCTIVE examples that actually terminate: summation and
-     factorial, computed by [Z] under [evalM] and by [Y] under [evalL].
+#<ol>#
+#<li>#FBAEC = FBAE + Booleans + [If]: the missing CONDITIONAL.#</li>#
+#<li>#A STRICT (call-by-value) closure interpreter [evalM], and a LAZY
+(call-by-name) interpreter [evalL] - both fuel-driven, as in Func.#</li>#
+#<li>#FUEL MONOTONICITY for the strict interpreter (the well-definedness
+metatheorem, carried over from Func with the new cases).#</li>#
+#<li>#RECURSION with NO new construct: the Y and Z fixpoint combinators
+as ordinary FBAEC terms.  Y is a parameterised [omega] that needs
+LAZY evaluation; Z eta-guards the self-application so it also works
+under STRICT evaluation.#</li>#
+#<li>#PRODUCTIVE examples that actually terminate: summation and
+factorial, computed by [Z] under [evalM] and by [Y] under [evalL].#</li>#
+#</ol>#
 
 This mirrors the "Untyped Recursion" unit of PLIH:
   https://ku-sldg.github.io/plih//funs/7-Untyped-Recursion.html

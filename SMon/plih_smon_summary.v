@@ -5,13 +5,15 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in SMon/):
-  1. plih_rocq_smon_shared.v      -- shared infra (re-exports State)
-  2. plih_smon_lecture.v          -- lecture: State monad, evalS,
-                                      agreement theorem
-  3. plih_smon_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_smon_solutions.v        -- complete solutions
-  5. plih_smon_instructor_guide.v -- teaching guide
-  6. plih_smon_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_smon_shared.v      -- shared infra (re-exports State)#</li>#
+#<li>#plih_smon_lecture.v          -- lecture: State monad, evalS,
+agreement theorem#</li>#
+#<li>#plih_smon_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_smon_solutions.v        -- complete solutions#</li>#
+#<li>#plih_smon_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_smon_summary.v          -- this file#</li>#
+#</ol>#
 
 Source idea (PLIH, Haskell):
   https://ku-sldg.github.io/plih//state/

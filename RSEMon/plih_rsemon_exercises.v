@@ -3,10 +3,12 @@ Programming Languages in Rocq - Reader+State+Either Monad Exercises
 Three-effect interpreter - Student Problem Set
 
 In these exercises you will:
-  1. Run the three-effect interpreter [evalRSErr], observing successes
-     ([inr]) and DESCRIPTIVE error messages ([inl])
-  2. Use the REFINEMENT theorem to relate it to the explicit [evalM]
-  3. Prove monad laws and effect-interaction facts
+#<ol>#
+#<li>#Run the three-effect interpreter [evalRSErr], observing successes
+([inr]) and DESCRIPTIVE error messages ([inl])#</li>#
+#<li>#Use the REFINEMENT theorem to relate it to the explicit [evalM]#</li>#
+#<li>#Prove monad laws and effect-interaction facts#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

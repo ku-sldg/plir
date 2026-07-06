@@ -15,13 +15,15 @@ three effects in one monad:
     first error.
 
 The plan:
-  1. The language [FBAES] and the explicit interpreter [evalM] (option
-     valued, threading env and store by hand) - the reference.
-  2. The combined monad [RSE E S A = E -> S -> sum string (A * S)] with
-     [retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/[putRSE]/[throwRSE].
-  3. The MONADIC interpreter [evalRSE], raising descriptive messages.
-  4. REFINEMENT: [forget (evalRSE fuel e env s) = evalM fuel env s e] -
-     the messages are extra information, not changed behavior.
+#<ol>#
+#<li>#The language [FBAES] and the explicit interpreter [evalM] (option
+valued, threading env and store by hand) - the reference.#</li>#
+#<li>#The combined monad [RSE E S A = E -> S -> sum string (A * S)] with
+[retRSE]/[bindRSE]/[askRSE]/[localRSE]/[getRSE]/[putRSE]/[throwRSE].#</li>#
+#<li>#The MONADIC interpreter [evalRSE], raising descriptive messages.#</li>#
+#<li>#REFINEMENT: [forget (evalRSE fuel e env s) = evalM fuel env s e] -
+the messages are extra information, not changed behavior.#</li>#
+#</ol>#
 
 This mirrors the effect-combining ("monad transformer") idea of PLIH:
   https://ku-sldg.github.io/plih//state/

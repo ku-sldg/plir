@@ -3,13 +3,15 @@ Programming Languages in Rocq - IDs Lecture
 Adding Identifiers
 
 This lecture covers:
-  1. Extending AE with identifiers (Id) and local bindings (Bind)
-  2. Substitution as the meaning of a binding
-  3. Free and bound identifiers; closed terms
-  4. Writing a SUBSTITUTION-BASED interpreter in Rocq - and the
-     surprise that it is NOT structurally recursive, so we drive it
-     with a fuel argument
-  5. Proving properties about substitution and evaluation
+#<ol>#
+#<li>#Extending AE with identifiers (Id) and local bindings (Bind)#</li>#
+#<li>#Substitution as the meaning of a binding#</li>#
+#<li>#Free and bound identifiers; closed terms#</li>#
+#<li>#Writing a SUBSTITUTION-BASED interpreter in Rocq - and the
+surprise that it is NOT structurally recursive, so we drive it
+with a fuel argument#</li>#
+#<li>#Proving properties about substitution and evaluation#</li>#
+#</ol>#
 
 This mirrors the "Adding Identifiers" section of PLIH:
   https://ku-sldg.github.io/plih//ids/1-Adding-IDs.html

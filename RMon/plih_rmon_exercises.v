@@ -3,9 +3,11 @@ Programming Languages in Rocq - Reader Monad Exercises
 Structuring the type checker with a Reader monad - Student Problem Set
 
 In these exercises you will:
-  1. Run the MONADIC type checker [typeofR]/[typecheckR]
-  2. Use the AGREEMENT theorem relating it to the direct [typeof]
-  3. Verify small READER-monad laws
+#<ol>#
+#<li>#Run the MONADIC type checker [typeofR]/[typecheckR]#</li>#
+#<li>#Use the AGREEMENT theorem relating it to the direct [typeof]#</li>#
+#<li>#Verify small READER-monad laws#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

@@ -3,10 +3,12 @@ Programming Languages in Rocq - IDs Exercises
 Adding Identifiers - Student Problem Set
 
 In these exercises you will:
-  1. Run the substitution interpreter for BAE
-  2. Reason about substitution, free variables, and closed terms
-  3. Use the [eval] equation lemmas from the lecture
-  4. Prove PROGRESS: closed programs never get stuck (challenge)
+#<ol>#
+#<li>#Run the substitution interpreter for BAE#</li>#
+#<li>#Reason about substitution, free variables, and closed terms#</li>#
+#<li>#Use the [eval] equation lemmas from the lecture#</li>#
+#<li>#Prove PROGRESS: closed programs never get stuck (challenge)#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

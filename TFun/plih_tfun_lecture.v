@@ -9,20 +9,22 @@ after it has already started evaluating.  This chapter adds a STATIC
 TYPE SYSTEM that rejects such programs BEFORE evaluation.
 
 The plan:
-  1. A TYPE language [Ty]: numbers, Booleans, and FUNCTION types.
-  2. The typed term language [TFBAEC]: Rec's FBAEC, except [Lambda] now
-     ASCRIBES its parameter's type (you cannot infer a domain type from
-     a function that has not yet been applied).
-  3. The TYPE CHECKER [typeof] - "an interpreter that returns TYPES
-     instead of values", carrying an identifier->type CONTEXT exactly
-     like [evalM] carries a value environment.
-  4. The STRICT interpreter [evalM] (call-by-value, fuel-driven) - the
-     ONLY interpreter now (no more lazy [evalL]) - with FUEL
-     MONOTONICITY carried over from Rec.
-  5. TYPE SOUNDNESS: well-typed programs do not get stuck.  We witness
-     it with a battery of machine-checked examples - good programs run
-     to a value of the predicted type, and every classic stuck term is
-     rejected by [typeof].
+#<ol>#
+#<li>#A TYPE language [Ty]: numbers, Booleans, and FUNCTION types.#</li>#
+#<li>#The typed term language [TFBAEC]: Rec's FBAEC, except [Lambda] now
+ASCRIBES its parameter's type (you cannot infer a domain type from
+a function that has not yet been applied).#</li>#
+#<li>#The TYPE CHECKER [typeof] - "an interpreter that returns TYPES
+instead of values", carrying an identifier->type CONTEXT exactly
+like [evalM] carries a value environment.#</li>#
+#<li>#The STRICT interpreter [evalM] (call-by-value, fuel-driven) - the
+ONLY interpreter now (no more lazy [evalL]) - with FUEL
+MONOTONICITY carried over from Rec.#</li>#
+#<li>#TYPE SOUNDNESS: well-typed programs do not get stuck.  We witness
+it with a battery of machine-checked examples - good programs run
+to a value of the predicted type, and every classic stuck term is
+rejected by [typeof].#</li>#
+#</ol>#
 
 This mirrors the "Typed Functions" unit of PLIH:
   https://ku-sldg.github.io/plih//types/1-Function-Types.html

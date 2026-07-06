@@ -3,11 +3,13 @@ Programming Languages in Rocq - ABE Lecture
 Arithmetic + Boolean Expressions
 
 This lecture extends AE by adding:
-1. Boolean literals and operations
-2. Comparison operations
-3. Conditional expressions
-4. Multiple value types
-5. Error handling
+#<ol>#
+#<li>#Boolean literals and operations#</li>#
+#<li>#Comparison operations#</li>#
+#<li>#Conditional expressions#</li>#
+#<li>#Multiple value types#</li>#
+#<li>#Error handling#</li>#
+#</ol>#
 
 This mirrors the PLIH section "Adding Booleans".
  *)

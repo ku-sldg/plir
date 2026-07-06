@@ -3,11 +3,13 @@ Programming Languages in Rocq - ABE Exercises
 Arithmetic + Boolean Expressions - Student Problem Set
 
 Building on AE, these exercises cover:
-1. Boolean evaluation
-2. Error handling with option
-3. Type consistency
-4. Conditionals
-5. Boolean algebra
+#<ol>#
+#<li>#Boolean evaluation#</li>#
+#<li>#Error handling with option#</li>#
+#<li>#Type consistency#</li>#
+#<li>#Conditionals#</li>#
+#<li>#Boolean algebra#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

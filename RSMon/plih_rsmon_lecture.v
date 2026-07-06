@@ -13,14 +13,16 @@ so the interpreter carries neither the environment nor the store by hand:
   - [bindRS] threads BOTH automatically.
 
 The plan:
-  1. The reference-cell language [FBAES], values [RVal], the [Store], and
-     the explicit interpreter [evalM] threading BOTH env and store by
-     hand - the reference, carried over from the State chapter.
-  2. The combined monad [RS E S A = E -> S -> option (A * S)], with
-     [retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS].
-  3. The MONADIC interpreter [evalRS], with NO explicit env or store.
-  4. AGREEMENT: [evalRS fuel e env s = evalM fuel env s e] - one proof
-     that both hidden resources line up with [evalM]'s hand plumbing.
+#<ol>#
+#<li>#The reference-cell language [FBAES], values [RVal], the [Store], and
+the explicit interpreter [evalM] threading BOTH env and store by
+hand - the reference, carried over from the State chapter.#</li>#
+#<li>#The combined monad [RS E S A = E -> S -> option (A * S)], with
+[retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS].#</li>#
+#<li>#The MONADIC interpreter [evalRS], with NO explicit env or store.#</li>#
+#<li>#AGREEMENT: [evalRS fuel e env s = evalM fuel env s e] - one proof
+that both hidden resources line up with [evalM]'s hand plumbing.#</li>#
+#</ol>#
 
 This mirrors the effect-combining ("monad transformer") idea of PLIH:
   https://ku-sldg.github.io/plih//state/

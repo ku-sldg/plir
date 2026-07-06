@@ -3,12 +3,14 @@ Programming Languages in Rocq - Env Lecture
 Adding Environments
 
 This lecture covers:
-  1. Environments: deferring substitution with a table of bindings
-  2. A CLEAN structural interpreter [evalE] (no fuel this time!)
-  3. Extensionality of [evalE] over environments
-  4. The centrepiece: PROVING that the environment interpreter and
-     the substitution interpreter always agree,
-       forall e, evalE nil e = eval e.
+#<ol>#
+#<li>#Environments: deferring substitution with a table of bindings#</li>#
+#<li>#A CLEAN structural interpreter [evalE] (no fuel this time!)#</li>#
+#<li>#Extensionality of [evalE] over environments#</li>#
+#<li>#The centrepiece: PROVING that the environment interpreter and
+the substitution interpreter always agree,
+forall e, evalE nil e = eval e.#</li>#
+#</ol>#
 
 This mirrors the "Adding Environments" section of PLIH:
   https://ku-sldg.github.io/plih//ids/2-Adding-Environments.html

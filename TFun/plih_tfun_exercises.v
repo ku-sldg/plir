@@ -3,12 +3,14 @@ Programming Languages in Rocq - Typed Functions Exercises
 A static type system for the functional language - Student Problem Set
 
 In these exercises you will:
-  1. Run the TYPE CHECKER [typeof]/[typecheck]: accept good programs,
-     reject the classic stuck terms (including self-application)
-  2. Run the STRICT interpreter [evalM]/[eval]
-  3. Connect the two - TYPE SOUNDNESS in miniature - and use the
-     metatheory ([Ty_eqb] correctness, fuel monotonicity, canonical
-     forms)
+#<ol>#
+#<li>#Run the TYPE CHECKER [typeof]/[typecheck]: accept good programs,
+reject the classic stuck terms (including self-application)#</li>#
+#<li>#Run the STRICT interpreter [evalM]/[eval]#</li>#
+#<li>#Connect the two - TYPE SOUNDNESS in miniature - and use the
+metatheory ([Ty_eqb] correctness, fuel monotonicity, canonical
+forms)#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

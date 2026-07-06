@@ -3,10 +3,12 @@ Programming Languages in Rocq - State Monad Exercises
 Structuring the interpreter with a State monad - Student Problem Set
 
 In these exercises you will:
-  1. Run the monadic interpreter [evalS]/[evalStore] on cell programs
-  2. Use the AGREEMENT theorem to transport results between the monadic
-     and explicit interpreters
-  3. Prove the State-monad laws that hold definitionally
+#<ol>#
+#<li>#Run the monadic interpreter [evalS]/[evalStore] on cell programs#</li>#
+#<li>#Use the AGREEMENT theorem to transport results between the monadic
+and explicit interpreters#</li>#
+#<li>#Prove the State-monad laws that hold definitionally#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

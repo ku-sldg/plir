@@ -9,16 +9,18 @@ is now [RE E A = E -> string + A], which reads a context [E] and either
 fails with a message ([inl msg]) or succeeds with a value ([inr a]).
 
 The plan:
-  1. The typed language [Ty]/[TFBAEC] and the DIRECT [option] checker
-     [typeof] (RMon's reference).
-  2. The combined READER+EITHER monad [RE] with [retE]/[bindE]/[askE]/
-     [localE]/[throwE]/[runE].
-  3. The message-carrying checker [typeofE], throwing a descriptive
-     error at each failure.
-  4. REFINEMENT: [forget (typeofE e ctx) = typeof ctx e] - erasing the
-     message recovers exactly RMon's [option] answer.  So the richer
-     checker accepts and rejects exactly the same programs; it just says
-     more when it rejects.
+#<ol>#
+#<li>#The typed language [Ty]/[TFBAEC] and the DIRECT [option] checker
+[typeof] (RMon's reference).#</li>#
+#<li>#The combined READER+EITHER monad [RE] with [retE]/[bindE]/[askE]/
+[localE]/[throwE]/[runE].#</li>#
+#<li>#The message-carrying checker [typeofE], throwing a descriptive
+error at each failure.#</li>#
+#<li>#REFINEMENT: [forget (typeofE e ctx) = typeof ctx e] - erasing the
+message recovers exactly RMon's [option] answer.  So the richer
+checker accepts and rejects exactly the same programs; it just says
+more when it rejects.#</li>#
+#</ol>#
 
 This mirrors the "Reader and Either" unit of PLIH (a source placeholder):
   https://ku-sldg.github.io/plih//types/6-Reader-And-Either.html

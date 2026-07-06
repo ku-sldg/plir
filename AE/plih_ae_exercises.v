@@ -3,10 +3,12 @@ Programming Languages in Rocq - AE Exercises
 Arithmetic Expressions - Student Problem Set
 
 In these exercises you will:
-1. Complete proofs by replacing [Admitted] with [Qed]
-2. Understand the eval function through examples
-3. Learn proof tactics (induction, lia, destruct, ...)
-4. Discover properties of arithmetic
+#<ol>#
+#<li>#Complete proofs by replacing [Admitted] with [Qed]#</li>#
+#<li>#Understand the eval function through examples#</li>#
+#<li>#Learn proof tactics (induction, lia, destruct, ...)#</li>#
+#<li>#Discover properties of arithmetic#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

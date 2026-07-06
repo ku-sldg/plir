@@ -15,17 +15,19 @@ This chapter adds recursion back the honest way: a PRIMITIVE typed
     once again diverge, and the interpreter stays fuel-driven/partial.
 
 The plan:
-  1. TFun's type language [Ty] and typed terms [TFBAEC], plus ONE new
-     form [Fix f] and a term-level [subst] to unfold it.
-  2. The type checker [typeof] with the [Fix] rule: if [f : T -> T] then
-     [Fix f : T].
-  3. The STRICT interpreter [evalM]: [Fix f] unfolds by substituting the
-     whole recursion back in for the recursive-call parameter - "fix
-     sets up what replaces the recursive call", it does not step once.
-  4. Real recursion: FACTORIAL and SUMMATION, well-typed and computed.
-  5. The trade-off, machine-checked: self-application is STILL rejected,
-     yet [Fix] lets a well-typed term DIVERGE ([loopT]).  Type soundness
-     survives; normalization does not.
+#<ol>#
+#<li>#TFun's type language [Ty] and typed terms [TFBAEC], plus ONE new
+form [Fix f] and a term-level [subst] to unfold it.#</li>#
+#<li>#The type checker [typeof] with the [Fix] rule: if [f : T -> T] then
+[Fix f : T].#</li>#
+#<li>#The STRICT interpreter [evalM]: [Fix f] unfolds by substituting the
+whole recursion back in for the recursive-call parameter - "fix
+sets up what replaces the recursive call", it does not step once.#</li>#
+#<li>#Real recursion: FACTORIAL and SUMMATION, well-typed and computed.#</li>#
+#<li>#The trade-off, machine-checked: self-application is STILL rejected,
+yet [Fix] lets a well-typed term DIVERGE ([loopT]).  Type soundness
+survives; normalization does not.#</li>#
+#</ol>#
 
 This mirrors the "Typed Recursion" unit of PLIH:
   https://ku-sldg.github.io/plih//types/3-Typed-Recursion.html

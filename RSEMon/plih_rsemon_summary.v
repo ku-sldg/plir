@@ -5,13 +5,15 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in RSEMon/):
-  1. plih_rocq_rsemon_shared.v      -- shared infra (re-exports RSMon)
-  2. plih_rsemon_lecture.v          -- lecture: three-effect monad,
-                                       evalRSE, refinement theorem
-  3. plih_rsemon_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_rsemon_solutions.v        -- complete solutions
-  5. plih_rsemon_instructor_guide.v -- teaching guide
-  6. plih_rsemon_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_rsemon_shared.v      -- shared infra (re-exports RSMon)#</li>#
+#<li>#plih_rsemon_lecture.v          -- lecture: three-effect monad,
+evalRSE, refinement theorem#</li>#
+#<li>#plih_rsemon_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_rsemon_solutions.v        -- complete solutions#</li>#
+#<li>#plih_rsemon_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_rsemon_summary.v          -- this file#</li>#
+#</ol>#
 
 Source idea (PLIH, Haskell): combining effects / monad transformers
   https://ku-sldg.github.io/plih//state/

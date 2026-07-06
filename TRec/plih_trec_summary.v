@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in TRec/):
-  1. plih_rocq_trec_shared.v      -- shared infra (re-exports TFun)
-  2. plih_trec_lecture.v          -- lecture: typed [Fix], recursion
-  3. plih_trec_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_trec_solutions.v        -- complete solutions
-  5. plih_trec_instructor_guide.v -- teaching guide
-  6. plih_trec_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_trec_shared.v      -- shared infra (re-exports TFun)#</li>#
+#<li>#plih_trec_lecture.v          -- lecture: typed [Fix], recursion#</li>#
+#<li>#plih_trec_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_trec_solutions.v        -- complete solutions#</li>#
+#<li>#plih_trec_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_trec_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//types/3-Typed-Recursion.html

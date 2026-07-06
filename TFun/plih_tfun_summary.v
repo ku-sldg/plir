@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in TFun/):
-  1. plih_rocq_tfun_shared.v      -- shared infra (re-exports Func)
-  2. plih_tfun_lecture.v          -- lecture: types, typeof, soundness
-  3. plih_tfun_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_tfun_solutions.v        -- complete solutions
-  5. plih_tfun_instructor_guide.v -- teaching guide
-  6. plih_tfun_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_tfun_shared.v      -- shared infra (re-exports Func)#</li>#
+#<li>#plih_tfun_lecture.v          -- lecture: types, typeof, soundness#</li>#
+#<li>#plih_tfun_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_tfun_solutions.v        -- complete solutions#</li>#
+#<li>#plih_tfun_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_tfun_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//types/1-Function-Types.html

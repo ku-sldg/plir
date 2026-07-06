@@ -3,11 +3,13 @@ Programming Languages in Rocq - Typed Recursion Exercises
 A primitive typed [Fix] - Student Problem Set
 
 In these exercises you will:
-  1. Type-check recursive programs, and see [Fix] rejected when its
-     argument is not a [T -> T] function (and self-application rejected)
-  2. RUN typed recursion (factorial, summation) and watch a well-typed
-     [Fix] DIVERGE
-  3. Use the metatheory: fuel monotonicity, canonical forms, determinism
+#<ol>#
+#<li>#Type-check recursive programs, and see [Fix] rejected when its
+argument is not a [T -> T] function (and self-application rejected)#</li>#
+#<li>#RUN typed recursion (factorial, summation) and watch a well-typed
+[Fix] DIVERGE#</li>#
+#<li>#Use the metatheory: fuel monotonicity, canonical forms, determinism#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

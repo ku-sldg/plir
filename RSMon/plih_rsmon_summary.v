@@ -5,13 +5,15 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in RSMon/):
-  1. plih_rocq_rsmon_shared.v      -- shared infra (re-exports SMon)
-  2. plih_rsmon_lecture.v          -- lecture: combined Reader+State
-                                      monad, evalRS, agreement theorem
-  3. plih_rsmon_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_rsmon_solutions.v        -- complete solutions
-  5. plih_rsmon_instructor_guide.v -- teaching guide
-  6. plih_rsmon_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_rsmon_shared.v      -- shared infra (re-exports SMon)#</li>#
+#<li>#plih_rsmon_lecture.v          -- lecture: combined Reader+State
+monad, evalRS, agreement theorem#</li>#
+#<li>#plih_rsmon_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_rsmon_solutions.v        -- complete solutions#</li>#
+#<li>#plih_rsmon_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_rsmon_summary.v          -- this file#</li>#
+#</ol>#
 
 Source idea (PLIH, Haskell): combining effects / monad transformers
   https://ku-sldg.github.io/plih//state/

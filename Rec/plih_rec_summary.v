@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in Rec/):
-  1. plih_rocq_rec_shared.v      -- shared infra (re-exports Func)
-  2. plih_rec_lecture.v          -- lecture: conditionals, Y/Z, recursion
-  3. plih_rec_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_rec_solutions.v        -- complete solutions
-  5. plih_rec_instructor_guide.v -- teaching guide
-  6. plih_rec_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_rec_shared.v      -- shared infra (re-exports Func)#</li>#
+#<li>#plih_rec_lecture.v          -- lecture: conditionals, Y/Z, recursion#</li>#
+#<li>#plih_rec_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_rec_solutions.v        -- complete solutions#</li>#
+#<li>#plih_rec_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_rec_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//funs/7-Untyped-Recursion.html

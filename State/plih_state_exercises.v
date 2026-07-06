@@ -3,11 +3,13 @@ Programming Languages in Rocq - Mutable State Exercises
 An explicit, threaded store - Student Problem Set
 
 In these exercises you will:
-  1. Run the store-threading interpreter [evalM] on reference cells,
-     observing the (value, store) PAIR it returns
-  2. Use the derived mutable-variable forms and see aliasing
-  3. Use FUEL MONOTONICITY, simple value laws, and the store lemmas
-     [update_at_length] / [nth_error_snoc]
+#<ol>#
+#<li>#Run the store-threading interpreter [evalM] on reference cells,
+observing the (value, store) PAIR it returns#</li>#
+#<li>#Use the derived mutable-variable forms and see aliasing#</li>#
+#<li>#Use FUEL MONOTONICITY, simple value laws, and the store lemmas
+[update_at_length] / [nth_error_snoc]#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

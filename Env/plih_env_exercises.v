@@ -3,11 +3,13 @@ Programming Languages in Rocq - Env Exercises
 Adding Environments - Student Problem Set
 
 In these exercises you will:
-  1. Run the environment interpreter [evalE] for BAE
-  2. Reason about environments (extensionality, shadowing, swapping)
-  3. Use the AGREEMENT theorem relating [evalE] and the substitution
-     interpreter [eval]
-  4. Build a prelude interpreter and an error-reporting interpreter
+#<ol>#
+#<li>#Run the environment interpreter [evalE] for BAE#</li>#
+#<li>#Reason about environments (extensionality, shadowing, swapping)#</li>#
+#<li>#Use the AGREEMENT theorem relating [evalE] and the substitution
+interpreter [eval]#</li>#
+#<li>#Build a prelude interpreter and an error-reporting interpreter#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

@@ -3,22 +3,24 @@ Programming Languages in Rocq - Func Lecture
 Adding Functions (first-class functions, closures, scoping)
 
 This lecture covers:
-  1. Extending BAE with [Lambda] and [App]: first-class functions.
-  2. A SUBSTITUTION interpreter [evalS] - and why, now that we can
-     substitute whole functions, [size] no longer bounds the fuel:
-     the language can DIVERGE (the classic [omega] term).
-  3. VALUES and CLOSURES: an environment interpreter [evalM] that
-     captures the definition-time environment in a closure.
-  4. FUEL MONOTONICITY - the well-definedness result that replaces
-     the "size is enough fuel" theorem of the earlier chapters.
-  5. STATIC vs DYNAMIC scoping, made precise with a third interpreter
-     [evalDyn] and a term on which the two disagree.
-  6. Currying, and strict-vs-lazy binding (a call-by-name [evalL]).
-  7. ELABORATION: desugaring [Bind] into [App]/[Lambda], with a
-     machine-checked proof that it preserves meaning.
-  8. A teaser toward RECURSION: fixpoint combinators are definable from
-     [Lambda]/[App], but productive recursion needs a conditional FBAE
-     lacks - delivered in the Untyped Recursion chapter (Rec/).
+#<ol>#
+#<li>#Extending BAE with [Lambda] and [App]: first-class functions.#</li>#
+#<li>#A SUBSTITUTION interpreter [evalS] - and why, now that we can
+substitute whole functions, [size] no longer bounds the fuel:
+the language can DIVERGE (the classic [omega] term).#</li>#
+#<li>#VALUES and CLOSURES: an environment interpreter [evalM] that
+captures the definition-time environment in a closure.#</li>#
+#<li>#FUEL MONOTONICITY - the well-definedness result that replaces
+the "size is enough fuel" theorem of the earlier chapters.#</li>#
+#<li>#STATIC vs DYNAMIC scoping, made precise with a third interpreter
+[evalDyn] and a term on which the two disagree.#</li>#
+#<li>#Currying, and strict-vs-lazy binding (a call-by-name [evalL]).#</li>#
+#<li>#ELABORATION: desugaring [Bind] into [App]/[Lambda], with a
+machine-checked proof that it preserves meaning.#</li>#
+#<li>#A teaser toward RECURSION: fixpoint combinators are definable from
+[Lambda]/[App], but productive recursion needs a conditional FBAE
+lacks - delivered in the Untyped Recursion chapter (Rec/).#</li>#
+#</ol>#
 
 This mirrors the "Functions" unit of PLIH:
   https://ku-sldg.github.io/plih//funs/1-Adding-Functions.html

@@ -3,9 +3,11 @@ Programming Languages in Rocq - Reader+Either Monad Exercises
 Informative type errors - Student Problem Set
 
 In these exercises you will:
-  1. Run the message-carrying checker [typeofE]/[typecheckE]
-  2. Use the REFINEMENT theorem relating it to the direct [typeof]
-  3. Verify small laws of the combined Reader+Either monad
+#<ol>#
+#<li>#Run the message-carrying checker [typeofE]/[typecheckE]#</li>#
+#<li>#Use the REFINEMENT theorem relating it to the direct [typeof]#</li>#
+#<li>#Verify small laws of the combined Reader+Either monad#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

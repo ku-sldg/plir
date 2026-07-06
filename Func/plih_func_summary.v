@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in Func/):
-  1. plih_rocq_func_shared.v      -- shared infra (re-exports IDs/AE)
-  2. plih_func_lecture.v          -- lecture: closures, scoping, fuel
-  3. plih_func_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_func_solutions.v        -- complete solutions
-  5. plih_func_instructor_guide.v -- teaching guide
-  6. plih_func_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_func_shared.v      -- shared infra (re-exports IDs/AE)#</li>#
+#<li>#plih_func_lecture.v          -- lecture: closures, scoping, fuel#</li>#
+#<li>#plih_func_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_func_solutions.v        -- complete solutions#</li>#
+#<li>#plih_func_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_func_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//funs/1-Adding-Functions.html

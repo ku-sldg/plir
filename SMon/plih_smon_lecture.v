@@ -11,14 +11,16 @@ it along).  We then PROVE the monadic interpreter computes exactly what
 the explicit one does.
 
 The plan:
-  1. The reference-cell language [FBAES], values [RVal], the [Store], and
-     the DIRECT store-threading interpreter [evalM] - the reference,
-     carried over from the State chapter.
-  2. The STATE monad: [State S A = S -> option (A * S)], with [retS],
-     [bindS] (with [;;] notation), [getS], [putS], [failS], [runState].
-  3. The MONADIC interpreter [evalS], written with no explicit store.
-  4. AGREEMENT: [evalS fuel env e s = evalM fuel env s e] for all inputs
-     - the refactor changes the code, not the behavior.
+#<ol>#
+#<li>#The reference-cell language [FBAES], values [RVal], the [Store], and
+the DIRECT store-threading interpreter [evalM] - the reference,
+carried over from the State chapter.#</li>#
+#<li>#The STATE monad: [State S A = S -> option (A * S)], with [retS],
+[bindS] (with [;;] notation), [getS], [putS], [failS], [runState].#</li>#
+#<li>#The MONADIC interpreter [evalS], written with no explicit store.#</li>#
+#<li>#AGREEMENT: [evalS fuel env e s = evalM fuel env s e] for all inputs
+- the refactor changes the code, not the behavior.#</li>#
+#</ol>#
 
 This mirrors the "State Monad" idea of PLIH:
   https://ku-sldg.github.io/plih//state/

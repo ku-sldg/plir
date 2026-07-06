@@ -3,11 +3,13 @@ Programming Languages in Rocq - Reader+State Monad Exercises
 Combined Reader + State interpreter - Student Problem Set
 
 In these exercises you will:
-  1. Run the combined-monad interpreter [evalRS]/[evalReaderState],
-     exercising both static scoping (Reader) and mutable cells (State)
-  2. Use the AGREEMENT theorem to transport results to the explicit
-     interpreter
-  3. Prove monad laws and effect-independence facts
+#<ol>#
+#<li>#Run the combined-monad interpreter [evalRS]/[evalReaderState],
+exercising both static scoping (Reader) and mutable cells (State)#</li>#
+#<li>#Use the AGREEMENT theorem to transport results to the explicit
+interpreter#</li>#
+#<li>#Prove monad laws and effect-independence facts#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

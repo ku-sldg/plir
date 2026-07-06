@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in AE/):
-  1. plih_rocq_ae_shared.v      -- shared infrastructure
-  2. plih_ae_lecture.v          -- lecture with worked examples
-  3. plih_ae_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_ae_solutions.v        -- complete solutions
-  5. plih_ae_instructor_guide.v -- teaching guide
-  6. plih_ae_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_ae_shared.v      -- shared infrastructure#</li>#
+#<li>#plih_ae_lecture.v          -- lecture with worked examples#</li>#
+#<li>#plih_ae_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_ae_solutions.v        -- complete solutions#</li>#
+#<li>#plih_ae_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_ae_summary.v          -- this file#</li>#
+#</ol>#
  *)
 
 (** * QUICK START *)

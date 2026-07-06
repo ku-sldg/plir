@@ -10,13 +10,15 @@ sub-term, [bind] to carry it along).  We then PROVE the monadic checker
 computes exactly what the explicit one does.
 
 The plan:
-  1. The typed language [Ty]/[TFBAEC] (with [Fix]) and the DIRECT
-     checker [typeof] - the reference, carried over from TRec.
-  2. The READER monad: [Reader E A = E -> option A], with [retR], [bindR]
-     (with [;;] notation), [askR], [localR], [failR], [runR].
-  3. The MONADIC checker [typeofR], written with no explicit context.
-  4. AGREEMENT: [typeofR e ctx = typeof ctx e] for all [e], [ctx] - the
-     refactor changes the code, not the behavior.
+#<ol>#
+#<li>#The typed language [Ty]/[TFBAEC] (with [Fix]) and the DIRECT
+checker [typeof] - the reference, carried over from TRec.#</li>#
+#<li>#The READER monad: [Reader E A = E -> option A], with [retR], [bindR]
+(with [;;] notation), [askR], [localR], [failR], [runR].#</li>#
+#<li>#The MONADIC checker [typeofR], written with no explicit context.#</li>#
+#<li>#AGREEMENT: [typeofR e ctx = typeof ctx e] for all [e], [ctx] - the
+refactor changes the code, not the behavior.#</li>#
+#</ol>#
 
 This mirrors the "More Reader Monad" unit of PLIH:
   https://ku-sldg.github.io/plih//types/5-More-Reader-Monad.html

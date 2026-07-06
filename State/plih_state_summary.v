@@ -5,14 +5,16 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in State/):
-  1. plih_rocq_state_shared.v      -- shared infra (re-exports Rec) +
-                                      the store plumbing [update_at]
-  2. plih_state_lecture.v          -- lecture: cells, store threading,
-                                      mutable vars, state + recursion
-  3. plih_state_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_state_solutions.v        -- complete solutions
-  5. plih_state_instructor_guide.v -- teaching guide
-  6. plih_state_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_state_shared.v      -- shared infra (re-exports Rec) +
+the store plumbing [update_at]#</li>#
+#<li>#plih_state_lecture.v          -- lecture: cells, store threading,
+mutable vars, state + recursion#</li>#
+#<li>#plih_state_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_state_solutions.v        -- complete solutions#</li>#
+#<li>#plih_state_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_state_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//state/

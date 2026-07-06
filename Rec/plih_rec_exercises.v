@@ -3,10 +3,12 @@ Programming Languages in Rocq - Untyped Recursion Exercises
 Recursion via fixpoint combinators - Student Problem Set
 
 In these exercises you will:
-  1. Run the strict [evalM] and lazy [evalL] interpreters for FBAEC
-  2. Drive PRODUCTIVE recursion with the Z (strict) and Y (lazy)
-     fixpoint combinators, and watch strict Y diverge
-  3. Use FUEL MONOTONICITY and simple value/branch laws
+#<ol>#
+#<li>#Run the strict [evalM] and lazy [evalL] interpreters for FBAEC#</li>#
+#<li>#Drive PRODUCTIVE recursion with the Z (strict) and Y (lazy)
+fixpoint combinators, and watch strict Y diverge#</li>#
+#<li>#Use FUEL MONOTONICITY and simple value/branch laws#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------

@@ -5,20 +5,22 @@ An explicit, threaded store
 Every language so far has had IMMUTABLE bindings: environments only grow
 (via [Bind] and application), a value once stored is never changed.
 This chapter adds real MUTATION:
-  1. FBAES = FBAEC + reference cells: [New] (allocate), [Deref] (read),
-     [Assign] (write), and [Seq] (evaluate for effect, keep the store).
-  2. A STORE-THREADING interpreter [evalM]: the environment stays
-     read-only, but the store is BOTH read and written, so it can no
-     longer be threaded like the environment - the interpreter must
-     RETURN a (value, store) pair and pass the new store to the next
-     subexpression.  This plumbing is deliberately verbose.
-  3. FUEL MONOTONICITY for the store-threading interpreter (the
-     well-definedness metatheorem, carried over with the store).
-  4. MUTABLE VARIABLES as a DERIVED FORM: a mutable variable is just
-     sugar for a cell.  This gives ALIASING - two names for one cell -
-     which immutable [Bind] can never express.
-  5. STATE + RECURSION together: a Z-combinator loop that accumulates
-     its result in a mutable cell.
+#<ol>#
+#<li>#FBAES = FBAEC + reference cells: [New] (allocate), [Deref] (read),
+[Assign] (write), and [Seq] (evaluate for effect, keep the store).#</li>#
+#<li>#A STORE-THREADING interpreter [evalM]: the environment stays
+read-only, but the store is BOTH read and written, so it can no
+longer be threaded like the environment - the interpreter must
+RETURN a (value, store) pair and pass the new store to the next
+subexpression.  This plumbing is deliberately verbose.#</li>#
+#<li>#FUEL MONOTONICITY for the store-threading interpreter (the
+well-definedness metatheorem, carried over with the store).#</li>#
+#<li>#MUTABLE VARIABLES as a DERIVED FORM: a mutable variable is just
+sugar for a cell.  This gives ALIASING - two names for one cell -
+which immutable [Bind] can never express.#</li>#
+#<li>#STATE + RECURSION together: a Z-combinator loop that accumulates
+its result in a mutable cell.#</li>#
+#</ol>#
 
 This mirrors the "Mutable State" unit of PLIH:
   https://ku-sldg.github.io/plih//state/

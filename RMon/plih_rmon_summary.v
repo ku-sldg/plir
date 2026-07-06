@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in RMon/):
-  1. plih_rocq_rmon_shared.v      -- shared infra (re-exports TRec)
-  2. plih_rmon_lecture.v          -- lecture: Reader monad type checker
-  3. plih_rmon_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_rmon_solutions.v        -- complete solutions
-  5. plih_rmon_instructor_guide.v -- teaching guide
-  6. plih_rmon_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_rmon_shared.v      -- shared infra (re-exports TRec)#</li>#
+#<li>#plih_rmon_lecture.v          -- lecture: Reader monad type checker#</li>#
+#<li>#plih_rmon_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_rmon_solutions.v        -- complete solutions#</li>#
+#<li>#plih_rmon_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_rmon_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//types/5-More-Reader-Monad.html

@@ -5,12 +5,14 @@ Complete Summary and Organization
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in IDs/):
-  1. plih_rocq_ids_shared.v      -- shared infrastructure (re-exports AE)
-  2. plih_ids_lecture.v          -- lecture with worked examples
-  3. plih_ids_exercises.v        -- student problem set (Admitted stubs)
-  4. plih_ids_solutions.v        -- complete solutions
-  5. plih_ids_instructor_guide.v -- teaching guide
-  6. plih_ids_summary.v          -- this file
+#<ol>#
+#<li>#plih_rocq_ids_shared.v      -- shared infrastructure (re-exports AE)#</li>#
+#<li>#plih_ids_lecture.v          -- lecture with worked examples#</li>#
+#<li>#plih_ids_exercises.v        -- student problem set (Admitted stubs)#</li>#
+#<li>#plih_ids_solutions.v        -- complete solutions#</li>#
+#<li>#plih_ids_instructor_guide.v -- teaching guide#</li>#
+#<li>#plih_ids_summary.v          -- this file#</li>#
+#</ol>#
 
 Source chapter (PLIH, Haskell):
   https://ku-sldg.github.io/plih//ids/1-Adding-IDs.html

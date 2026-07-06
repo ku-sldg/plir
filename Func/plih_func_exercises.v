@@ -3,10 +3,12 @@ Programming Languages in Rocq - Func Exercises
 Adding Functions - Student Problem Set
 
 In these exercises you will:
-  1. Run the closure interpreter [evalM] for FBAE
-  2. State the value/equation laws and use FUEL MONOTONICITY
-  3. Observe the difference between STATIC and DYNAMIC scoping
-  4. Explore currying, divergence, and an error-reporting interpreter
+#<ol>#
+#<li>#Run the closure interpreter [evalM] for FBAE#</li>#
+#<li>#State the value/equation laws and use FUEL MONOTONICITY#</li>#
+#<li>#Observe the difference between STATIC and DYNAMIC scoping#</li>#
+#<li>#Explore currying, divergence, and an error-reporting interpreter#</li>#
+#</ol>#
 
 HOW TO USE THIS FILE
 --------------------
