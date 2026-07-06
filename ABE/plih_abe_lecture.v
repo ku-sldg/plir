@@ -1,7 +1,6 @@
-(**
-Programming Languages in Rocq - ABE Lecture
-Arithmetic + Boolean Expressions
+(** * Programming Languages in Rocq - Arithmetic + Boolean Expressions *)
 
+(**
 This lecture extends AE by adding:
 #<ol>#
 #<li>#Boolean literals and operations#</li>#
@@ -24,15 +23,15 @@ Require Export plih_rocq_abe_shared.
 
 (**
 ABE extends AE with:
-  - Boolean literals: BTrue, BFalse
-  - Boolean operations: And, Or, Not
-  - Comparisons: LessThan, Equal
-  - Conditionals: IfThenElse
 
-Compare to the Haskell course (data ABE = Num | Plus | Minus
-| Boolean | And | Leq | IsZero | If).  We split the boolean and
-comparison operators out into separate constructors so that each
-proof exercises one idea at a time.
+  - Boolean literals: [BTrue], [BFalse]
+  - Boolean operations: [And], [Or], [Not]
+  - Comparisons: [LessThan], [Equal]
+  - Conditionals: [IfThenElse]
+
+We give the boolean and comparison operators each their _own_ constructor -
+rather than folding several of them into one - so that every proof exercises a
+single idea at a time.
  *)
 
 Inductive ABE : Type :=
@@ -57,16 +56,15 @@ Definition abe_example_3 : ABE := LessThan (Num 3) (Num 5).
 (** * SECTION 2: SEMANTICS - EVALUATION WITH MULTIPLE TYPES *)
 
 (**
-ABE evaluation is the KEY DIFFERENCE from AE:
-- It can return either a number or a boolean (a [Value]).
-- It can FAIL if there is a type mismatch.
-- It returns [option Value] instead of [nat].
+Evaluation is the _key difference_ from AE:
 
-Compare to Haskell:
-  eval :: ABE -> Maybe ABE
-We use [option Value]; [None] models a type error.
+  - it can return either a number or a boolean (a [Value]);
+  - it can _fail_ when an operator's operands do not have the types it
+    expects (a type mismatch);
+  - so it returns an [option Value] rather than a bare [nat], with [None]
+    standing for a type error.
 
-The [Value] type (NumV / BoolV) lives in plih_rocq_abe_shared.v.
+The [Value] type ([NumV] / [BoolV]) lives in plih_rocq_abe_shared.v.
  *)
 
 Fixpoint eval (e : ABE) : option Value :=
@@ -117,6 +115,20 @@ Fixpoint eval (e : ABE) : option Value :=
       end
   end.
 
+(**
+Every operator follows the same shape: evaluate the operands, then _check their
+[Value] shape_ with a nested [match].  [Plus] insists on two [NumV]s and
+produces a [NumV]; [And] insists on two [BoolV]s; [LessThan] takes two [NumV]s
+but produces a [BoolV].  Anything else - a boolean where a number is wanted, or
+an operand that already failed with [None] - falls through the [_, _ => None]
+wildcard, so a type error _propagates_ outward as [None].
+
+[IfThenElse] is the one construct that does not evaluate all of its parts: it
+evaluates the condition and then _only_ the taken branch.  That is why a type
+error hiding in the untaken branch never surfaces - see [conditional_is_lazy]
+in Section 9.
+ *)
+
 (* Test cases *)
 
 Example test_eval_1 : eval BTrue = Some (BoolV true).
@@ -140,9 +152,16 @@ Proof. reflexivity. Qed.
 (** * SECTION 3: CLASSIFYING EXPRESSIONS *)
 
 (**
-Some expressions are guaranteed to produce numbers.
-Some are guaranteed to produce booleans.
-We capture these classes with inductive predicates.
+Some expressions are guaranteed to produce a number, some a boolean.  We
+capture these classes with _inductive predicates_.
+
+An [Inductive] whose result is [Prop] (like [is_numeric] below) is not a
+datatype of values but a set of _inference rules_: each constructor is a rule
+saying when the predicate holds.  [numeric_num] says [Num n] is numeric with no
+premises; [numeric_plus] says [Plus a b] is numeric _provided_ [a] and [b] are.
+A proof that a particular expression is [is_numeric] is therefore a small
+derivation built from these rules - and, like any inductive definition, we can
+run [induction] on it.
  *)
 
 (* An expression is "numeric" if it is built only from number operations. *)
@@ -218,6 +237,24 @@ Proof.
     simpl. rewrite H1, H2. reflexivity.
 Qed.
 
+(**
+A note on inducting over a _derivation_.
+
+In AE we ran [induction] on a term ([induction e]).  Here [induction Hnum] runs
+it on a _hypothesis_ - the derivation [Hnum : is_numeric e].  It is the same
+principle applied to [is_numeric]'s rules: one subgoal per rule that could have
+built [Hnum] ([numeric_num], [numeric_plus], [numeric_minus]), with an
+induction hypothesis for each recursive premise.  In the [Plus] case those
+hypotheses are [IHHnum1] and [IHHnum2], one per operand.
+
+Each hypothesis is itself an existential ([exists n, eval a = Some (NumV n)]),
+so [destruct IHHnum1 as [n1 H1]] unpacks it - naming the witness [n1] and the
+equation [H1] - after which [exists (n1 + n2)] supplies the answer and
+[rewrite H1, H2] rewrites both operands at once.  [boolean_never_fails] follows
+the same pattern, and in its comparison cases even calls [numeric_never_fails]
+to discharge the numeric premises.
+ *)
+
 (** * SECTION 4: WORKING WITH CONDITIONALS *)
 
 (**
@@ -270,12 +307,28 @@ Proof.
   exists n. symmetry. exact Heval.
 Qed.
 
+(**
+A note on [injection].
+
+The proof reaches a hypothesis [Heval : Some (NumV n) = Some v] and needs the
+underlying [v = NumV n].  Constructors are _injective_ and _disjoint_: [Some x
+= Some y] holds only when [x = y], and two different constructors are never
+equal (the fact [discriminate] exploited in AE).  [injection Heval as Heval]
+uses injectivity to peel off the shared [Some], leaving the hypothesis
+[NumV n = v]; [symmetry] then orients it and [exact] closes the goal.
+ *)
+
 (** * SECTION 6: EQUIVALENCE AND OPTIMIZATION *)
 
 (**
-Two expressions are equivalent when they evaluate to the same
-result.  Because eval returns [option Value], "same result" covers
-both "both succeed with the same value" and "both fail".
+Two expressions are equivalent when they evaluate to the same result.  Because
+[eval] returns an [option Value], "same result" now covers both "both succeed
+with the same value" _and_ "both fail with [None]".
+
+As in AE, [abe_equiv] is an _equivalence relation_: the next three lemmas prove
+it _reflexive_, _symmetric_, and _transitive_, each reducing (after [unfold]) to
+the corresponding fact about equality.  De Morgan's law then shows a genuine
+boolean-algebra equivalence.
  *)
 
 Definition abe_equiv (e1 e2 : ABE) : Prop := eval e1 = eval e2.
@@ -313,7 +366,35 @@ Proof.
   destruct b1; destruct b2; reflexivity.
 Qed.
 
+(**
+That proof of De Morgan's law uses three case-analysis tools worth naming.
+
+[abe_equiv] unfolds exactly as [ae_equiv] did in AE, so [reflexivity],
+[symmetry], and [transitivity] apply to the underlying [eval _ = eval _].
+([abe_equiv_trans] even discharges its two remaining goals with
+[transitivity (eval e2); [ exact H12 | exact H23 ]] - the [; [ g1 | g2 ]] form
+runs a _different_ tactic on each subgoal the [;] produced.)
+
+  - [cbn] simplifies much like [simpl] but is gentler and more predictable;
+    here it exposes the nested [match]es inside [eval] without over-reducing.
+  - [destruct (eval e1) as [ [n1|b1] | ]] case-splits the _result_ of an
+    expression.  Its type is [option Value], so the outer [[ _ | ]] splits
+    [Some] from [None] and the inner [[n1|b1]] splits a [Some]'s [Value] into
+    [NumV n1] / [BoolV b1] - all in one nested pattern.  Splitting both operands
+    leaves nine combinations to consider.
+  - [try reflexivity] attempts [reflexivity] and _quietly does nothing_ if it
+    fails.  Eight of the nine combinations close immediately; [try] disposes of
+    them and leaves only the genuine bool/bool case, finished by
+    [destruct b1; destruct b2; reflexivity].
+ *)
+
 (** * SECTION 7: BOOLEAN PROPERTIES *)
+
+(**
+The boolean operators obey the usual laws - but, because evaluation is typed
+now, the laws come with conditions.  We start with the negations of the
+literals, then look at how [And]/[Or] behave once the left operand is known.
+ *)
 
 Lemma not_true : eval (Not BTrue) = Some (BoolV false).
 Proof. reflexivity. Qed.
@@ -359,6 +440,12 @@ Qed.
 
 (** * SECTION 8: COMPARISON PROPERTIES *)
 
+(**
+Comparisons take two numbers and produce a boolean.  Concrete comparisons
+compute, so they close by [reflexivity]; comparing a variable [n] with itself
+needs one small rewrite with [Nat.eqb_refl].
+ *)
+
 Lemma less_than_3_5 :
   eval (LessThan (Num 3) (Num 5)) = Some (BoolV true).
 Proof. reflexivity. Qed.
@@ -375,6 +462,12 @@ Proof.
 Qed.
 
 (** * SECTION 9: CONDITIONAL SEMANTICS *)
+
+(**
+Two more looks at [IfThenElse]: a conditional whose branches are arithmetic,
+and the payoff of evaluating only the taken branch - a type error sitting in
+the _untaken_ branch is never triggered.
+ *)
 
 Lemma conditional_with_arithmetic_branches :
   eval (IfThenElse (LessThan (Num 3) (Num 5))
@@ -394,6 +487,13 @@ Proof.
 Qed.
 
 (** * SECTION 10: SIZE AND COMPLEXITY METRICS *)
+
+(**
+Finally, two structural measures defined by recursion over the syntax: [size]
+counts the nodes of an expression, and [count_conditionals] counts its
+[IfThenElse]s.  Both facts below are one-liners - [induction e; simpl; lia]
+handles every constructor uniformly.
+ *)
 
 Fixpoint size (e : ABE) : nat :=
   match e with
@@ -594,4 +694,22 @@ no longer assume every expression evaluates to a nat - some evaluate
 to booleans, and some fail with type errors.
 
 Next: students add type checking to rule out the errors statically.
+ *)
+
+(** * NEW PROOF TACTICS IN THIS CHAPTER *)
+
+(**
+This chapter reuses the AE toolkit ([intro]/[intros], [reflexivity], [simpl],
+[rewrite], [symmetry], [exact], [exists], [discriminate], [induction], [lia],
+[unfold], [destruct], and friends).  A few tactics and idioms appear here for
+the first time:
+
+#<ul>#
+#<li>#[induction] _on a derivation_ - running [induction] on a hypothesis of an inductive predicate ([induction Hnum]), giving one subgoal per rule with induction hypotheses for the recursive premises.#</li>#
+#<li>#[destruct (eval e) as [ [n|b] | ]] - a nested pattern that case-splits an [option Value] into [NumV], [BoolV], and [None] in a single step.#</li>#
+#<li>#[injection] - use constructor injectivity to turn [C x = C y] into [x = y] (here [Some (NumV n) = Some v] into [NumV n = v]).#</li>#
+#<li>#[cbn] - simplify by computation like [simpl], but gentler and more predictable.#</li>#
+#<li>#[try t] - attempt tactic [t] and do nothing if it fails; used to clear the easy cases of a large case split ([try reflexivity]).#</li>#
+#<li>#[t; [ g1 | g2 | ... ]] - after [t] leaves several goals, run a different tactic on each of them.#</li>#
+#</ul>#
  *)
