@@ -1,23 +1,16 @@
-(**
-Programming Languages in Rocq - Untyped Recursion Lecture
-Recursion via fixpoint combinators
+(** * Programming Languages in Rocq - Untyped Recursion *)
 
+(**
 The Func chapter left a cliffhanger: [omega] shows the language can
-LOOP, but FBAE has no conditional, so recursion could never TEST its
+_loop_, but FBAE has no conditional, so recursion could never _test_ its
 argument and stop - nothing productive could be written.  This chapter
 fixes that and delivers real recursion:
 #<ol>#
-#<li>#FBAEC = FBAE + Booleans + [If]: the missing CONDITIONAL.#</li>#
-#<li>#A STRICT (call-by-value) closure interpreter [evalM], and a LAZY
-(call-by-name) interpreter [evalL] - both fuel-driven, as in Func.#</li>#
-#<li>#FUEL MONOTONICITY for the strict interpreter (the well-definedness
-metatheorem, carried over from Func with the new cases).#</li>#
-#<li>#RECURSION with NO new construct: the Y and Z fixpoint combinators
-as ordinary FBAEC terms.  Y is a parameterised [omega] that needs
-LAZY evaluation; Z eta-guards the self-application so it also works
-under STRICT evaluation.#</li>#
-#<li>#PRODUCTIVE examples that actually terminate: summation and
-factorial, computed by [Z] under [evalM] and by [Y] under [evalL].#</li>#
+#<li>#FBAEC = FBAE + Booleans + [If]: the missing _conditional_.#</li>#
+#<li>#A _strict_ (call-by-value) closure interpreter [evalM], and a _lazy_ (call-by-name) interpreter [evalL] - both fuel-driven, as in Func.#</li>#
+#<li>#_Fuel monotonicity_ for the strict interpreter (the well-definedness metatheorem, carried over from Func with the new cases).#</li>#
+#<li>#Recursion with _no new construct_: the Y and Z fixpoint combinators as ordinary FBAEC terms.  Y needs _lazy_ evaluation; Z eta-guards the self-application so it also works under _strict_ evaluation.#</li>#
+#<li>#_Productive_ examples that actually terminate: summation and factorial, computed by Z under [evalM] and by Y under [evalL].#</li>#
 #</ol>#
 
 This mirrors the "Untyped Recursion" unit of PLIH:
@@ -39,12 +32,14 @@ Import ListNotations.
 (**
 FBAEC ("FBAE + Conditionals") is the Func language extended with what
 it was missing to make recursion useful:
+
   - [Boolean b] : a Boolean literal;
   - [IsZero e]  : the test that produces a Boolean from a number;
-  - [If c t f]  : a CONDITIONAL - and crucially, it evaluates ONLY the
+  - [If c t f]  : a _conditional_ - crucially, it evaluates _only_ the
                   branch selected, so a recursive call in the untaken
                   branch is never made.  That is what lets recursion
                   bottom out.
+
 We also add [Mult] so factorial has something to multiply with.
  *)
 Inductive FBAEC : Type :=
@@ -74,7 +69,7 @@ Inductive RVal : Type :=
 
 (**
 The strict interpreter.  [Bind] and [App] evaluate the bound/argument
-expression BEFORE the body (call-by-value); [If] evaluates its
+expression _before_ the body (call-by-value); [If] evaluates its
 condition and then only the chosen branch.  Fuel-driven, since the
 language still diverges.
  *)
@@ -139,7 +134,7 @@ Definition eval (e : FBAEC) : option RVal := evalM 1000 nil e.
 (**
 The lazy interpreter, carried over from Func's [evalL] and extended
 with the new arithmetic/conditional cases.  A bound name or argument
-is stored UNEVALUATED as a thunk (expression + its environment) and
+is stored _unevaluated_ as a thunk (expression + its environment) and
 forced only when looked up.  Arithmetic, [IsZero], and [If]'s
 condition still force their operands - you cannot branch on a thunk.
  *)
@@ -191,7 +186,7 @@ Fixpoint evalL (fuel : nat) (env : Env LThunk) (e : FBAEC) : option LVal :=
       | App f a =>
           match evalL k env f with
           | Some (LCloV i b cenv) =>
-              (* the ARGUMENT is thunked in the caller's env, unevaluated *)
+              (* the argument is thunked in the caller's env, unevaluated *)
               evalL k (extend i (Thk a env) cenv) b
           | _ => None
           end
@@ -206,6 +201,11 @@ Fixpoint evalL (fuel : nat) (env : Env LThunk) (e : FBAEC) : option LVal :=
 Definition evalLazy (e : FBAEC) : option LVal := evalL 1000 nil e.
 
 (** * SECTION 4: RUNNING THE BASICS *)
+
+(**
+A few sanity-check examples to confirm the new forms work before we
+build the recursive combinators on top of them.
+ *)
 
 Example ev_arith : eval (Mult (Num 6) (Plus (Num 3) (Num 4))) = Some (NumV 42).
 Proof. reflexivity. Qed.
@@ -231,7 +231,7 @@ Proof. reflexivity. Qed.
 
 (**
 As in Func, no measure bounds the fuel, so the well-definedness result
-is MONOTONICITY: more fuel never changes an answer already produced.
+is _monotonicity_: more fuel never changes an answer already produced.
 The proof is Func's, with cases for [Mult], [Boolean], [IsZero], [If].
  *)
 Lemma evalM_mono : forall f1 f2 env e v,
@@ -295,7 +295,7 @@ Example omega_diverges : evalM 100 nil omega = None.
 Proof. reflexivity. Qed.
 
 (**
-RECURSION is [omega] made useful: self-application PARAMETERISED by the
+_Recursion_ is [omega] made useful: self-application _parameterised_ by the
 function to iterate.  A fixpoint combinator [fix] satisfies
 [fix F ~> F (fix F)], so [F]'s recursive-call parameter is bound to
 another copy of the recursion - definable as an ordinary term.
@@ -308,9 +308,9 @@ Definition Yc : FBAEC :=
          (Lambda "x" (App (Id "f") (App (Id "x") (Id "x"))))).
 
 (**
-The Z combinator, Y with the self-application ETA-GUARDED behind a
+The Z combinator, Y with the self-application _eta-guarded_ behind a
 lambda, Z = \f. (\x. f (\v. x x v)) (\x. f (\v. x x v)).  The delayed
-[\v. x x v] is a VALUE, so strict evaluation can build the fixpoint
+[\v. x x v] is a _value_, so strict evaluation can build the fixpoint
 without looping.
  *)
 Definition Zc : FBAEC :=
@@ -336,8 +336,8 @@ Definition sumGen : FBAEC :=
           (Plus (Id "z") (App (Id "g") (Minus (Id "z") (Num 1)))))).
 
 (**
-Under STRICT evaluation the Z combinator ties the knot and the
-recursion RUNS to completion: sum 0..5 = 15.  This is the payoff the
+Under _strict_ evaluation the Z combinator ties the knot and the
+recursion _runs_ to completion: sum 0..5 = 15.  This is the payoff the
 Func chapter could not reach - real, terminating recursion.
  *)
 Example sum_Z_strict :
@@ -345,15 +345,15 @@ Example sum_Z_strict :
 Proof. reflexivity. Qed.
 
 (**
-The plain Y combinator DIVERGES under strict evaluation - it is a
-parameterised [omega], looping before any work (cf. Func's [recY]).
+The plain Y combinator _diverges_ under strict evaluation - it is a
+parameterised [omega], looping before any work.
  *)
 Example sum_Y_strict_diverges :
   evalM 100 nil (App (App Yc sumGen) (Num 5)) = None.
 Proof. reflexivity. Qed.
 
 (**
-But under LAZY (call-by-name) evaluation the eta-guard is unnecessary:
+But under _lazy_ (call-by-name) evaluation the eta-guard is unnecessary:
 the plain Y combinator computes the same answer, 15.  Strict needs Z;
 lazy runs Y directly - the classic strict/lazy split for recursion.
  *)
@@ -385,10 +385,10 @@ Proof. reflexivity. Qed.
 
 (**
 FBAEC keeps the whole FBAE surface syntax and adds four forms, so it
-needs its OWN parser (the notation is tied to the FBAEC type, not
+needs its _own_ parser (the notation is tied to the FBAEC type, not
 FBAE's).  It is Func's grammar - numerals/identifiers via coercion,
-[+]/[-], [bind ID = e1 in e2], [lambda ID in body], and APPLICATION BY
-JUXTAPOSITION [f a] - extended with multiplication [*], the Boolean
+[+]/[-], [bind ID = e1 in e2], [lambda ID in body], and application by
+_juxtaposition_ [f a] - extended with multiplication [*], the Boolean
 literals [true]/[false], the numeric test [iszero e], and the
 conditional [if c then t else f].
  *)
@@ -445,8 +445,8 @@ Example parse_if :
 Proof. reflexivity. Qed.
 
 (**
-The real payoff is READABILITY of the recursive generators.  Here are
-[sumGen] and [factGen] from Section 7, now written the way the chapter
+The real payoff is _readability_ of the recursive generators.  Here are
+[sumGen] and [factGen] from Section 7, written the way the chapter
 states them on paper.
  *)
 
@@ -481,24 +481,29 @@ Proof. reflexivity. Qed.
 (**
 In this lecture we:
 #<ol>#
-#<li>#Extended FBAE to FBAEC with Booleans, [IsZero], and a CONDITIONAL
-[If] that evaluates only the selected branch - the ingredient the
-Func chapter lacked, which lets recursion bottom out.#</li>#
-#<li>#Gave a STRICT closure interpreter [evalM] and a LAZY interpreter
-[evalL], both fuel-driven, and proved FUEL MONOTONICITY for [evalM].#</li>#
-#<li>#Encoded recursion with NO new construct: the Y and Z fixpoint
-combinators as ordinary FBAEC terms.#</li>#
-#<li>#Ran PRODUCTIVE recursion to real answers: summation (0..5 = 15)
-and factorial (5! = 120), with Z under strict [evalM] and Y under
-lazy [evalL], while strict Y diverges.#</li>#
-#<li>#Added CONCRETE SYNTAX (its own parser, since FBAEC is a new type):
-Func's grammar plus [*], [true]/[false], [iszero e], and
-[if c then t else f], so [sumGen]/[factGen] read as on paper.#</li>#
+#<li>#Extended FBAE to FBAEC with Booleans, [IsZero], and a _conditional_ [If] that evaluates only the selected branch - the ingredient the Func chapter lacked, which lets recursion bottom out.#</li>#
+#<li>#Gave a _strict_ closure interpreter [evalM] and a _lazy_ interpreter [evalL], both fuel-driven, and proved _fuel monotonicity_ for [evalM].#</li>#
+#<li>#Encoded recursion with _no new construct_: the Y and Z fixpoint combinators as ordinary FBAEC terms.#</li>#
+#<li>#Ran _productive_ recursion to real answers: summation (0..5 = 15) and factorial (5! = 120), with Z under strict [evalM] and Y under lazy [evalL], while strict Y diverges.#</li>#
+#<li>#Added _concrete syntax_ (its own parser, since FBAEC is a new type): Func's grammar plus [*], [true]/[false], [iszero e], and [if c then t else f], so [sumGen]/[factGen] read as on paper.#</li>#
 #</ol>#
 
 The catch: [omega] and [Y] show the untyped language is still Turing
-powerful, so [evalM] is inescapably PARTIAL (the fuel can run out).
-Next: TYPES rule out the stuck/divergent programs - but, as the Typed
-Recursion chapter shows, recursion must then be put BACK deliberately
+powerful, so [evalM] is inescapably _partial_ (the fuel can run out).
+Next: types rule out the stuck/divergent programs - but, as the Typed
+Recursion chapter shows, recursion must then be put _back_ deliberately
 with a typed [fix], because the combinators stop type-checking.
+ *)
+
+(** * NEW PROOF TACTICS IN THIS CHAPTER *)
+
+(**
+This chapter introduces no new proof tactics.  The [evalM_mono] proof
+uses the same patterns established in Func: [discriminate], [ltac:(lia)],
+[try discriminate], [destruct ... eqn:E], and [exact].  The extra
+constructor cases ([Mult], [Boolean], [IsZero], [If]) follow the same
+template as [Plus]/[Minus]/[App].
+
+See Func's "New Proof Tactics" section for a full glossary of all tactics
+used here.
  *)
