@@ -531,21 +531,23 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Carried over the reference-cell language [FBAES] and its explicit
-     interpreter [evalM], which threads BOTH the environment and the
-     store by hand.
-  2. Combined a READER (for the read-only environment) and a STATE (for
-     the mutable store) into one monad [RS E S A = E -> S -> option (A*S)]
-     with [askRS]/[localRS] and [getRS]/[putRS] over a shared [bindRS].
-  3. Rebuilt the interpreter as [evalRS] carrying NEITHER resource
-     explicitly - [askRS]/[localRS] handle the environment,
-     [getRS]/[putRS] the store, [bindRS] threads both.
-  4. Proved AGREEMENT [evalRS fuel e env s = evalM fuel env s e] in a
-     single induction (corollary [evalReaderState_agrees] for the
-     wrappers), and checked the monad laws / effect-independence.
-  5. Added CONCRETE SYNTAX (Section 7): the State chapter's FBAES parser
-     ([new e]/[! e]/[l := e]/[a ; b]), read through the combined-monad
-     interpreter [evalReaderState].
+#<ol>#
+#<li>#Carried over the reference-cell language [FBAES] and its explicit
+interpreter [evalM], which threads BOTH the environment and the
+store by hand.#</li>#
+#<li>#Combined a READER (for the read-only environment) and a STATE (for
+the mutable store) into one monad [RS E S A = E -> S -> option (A*S)]
+with [askRS]/[localRS] and [getRS]/[putRS] over a shared [bindRS].#</li>#
+#<li>#Rebuilt the interpreter as [evalRS] carrying NEITHER resource
+explicitly - [askRS]/[localRS] handle the environment,
+[getRS]/[putRS] the store, [bindRS] threads both.#</li>#
+#<li>#Proved AGREEMENT [evalRS fuel e env s = evalM fuel env s e] in a
+single induction (corollary [evalReaderState_agrees] for the
+wrappers), and checked the monad laws / effect-independence.#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 7): the State chapter's FBAES parser
+([new e]/[! e]/[l := e]/[a ; b]), read through the combined-monad
+interpreter [evalReaderState].#</li>#
+#</ol>#
 
 This is the culmination of the monad arc: RMon hid a context, SMon hid a
 store, and here BOTH are hidden at once by stacking their operations in

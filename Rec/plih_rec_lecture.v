@@ -478,19 +478,21 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Extended FBAE to FBAEC with Booleans, [IsZero], and a CONDITIONAL
-     [If] that evaluates only the selected branch - the ingredient the
-     Func chapter lacked, which lets recursion bottom out.
-  2. Gave a STRICT closure interpreter [evalM] and a LAZY interpreter
-     [evalL], both fuel-driven, and proved FUEL MONOTONICITY for [evalM].
-  3. Encoded recursion with NO new construct: the Y and Z fixpoint
-     combinators as ordinary FBAEC terms.
-  4. Ran PRODUCTIVE recursion to real answers: summation (0..5 = 15)
-     and factorial (5! = 120), with Z under strict [evalM] and Y under
-     lazy [evalL], while strict Y diverges.
-  5. Added CONCRETE SYNTAX (its own parser, since FBAEC is a new type):
-     Func's grammar plus [*], [true]/[false], [iszero e], and
-     [if c then t else f], so [sumGen]/[factGen] read as on paper.
+#<ol>#
+#<li>#Extended FBAE to FBAEC with Booleans, [IsZero], and a CONDITIONAL
+[If] that evaluates only the selected branch - the ingredient the
+Func chapter lacked, which lets recursion bottom out.#</li>#
+#<li>#Gave a STRICT closure interpreter [evalM] and a LAZY interpreter
+[evalL], both fuel-driven, and proved FUEL MONOTONICITY for [evalM].#</li>#
+#<li>#Encoded recursion with NO new construct: the Y and Z fixpoint
+combinators as ordinary FBAEC terms.#</li>#
+#<li>#Ran PRODUCTIVE recursion to real answers: summation (0..5 = 15)
+and factorial (5! = 120), with Z under strict [evalM] and Y under
+lazy [evalL], while strict Y diverges.#</li>#
+#<li>#Added CONCRETE SYNTAX (its own parser, since FBAEC is a new type):
+Func's grammar plus [*], [true]/[false], [iszero e], and
+[if c then t else f], so [sumGen]/[factGen] read as on paper.#</li>#
+#</ol>#
 
 The catch: [omega] and [Y] show the untyped language is still Turing
 powerful, so [evalM] is inescapably PARTIAL (the fuel can run out).

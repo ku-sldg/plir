@@ -580,23 +580,25 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Carried over [FBAES] and the explicit option-valued interpreter
-     [evalM] as the reference.
-  2. Stacked THREE effects in one monad
-     [RSE E S A = E -> S -> sum string (A * S)]: Reader
-     ([askRSE]/[localRSE]) for the environment, State
-     ([getRSE]/[putRSE]) for the store, and Either ([throwRSE], with
-     [bindRSE] short-circuiting) for descriptive error messages.
-  3. Rebuilt the interpreter as [evalRSE], carrying no resource by hand
-     and raising a descriptive message at every stuck point (including
-     running out of fuel).
-  4. Proved REFINEMENT [forget (evalRSE fuel e env s) = evalM fuel env s e]
-     (corollary [evalRSErr_refines] for the wrappers): the messages add
-     information without changing behavior.
-  5. Added CONCRETE SYNTAX (Section 7): the State chapter's FBAES parser
-     ([new e]/[! e]/[l := e]/[a ; b]), read through [evalRSErr] - a
-     success on [inr], a stuck program on [inl] with a descriptive
-     message.
+#<ol>#
+#<li>#Carried over [FBAES] and the explicit option-valued interpreter
+[evalM] as the reference.#</li>#
+#<li>#Stacked THREE effects in one monad
+[RSE E S A = E -> S -> sum string (A * S)]: Reader
+([askRSE]/[localRSE]) for the environment, State
+([getRSE]/[putRSE]) for the store, and Either ([throwRSE], with
+[bindRSE] short-circuiting) for descriptive error messages.#</li>#
+#<li>#Rebuilt the interpreter as [evalRSE], carrying no resource by hand
+and raising a descriptive message at every stuck point (including
+running out of fuel).#</li>#
+#<li>#Proved REFINEMENT [forget (evalRSE fuel e env s) = evalM fuel env s e]
+(corollary [evalRSErr_refines] for the wrappers): the messages add
+information without changing behavior.#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 7): the State chapter's FBAES parser
+([new e]/[! e]/[l := e]/[a ; b]), read through [evalRSErr] - a
+success on [inr], a stuck program on [inl] with a descriptive
+message.#</li>#
+#</ol>#
 
 This is the capstone of the monad arc.  Reader (RMon) hid a context,
 Either (EMon) added messages, State (SMon) hid a store, RSMon combined

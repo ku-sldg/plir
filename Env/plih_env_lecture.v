@@ -321,16 +321,18 @@ Proof. apply evalEnv_agrees_eval. Qed.
 
 (**
 In this lecture we:
-  1. Introduced ENVIRONMENTS as deferred substitutions.
-  2. Defined [evalE], a clean STRUCTURAL interpreter - no fuel,
-     because it never rebuilds the term.
-  3. Proved extensionality of [evalE] and the key lemma
-       evalE (extend i n env) e = evalE env (subst i (Num n) e).
-  4. Proved the two interpreters AGREE: [evalE nil e = eval e],
-     so environments change only HOW we evaluate, not WHAT we get.
-  5. Transferred PROGRESS to the environment interpreter for free.
-  6. Reused the INHERITED concrete syntax, so [<{ ... }>] programs run
-     under the environment interpreter too - no new notation required.
+#<ol>#
+#<li>#Introduced ENVIRONMENTS as deferred substitutions.#</li>#
+#<li>#Defined [evalE], a clean STRUCTURAL interpreter - no fuel,
+because it never rebuilds the term.#</li>#
+#<li>#Proved extensionality of [evalE] and the key lemma
+evalE (extend i n env) e = evalE env (subst i (Num n) e).#</li>#
+#<li>#Proved the two interpreters AGREE: [evalE nil e = eval e],
+so environments change only HOW we evaluate, not WHAT we get.#</li>#
+#<li>#Transferred PROGRESS to the environment interpreter for free.#</li>#
+#<li>#Reused the INHERITED concrete syntax, so [<{ ... }>] programs run
+under the environment interpreter too - no new notation required.#</li>#
+#</ol>#
 
 Exercises: implement an error-reporting variant, and an interpreter
 seeded with a PRELUDE (a starting environment of always-available

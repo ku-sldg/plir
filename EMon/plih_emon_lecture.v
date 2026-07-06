@@ -381,19 +381,21 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Kept the typed language and the direct [option] checker [typeof].
-  2. Combined READER with EITHER: [RE E A = E -> string + A], threading
-     a context AND carrying an error message, with
-     [retE]/[bindE]/[askE]/[localE]/[throwE]/[runE].
-  3. Wrote [typeofE], which reports a descriptive message at every
-     failure instead of a bare [None].
-  4. Proved REFINEMENT ([forget (typeofE e ctx) = typeof ctx e]): the
-     message-carrying checker decides exactly the same programs; the
-     messages are extra information, not a change of behavior.
-  5. Added CONCRETE SYNTAX (Section 6): TRec's type grammar
-     [<[ Nat -> Bool ]>] and term grammar [<{ ... }>] (ascribed lambda
-     and prefix [fix]), read through [typecheckE] - success on [inr], a
-     descriptive message on [inl].
+#<ol>#
+#<li>#Kept the typed language and the direct [option] checker [typeof].#</li>#
+#<li>#Combined READER with EITHER: [RE E A = E -> string + A], threading
+a context AND carrying an error message, with
+[retE]/[bindE]/[askE]/[localE]/[throwE]/[runE].#</li>#
+#<li>#Wrote [typeofE], which reports a descriptive message at every
+failure instead of a bare [None].#</li>#
+#<li>#Proved REFINEMENT ([forget (typeofE e ctx) = typeof ctx e]): the
+message-carrying checker decides exactly the same programs; the
+messages are extra information, not a change of behavior.#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 6): TRec's type grammar
+[<[ Nat -> Bool ]>] and term grammar [<{ ... }>] (ascribed lambda
+and prefix [fix]), read through [typecheckE] - success on [inr], a
+descriptive message on [inl].#</li>#
+#</ol>#
 
 This completes the monadic-interpreter arc: the Reader monad removed the
 context plumbing, and the Either monad turned silent failure into

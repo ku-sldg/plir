@@ -574,17 +574,18 @@ Qed.
 
 (**
 In this lecture, we:
-
-1. Extended the language with booleans, comparisons, and conditionals.
-2. Introduced multiple value types (NumV, BoolV).
-3. Added error handling with [option Value].
-4. Proved that well-formed (numeric / boolean) expressions never fail.
-5. Explored boolean algebra properties, including De Morgan's law.
-6. Introduced type-consistency reasoning.
-7. Proved equivalence is reflexive, symmetric, and transitive.
-8. Added CONCRETE SYNTAX with a notation-based parser covering booleans,
-   the connectives, comparisons, and the conditional, so that
-   [<{ if 3 < 5 then 1 + 2 else 10 }>] elaborates to the abstract tree.
+#<ol>#
+#<li>#Extended the language with booleans, comparisons, and conditionals.#</li>#
+#<li>#Introduced multiple value types (NumV, BoolV).#</li>#
+#<li>#Added error handling with [option Value].#</li>#
+#<li>#Proved that well-formed (numeric / boolean) expressions never fail.#</li>#
+#<li>#Explored boolean algebra properties, including De Morgan's law.#</li>#
+#<li>#Introduced type-consistency reasoning.#</li>#
+#<li>#Proved equivalence is reflexive, symmetric, and transitive.#</li>#
+#<li>#Added CONCRETE SYNTAX with a notation-based parser covering booleans,
+the connectives, comparisons, and the conditional, so that
+[<{ if 3 < 5 then 1 + 2 else 10 }>] elaborates to the abstract tree.#</li>#
+#</ol>#
 
 Key insight: adding booleans forces us to rethink evaluation.  We can
 no longer assume every expression evaluates to a nat - some evaluate

@@ -943,31 +943,33 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Extended BAE to FBAE with first-class [Lambda]/[App].
-  2. Wrote a SUBSTITUTION interpreter [evalS] and saw that
-     substituting functions can GROW terms, so - unlike BAE - no
-     [size] bound works and the language can DIVERGE.  Fuel is
-     unavoidable.
-  3. Introduced VALUES and CLOSURES and the environment interpreter
-     [evalM]: a closure captures the definition-time environment.
-  4. Proved FUEL MONOTONICITY, the well-definedness result that
-     replaces "size is enough fuel," plus determinism.
-  5. Distinguished STATIC from DYNAMIC scoping with [evalDyn] and a
-     term on which they disagree (4 vs 5); [evalS] and [evalM] both
-     give the static answer.
-  6. Illustrated currying, and made the strict-vs-lazy choice precise
-     with a call-by-name interpreter [evalL] (thunks forced on demand)
-     that DISAGREES with strict [evalM] on termination ([omega] bound
-     but unused: [None] vs [Some 5]).
-  7. Defined ELABORATION [elab] desugaring [Bind] into [App]/[Lambda],
-     showed it eliminates every [Bind] ([elab_bindFree]), and proved it
-     preserves evaluation ([elab_preserves]).
-  8. Previewed RECURSION: fixpoint combinators ([Y]/[Z]) are definable
-     from [Lambda]/[App], but productive recursion needs a CONDITIONAL
-     FBAE lacks - delivered in the Untyped Recursion chapter (Rec/).
-  9. Added CONCRETE SYNTAX with a notation-based parser: [lambda ID in
-     body] for functions and JUXTAPOSITION [f a] for application, so
-     [<{ (lambda "x" in "x" + 1) 4 }>] elaborates to the abstract tree.
+#<ol>#
+#<li>#Extended BAE to FBAE with first-class [Lambda]/[App].#</li>#
+#<li>#Wrote a SUBSTITUTION interpreter [evalS] and saw that
+substituting functions can GROW terms, so - unlike BAE - no
+[size] bound works and the language can DIVERGE.  Fuel is
+unavoidable.#</li>#
+#<li>#Introduced VALUES and CLOSURES and the environment interpreter
+[evalM]: a closure captures the definition-time environment.#</li>#
+#<li>#Proved FUEL MONOTONICITY, the well-definedness result that
+replaces "size is enough fuel," plus determinism.#</li>#
+#<li>#Distinguished STATIC from DYNAMIC scoping with [evalDyn] and a
+term on which they disagree (4 vs 5); [evalS] and [evalM] both
+give the static answer.#</li>#
+#<li>#Illustrated currying, and made the strict-vs-lazy choice precise
+with a call-by-name interpreter [evalL] (thunks forced on demand)
+that DISAGREES with strict [evalM] on termination ([omega] bound
+but unused: [None] vs [Some 5]).#</li>#
+#<li>#Defined ELABORATION [elab] desugaring [Bind] into [App]/[Lambda],
+showed it eliminates every [Bind] ([elab_bindFree]), and proved it
+preserves evaluation ([elab_preserves]).#</li>#
+#<li>#Previewed RECURSION: fixpoint combinators ([Y]/[Z]) are definable
+from [Lambda]/[App], but productive recursion needs a CONDITIONAL
+FBAE lacks - delivered in the Untyped Recursion chapter (Rec/).#</li>#
+#<li>#Added CONCRETE SYNTAX with a notation-based parser: [lambda ID in
+body] for functions and JUXTAPOSITION [f a] for application, so
+[<{ (lambda "x" in "x" + 1) 4 }>] elaborates to the abstract tree.#</li>#
+#</ol>#
 
 Next: UNTYPED RECURSION adds a conditional and runs the Y/Z combinators
 for real (Rec/).  Then TYPED functions rule out the stuck/divergent

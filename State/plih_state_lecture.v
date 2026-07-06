@@ -525,24 +525,26 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Extended FBAEC to FBAES with reference cells - [New], [Deref],
-     [Assign], [Seq] - the PRIMITIVE form of mutable state, and added
-     locations [LocV] to the value domain.
-  2. Gave a STORE-THREADING interpreter [evalM] that returns a
-     (value, store) pair: the environment stays read-only, but the
-     store is read AND written, so it is threaded explicitly, left to
-     right, through every subexpression.
-  3. Proved FUEL MONOTONICITY for [evalM] - now preserving the store as
-     part of the answer.
-  4. Recovered MUTABLE VARIABLES as a DERIVED FORM ([MutBind]/[Get]/
-     [SetVar] = sugar over cells) and saw ALIASING fall out - two names
-     for one cell, which immutable [Bind] cannot express.
-  5. Combined STATE and RECURSION: a Z-combinator loop accumulating into
-     a shared cell.
-  6. Added CONCRETE SYNTAX (Section 8): Rec's FBAEC parser plus the four
-     state forms [new e], [! e], [l := e], [a ; b] - reading like ML,
-     with [!] binding tighter than arithmetic and [;] the loosest,
-     right-associative operator.
+#<ol>#
+#<li>#Extended FBAEC to FBAES with reference cells - [New], [Deref],
+[Assign], [Seq] - the PRIMITIVE form of mutable state, and added
+locations [LocV] to the value domain.#</li>#
+#<li>#Gave a STORE-THREADING interpreter [evalM] that returns a
+(value, store) pair: the environment stays read-only, but the
+store is read AND written, so it is threaded explicitly, left to
+right, through every subexpression.#</li>#
+#<li>#Proved FUEL MONOTONICITY for [evalM] - now preserving the store as
+part of the answer.#</li>#
+#<li>#Recovered MUTABLE VARIABLES as a DERIVED FORM ([MutBind]/[Get]/
+[SetVar] = sugar over cells) and saw ALIASING fall out - two names
+for one cell, which immutable [Bind] cannot express.#</li>#
+#<li>#Combined STATE and RECURSION: a Z-combinator loop accumulating into
+a shared cell.#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 8): Rec's FBAEC parser plus the four
+state forms [new e], [! e], [l := e], [a ; b] - reading like ML,
+with [!] binding tighter than arithmetic and [;] the loosest,
+right-associative operator.#</li>#
+#</ol>#
 
 The catch: this explicit store-threading is PAINFUL - every case has to
 name intermediate stores [s1], [s2], ... and thread them by hand, and

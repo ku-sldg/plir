@@ -512,20 +512,22 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Carried over the reference-cell language [FBAES] and its EXPLICIT
-     store-threading interpreter [evalM] from the State chapter.
-  2. Defined the STATE monad [State S A = S -> option (A * S)] with
-     [retS]/[bindS]/[getS]/[putS]/[failS] and [;;] notation.
-  3. Rebuilt the interpreter as [evalS] with NO explicit store - [bindS]
-     threads it, [getS]/[putS] appear only at [New]/[Deref]/[Assign].
-  4. Proved AGREEMENT: [evalS fuel env e s = evalM fuel env s e], so the
-     monadic refactor changes the structure, not the behavior (corollary
-     [evalStore_agrees] lifts this to the top-level wrappers).
-  5. Checked the monad laws that hold definitionally (left identity,
-     get-after-put).
-  6. Added CONCRETE SYNTAX (Section 7): the same FBAES notation parser as
-     the State chapter ([new e]/[! e]/[l := e]/[a ; b]), read through the
-     monadic interpreter [evalStore].
+#<ol>#
+#<li>#Carried over the reference-cell language [FBAES] and its EXPLICIT
+store-threading interpreter [evalM] from the State chapter.#</li>#
+#<li>#Defined the STATE monad [State S A = S -> option (A * S)] with
+[retS]/[bindS]/[getS]/[putS]/[failS] and [;;] notation.#</li>#
+#<li>#Rebuilt the interpreter as [evalS] with NO explicit store - [bindS]
+threads it, [getS]/[putS] appear only at [New]/[Deref]/[Assign].#</li>#
+#<li>#Proved AGREEMENT: [evalS fuel env e s = evalM fuel env s e], so the
+monadic refactor changes the structure, not the behavior (corollary
+[evalStore_agrees] lifts this to the top-level wrappers).#</li>#
+#<li>#Checked the monad laws that hold definitionally (left identity,
+get-after-put).#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 7): the same FBAES notation parser as
+the State chapter ([new e]/[! e]/[l := e]/[a ; b]), read through the
+monadic interpreter [evalStore].#</li>#
+#</ol>#
 
 This closes the mutable-state arc: the State chapter showed WHAT
 mutation means (an explicitly threaded store); this chapter shows how to

@@ -587,20 +587,22 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Added a primitive [Fix] to TFun's typed language, with a term-level
-     [subst] to unfold it.
-  2. Gave [Fix] a typing rule - [f : T -> T] yields [Fix f : T] - and an
-     evaluation rule that substitutes the whole recursion back in for
-     the recursive-call parameter.
-  3. Wrote real, well-typed RECURSION: factorial (5! = 120) and
-     summation (0..5 = 15), running under the strict interpreter.
-  4. Re-proved FUEL MONOTONICITY (now with a [Fix] case).
-  5. Made the bargain explicit and machine-checked: self-application is
-     still rejected (safety kept), but [Fix] lets a well-typed term
-     DIVERGE ([loopT]) - normalization is deliberately traded away.
-  6. Added CONCRETE SYNTAX (Section 9): TFun's type grammar
-     [<[ Nat -> Bool ]>] and term grammar [<{ ... }>], extended with the
-     prefix [fix f] for the fixed-point form.
+#<ol>#
+#<li>#Added a primitive [Fix] to TFun's typed language, with a term-level
+[subst] to unfold it.#</li>#
+#<li>#Gave [Fix] a typing rule - [f : T -> T] yields [Fix f : T] - and an
+evaluation rule that substitutes the whole recursion back in for
+the recursive-call parameter.#</li>#
+#<li>#Wrote real, well-typed RECURSION: factorial (5! = 120) and
+summation (0..5 = 15), running under the strict interpreter.#</li>#
+#<li>#Re-proved FUEL MONOTONICITY (now with a [Fix] case).#</li>#
+#<li>#Made the bargain explicit and machine-checked: self-application is
+still rejected (safety kept), but [Fix] lets a well-typed term
+DIVERGE ([loopT]) - normalization is deliberately traded away.#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 9): TFun's type grammar
+[<[ Nat -> Bool ]>] and term grammar [<{ ... }>], extended with the
+prefix [fix f] for the fixed-point form.#</li>#
+#</ol>#
 
 Next: the course turns to modeling evaluation itself as a MONAD (the
 Reader/Either interpreters), and then to STATE.

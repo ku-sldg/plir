@@ -589,16 +589,18 @@ Qed.
 
 (**
 In this lecture we:
-  1. Defined BAE = AE + identifiers (Id) + local bindings (Bind).
-  2. Formalised free/bound instances and closed terms.
-  3. Defined substitution and proved it ignores non-free variables.
-  4. Discovered that a substitution interpreter is NOT structurally
-     recursive in Rocq, and drove it with a [size]-bounded fuel.
-  5. Recovered clean recursive equations for [eval] and proved
-     properties of substitution and evaluation.
-  6. Made the concrete grammar real with a notation-based parser, so
-     that [<{ bind "x" = 5 + 2 in "x" + "x" - 4 }>] elaborates to the
-     abstract tree (numerals coerce to [Num], strings to [Id]).
+#<ol>#
+#<li>#Defined BAE = AE + identifiers (Id) + local bindings (Bind).#</li>#
+#<li>#Formalised free/bound instances and closed terms.#</li>#
+#<li>#Defined substitution and proved it ignores non-free variables.#</li>#
+#<li>#Discovered that a substitution interpreter is NOT structurally
+recursive in Rocq, and drove it with a [size]-bounded fuel.#</li>#
+#<li>#Recovered clean recursive equations for [eval] and proved
+properties of substitution and evaluation.#</li>#
+#<li>#Made the concrete grammar real with a notation-based parser, so
+that [<{ bind "x" = 5 + 2 in "x" + "x" - 4 }>] elaborates to the
+abstract tree (numerals coerce to [Num], strings to [Id]).#</li>#
+#</ol>#
 
 Next: "Adding Environments" replaces eager substitution with a
 deferred environment, yielding a clean structural interpreter, and

@@ -364,17 +364,19 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Recalled the DIRECT checker [typeof], which threads a type context
-     by hand through every case.
-  2. Built a READER monad [Reader E A = E -> option A] with
-     [retR]/[bindR]/[askR]/[localR]/[failR]/[runR] and a [;;] notation.
-  3. Rewrote the checker as [typeofR] with NO explicit context - [localR]
-     extends it, [askR] reads it, [bindR] threads it.
-  4. Proved AGREEMENT ([typeofR e ctx = typeof ctx e]): the monadic
-     refactor is behavior-preserving, a change of style not of meaning.
-  5. Added CONCRETE SYNTAX (Section 6): TRec's type grammar
-     [<[ Nat -> Bool ]>] and term grammar [<{ ... }>] (ascribed lambda
-     and prefix [fix]), read through the monadic checker [typecheckR].
+#<ol>#
+#<li>#Recalled the DIRECT checker [typeof], which threads a type context
+by hand through every case.#</li>#
+#<li>#Built a READER monad [Reader E A = E -> option A] with
+[retR]/[bindR]/[askR]/[localR]/[failR]/[runR] and a [;;] notation.#</li>#
+#<li>#Rewrote the checker as [typeofR] with NO explicit context - [localR]
+extends it, [askR] reads it, [bindR] threads it.#</li>#
+#<li>#Proved AGREEMENT ([typeofR e ctx = typeof ctx e]): the monadic
+refactor is behavior-preserving, a change of style not of meaning.#</li>#
+#<li>#Added CONCRETE SYNTAX (Section 6): TRec's type grammar
+[<[ Nat -> Bool ]>] and term grammar [<{ ... }>] (ascribed lambda
+and prefix [fix]), read through the monadic checker [typecheckR].#</li>#
+#</ol>#
 
 Next: the READER-AND-EITHER chapter upgrades failure from a bare [None]
 to an informative error MESSAGE, so a rejected program says WHY.

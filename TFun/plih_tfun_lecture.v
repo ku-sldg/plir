@@ -580,21 +580,23 @@ Proof. reflexivity. Qed.
 
 (**
 In this lecture we:
-  1. Added a TYPE language [Ty] with numbers, Booleans, and FUNCTION
-     types, plus decidable type equality [Ty_eqb] (proved correct).
-  2. Typed the term language: [Lambda] now ASCRIBES its parameter type,
-     because a domain type cannot be inferred before application.
-  3. Built the TYPE CHECKER [typeof] - an "interpreter that returns
-     types" - and saw it ACCEPT good programs and REJECT every classic
-     stuck term, including self-application ([omega]'s core).
-  4. Kept a single STRICT interpreter [evalM] (no lazy [evalL]) and
-     re-proved FUEL MONOTONICITY.
-  5. Stated TYPE SOUNDNESS and witnessed it: good programs run to a
-     value of the predicted type; bad programs never type-check.  We
-     proved the canonical-forms slices for the base types.
-  6. Added CONCRETE SYNTAX in two parts: a type grammar [<[ Nat -> Bool ]>]
-     and the term grammar with the classical ascription
-     [lambda ID : T in body] - the one place a type is written.
+#<ol>#
+#<li>#Added a TYPE language [Ty] with numbers, Booleans, and FUNCTION
+types, plus decidable type equality [Ty_eqb] (proved correct).#</li>#
+#<li>#Typed the term language: [Lambda] now ASCRIBES its parameter type,
+because a domain type cannot be inferred before application.#</li>#
+#<li>#Built the TYPE CHECKER [typeof] - an "interpreter that returns
+types" - and saw it ACCEPT good programs and REJECT every classic
+stuck term, including self-application ([omega]'s core).#</li>#
+#<li>#Kept a single STRICT interpreter [evalM] (no lazy [evalL]) and
+re-proved FUEL MONOTONICITY.#</li>#
+#<li>#Stated TYPE SOUNDNESS and witnessed it: good programs run to a
+value of the predicted type; bad programs never type-check.  We
+proved the canonical-forms slices for the base types.#</li>#
+#<li>#Added CONCRETE SYNTAX in two parts: a type grammar [<[ Nat -> Bool ]>]
+and the term grammar with the classical ascription
+[lambda ID : T in body] - the one place a type is written.#</li>#
+#</ol>#
 
 The catch: typing is now so strict that RECURSION is gone - the Y and Z
 combinators relied on self-application, which no longer type-checks.
