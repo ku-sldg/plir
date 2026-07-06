@@ -7,8 +7,7 @@ Documentation only - no Rocq code, so this file compiles trivially.
 FILES (in RSEMon/):
 #<ol>#
 #<li>#plih_rocq_rsemon_shared.v      -- shared infra (re-exports RSMon)#</li>#
-#<li>#plih_rsemon_lecture.v          -- lecture: three-effect monad,
-evalRSE, refinement theorem#</li>#
+#<li>#plih_rsemon_lecture.v          -- lecture: three-effect monad, evalRSE, refinement theorem#</li>#
 #<li>#plih_rsemon_exercises.v        -- student problem set (Admitted stubs)#</li>#
 #<li>#plih_rsemon_solutions.v        -- complete solutions#</li>#
 #<li>#plih_rsemon_instructor_guide.v -- teaching guide#</li>#
@@ -23,35 +22,38 @@ Source idea (PLIH, Haskell): combining effects / monad transformers
 
 (**
 FOR STUDENTS:
-  1. Finish RMon, EMon, SMon, and RSMon first - this capstone stacks
-     ALL of their effects (Reader + State + Either) in one monad.
-  2. Read plih_rsemon_lecture.v.
-  3. Work plih_rsemon_exercises.v ([Admitted] -> [Qed]).
-  4. Check against plih_rsemon_solutions.v.
+#<ol>#
+#<li>#Finish RMon, EMon, SMon, and RSMon first - this capstone stacks _all_ of their effects (Reader + State + Either) in one monad.#</li>#
+#<li>#Read plih_rsemon_lecture.v.#</li>#
+#<li>#Work plih_rsemon_exercises.v ([Admitted] -> [Qed]).#</li>#
+#<li>#Check against plih_rsemon_solutions.v.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_rsemon_instructor_guide.v.
-  2. Assign the exercises; grade by building the file.
+#<ol>#
+#<li>#Read plih_rsemon_instructor_guide.v.#</li>#
+#<li>#Assign the exercises; grade by building the file.#</li>#
+#</ol>#
  *)
 
 (** * THE BIG IDEA *)
 
 (**
 RSMon combined a Reader (environment) and a State (store) but still
-failed SILENTLY ([None]).  EMon showed an Either layer replaces silent
-failure with a descriptive MESSAGE, and that the refined version REFINES
+failed _silently_ ([None]).  EMon showed an Either layer replaces silent
+failure with a descriptive _message_, and that the refined version _refines_
 the plain one.  This capstone stacks all three:
 
   RSE E S A := E -> S -> sum string (A * S)
 
-- READER: [askRSE] reads the environment, [localRSE] extends it;
-- STATE: [getRSE] reads the store, [putRSE] replaces it;
-- EITHER: [throwRSE] raises a message, and [bindRSE] short-circuits on
+- _Reader:_ [askRSE] reads the environment, [localRSE] extends it;
+- _State:_ [getRSE] reads the store, [putRSE] replaces it;
+- _Either:_ [throwRSE] raises a message, and [bindRSE] short-circuits on
   the first error while threading the environment and store otherwise.
 
 The interpreter [evalRSE] carries no resource by hand and reports a
 descriptive message at every stuck point (including running out of
-fuel).  The headline is REFINEMENT:
+fuel).  The headline is _refinement_:
 
   forget (evalRSE fuel e env s) = evalM fuel env s e
 
@@ -70,10 +72,10 @@ CARRIES OVER:
     [forget]/refinement idea (EMon).
 
 NEW HERE:
-  - the THREE-effect monad [RSE] with [askRSE]/[localRSE], [getRSE]/
+  - the _three-effect_ monad [RSE] with [askRSE]/[localRSE], [getRSE]/
     [putRSE], and [throwRSE] over one [bindRSE];
   - the interpreter [evalRSE] with descriptive messages, and [evalRSErr];
-  - the REFINEMENT theorem [evalRSE_refines] (+ [evalRSErr_refines]) and
+  - the _refinement_ theorem [evalRSE_refines] (+ [evalRSErr_refines]) and
     the effect-interaction lemmas.
  *)
 
@@ -85,7 +87,7 @@ NEW HERE:
     [throwRSE]/[runRSE]          -- the three-effect monad (Section 2)
   [forget]                       -- erase the message (Section 2)
   [evalRSE]/[evalRSErr]          -- the monadic interpreter + wrapper (S3)
-  [evalRSE_refines]              -- HEADLINE: forget o monadic = explicit
+  [evalRSE_refines]              -- _headline_: forget o monadic = explicit
   [evalRSErr_refines]            -- lifted to the top-level wrappers
   [left_id_RSE], [throw_short_circuits], [channels_independent] -- laws
   concrete syntax     -- the State chapter's FBAES notation parser
@@ -101,6 +103,6 @@ This is the end of the monad arc: Reader (RMon), Either (EMon), State
 Each effect contributes its own operations to one shared [bind], and the
 interpreter reads like a plain recursive definition while an environment,
 a store, and an error channel are all threaded - provably - underneath.
-That is the essence of MONAD TRANSFORMERS.  Further layers (a Writer for
+That is the essence of _monad transformers_.  Further layers (a Writer for
 a trace/log, a nondeterminism list monad) slot in the same way.
  *)

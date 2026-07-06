@@ -7,8 +7,7 @@ Documentation only - no Rocq code, so this file compiles trivially.
 FILES (in RSMon/):
 #<ol>#
 #<li>#plih_rocq_rsmon_shared.v      -- shared infra (re-exports SMon)#</li>#
-#<li>#plih_rsmon_lecture.v          -- lecture: combined Reader+State
-monad, evalRS, agreement theorem#</li>#
+#<li>#plih_rsmon_lecture.v          -- lecture: combined Reader+State monad, evalRS, agreement theorem#</li>#
 #<li>#plih_rsmon_exercises.v        -- student problem set (Admitted stubs)#</li>#
 #<li>#plih_rsmon_solutions.v        -- complete solutions#</li>#
 #<li>#plih_rsmon_instructor_guide.v -- teaching guide#</li>#
@@ -23,36 +22,39 @@ Source idea (PLIH, Haskell): combining effects / monad transformers
 
 (**
 FOR STUDENTS:
-  1. Finish RMon (Reader monad) and SMon (State monad) first - this
-     chapter COMBINES exactly those two effects in one monad.
-  2. Read plih_rsmon_lecture.v.
-  3. Work plih_rsmon_exercises.v ([Admitted] -> [Qed]).
-  4. Check against plih_rsmon_solutions.v.
+#<ol>#
+#<li>#Finish RMon (Reader monad) and SMon (State monad) first - this chapter _combines_ exactly those two effects in one monad.#</li>#
+#<li>#Read plih_rsmon_lecture.v.#</li>#
+#<li>#Work plih_rsmon_exercises.v ([Admitted] -> [Qed]).#</li>#
+#<li>#Check against plih_rsmon_solutions.v.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_rsmon_instructor_guide.v.
-  2. Assign the exercises; grade by building the file.
+#<ol>#
+#<li>#Read plih_rsmon_instructor_guide.v.#</li>#
+#<li>#Assign the exercises; grade by building the file.#</li>#
+#</ol>#
  *)
 
 (** * THE BIG IDEA *)
 
 (**
-SMon hid the mutable STORE behind a State monad but left the ENVIRONMENT
+SMon hid the mutable _store_ behind a State monad but left the _environment_
 an explicit argument.  RMon hid a read-only context behind a Reader
-monad.  This chapter puts BOTH effects in one monad:
+monad.  This chapter puts _both_ effects in one monad:
 
   RS E S A := E -> S -> option (A * S)
 
-- the READER part (environment [E], read-only): [askRS] reads it,
+- the _Reader_ part (environment [E], read-only): [askRS] reads it,
   [localRS g m] runs [m] under [g e] (used to extend it);
-- the STATE part (store [S], mutable): [getRS] reads it, [putRS] replaces
+- the _State_ part (store [S], mutable): [getRS] reads it, [putRS] replaces
   it - and only the store is returned, since the environment never
   changes;
 - [retRS]/[bindRS]/[failRS] are the monad core, and [bindRS] threads
-  BOTH resources at once.
+  _both_ resources at once.
 
-The interpreter [evalRS] then carries NEITHER the environment nor the
-store explicitly.  The headline is AGREEMENT:
+The interpreter [evalRS] then carries _neither_ the environment nor the
+store explicitly.  The headline is _agreement_:
 
   evalRS fuel e env s = evalM fuel env s e
 
@@ -70,9 +72,9 @@ CARRIES OVER:
   - the Reader ops idea from RMon and the State ops from SMon.
 
 NEW HERE:
-  - the COMBINED monad [RS] with [askRS]/[localRS] AND [getRS]/[putRS]
+  - the _combined_ monad [RS] with [askRS]/[localRS] and [getRS]/[putRS]
     over one [bindRS];
-  - the interpreter [evalRS] hiding BOTH env and store, and its wrapper
+  - the interpreter [evalRS] hiding _both_ env and store, and its wrapper
     [evalReaderState];
   - the single agreement theorem [evalRS_agrees] (+ corollary
     [evalReaderState_agrees]) and effect-independence lemmas.
@@ -85,7 +87,7 @@ NEW HERE:
   [RS]/[retRS]/[bindRS]/[askRS]/[localRS]/[getRS]/[putRS]/[failRS]/[runRS]
                                  -- the combined monad (Section 2)
   [evalRS]/[evalReaderState]     -- the monadic interpreter + wrapper (S3)
-  [evalRS_agrees]                -- HEADLINE: monadic = explicit (S5)
+  [evalRS_agrees]                -- _headline_: monadic = explicit (S5)
   [evalReaderState_agrees]       -- lifted to the top-level wrappers
   [left_id_RS], [ask_get_comm], [local_scoped] -- laws / independence (S6)
   concrete syntax     -- the State chapter's FBAES notation parser
@@ -98,9 +100,9 @@ NEW HERE:
 (**
 This closes the monad arc.  Students have now seen a Reader (RMon), an
 Either (EMon), a State (SMon), and finally two effects stacked together
-(RSMon) - the essence of MONAD TRANSFORMERS, where each effect
+(RSMon) - the essence of _monad transformers_, where each effect
 contributes its own operations to a shared [bind].  A natural extension
 adds a third layer - Either for descriptive error messages - so the
-interpreter reads its environment, mutates its store, AND reports typed
+interpreter reads its environment, mutates its store, and reports typed
 failures, all through one monad.
  *)

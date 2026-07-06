@@ -23,32 +23,35 @@ standard content ourselves:
 
 (**
 FOR STUDENTS:
-  1. Do RMon (the Reader monad) first - this chapter adds error
-     messages on top of it.
-  2. Read plih_emon_lecture.v.
-  3. Work plih_emon_exercises.v ([Admitted] -> [Qed]).
-  4. Check against plih_emon_solutions.v.
+#<ol>#
+#<li>#Do RMon (the Reader monad) first - this chapter adds error messages on top of it.#</li>#
+#<li>#Read plih_emon_lecture.v.#</li>#
+#<li>#Work plih_emon_exercises.v ([Admitted] -> [Qed]).#</li>#
+#<li>#Check against plih_emon_solutions.v.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_emon_instructor_guide.v.
-  2. Assign the exercises; grade by building the file.
+#<ol>#
+#<li>#Read plih_emon_instructor_guide.v.#</li>#
+#<li>#Assign the exercises; grade by building the file.#</li>#
+#</ol>#
  *)
 
 (** * THE BIG IDEA *)
 
 (**
 RMon's Reader monad hid the context but failed with a bare [None] - no
-reason given.  Stacking the EITHER monad on top yields a computation
-[RE E A = E -> string + A] that READS a context and either FAILS WITH A
-MESSAGE ([inl msg]) or SUCCEEDS ([inr a]).  The checker [typeofE] uses
+reason given.  Stacking the _Either monad_ on top yields a computation
+[RE E A = E -> string + A] that _reads_ a context and either _fails with a
+message_ ([inl msg]) or _succeeds_ ([inr a]).  The checker [typeofE] uses
 [throwE "..."] at each failure, so a rejected program explains itself.
 
-Crucially, the richer checker decides EXACTLY the same programs:
+Crucially, the richer checker decides _exactly_ the same programs:
 
     forget (typeofE e ctx) = typeof ctx e      ([typeofE_refines])
 
 where [forget] erases the message.  The Either layer adds information,
-not behavior - a REFINEMENT of the plain [option] checker.
+not behavior - a _refinement_ of the plain [option] checker.
  *)
 
 (** * KEY DEFINITIONS AND RESULTS *)
@@ -68,8 +71,8 @@ not behavior - a REFINEMENT of the plain [option] checker.
 (** * THE MONADIC ARC, COMPLETE *)
 
 (**
-RMon: the Reader monad removed the CONTEXT plumbing from the checker.
-EMon: the Either monad turned SILENT failure into EXPLAINED failure.
+RMon: the Reader monad removed the _context_ plumbing from the checker.
+EMon: the Either monad turned _silent_ failure into _explained_ failure.
 Both are proven to preserve exactly what the checker decides - style and
-diagnostics improved, meaning unchanged.  Next in the course: STATE.
+diagnostics improved, meaning unchanged.  Next in the course: _state_.
  *)

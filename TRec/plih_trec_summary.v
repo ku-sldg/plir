@@ -22,15 +22,18 @@ Source chapter (PLIH, Haskell):
 
 (**
 FOR STUDENTS:
-  1. Finish Typed Functions (TFun) first - this chapter is that typed
-     language plus one new form, [Fix].
-  2. Read plih_trec_lecture.v.
-  3. Work plih_trec_exercises.v ([Admitted] -> [Qed]).
-  4. Check against plih_trec_solutions.v.
+#<ol>#
+#<li>#Finish Typed Functions (TFun) first - this chapter is that typed language plus one new form, [Fix].#</li>#
+#<li>#Read plih_trec_lecture.v.#</li>#
+#<li>#Work plih_trec_exercises.v ([Admitted] -> [Qed]).#</li>#
+#<li>#Check against plih_trec_solutions.v.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_trec_instructor_guide.v.
-  2. Assign the exercises; grade by building the file.
+#<ol>#
+#<li>#Read plih_trec_instructor_guide.v.#</li>#
+#<li>#Assign the exercises; grade by building the file.#</li>#
+#</ol>#
  *)
 
 (** * THE BIG IDEA *)
@@ -38,30 +41,30 @@ FOR INSTRUCTORS:
 (**
 Typing killed recursion: the Y/Z combinators of the Rec chapter relied
 on self-application [x x], which does not type-check, so the simply
-typed language of TFun has NO recursion at all - and in exchange it is
-STRONGLY NORMALIZING (every well-typed term terminates).
+typed language of TFun has _no_ recursion at all - and in exchange it is
+_strongly normalizing_ (every well-typed term terminates).
 
-This chapter buys recursion back with a PRIMITIVE typed [Fix]:
-  - TYPING: if [f : T -> T] then [Fix f : T].
-  - EVALUATION: [Fix f] unfolds by substituting the whole recursion
+This chapter buys recursion back with a _primitive_ typed [Fix]:
+  - _Typing:_ if [f : T -> T] then [Fix f : T].
+  - _Evaluation:_ [Fix f] unfolds by substituting the whole recursion
     [Fix (Lambda i t b)] back in for the recursive-call parameter [i] -
     "fix installs what the recursive call means", it does not step once.
-  - RESULT: factorial and summation are now well-typed and RUN.
+  - _Result:_ factorial and summation are now well-typed and _run_.
 
-THE BARGAIN, stated honestly and machine-checked:
-  - type SAFETY is KEPT - self-application is still rejected, [Fix] is
+_The bargain_, stated honestly and machine-checked:
+  - type _safety_ is _kept_ - self-application is still rejected, [Fix] is
     the only loop and it is a deliberate, well-typed one;
-  - NORMALIZATION is GIVEN UP - [loopT = Fix (\x:Nat. x)] is well-typed
-    ([TNum]) yet DIVERGES, so [evalM] is genuinely partial again and the
+  - _normalization_ is _given up_ - [loopT = Fix (\x:Nat. x)] is well-typed
+    ([TNum]) yet _diverges_, so [evalM] is genuinely partial again and the
     fuel is a necessity, not a convenience.
  *)
 
 (** * THE ARC OF THE COURSE SO FAR *)
 
 (**
-  Func / Rec (untyped)     : can get STUCK   and can DIVERGE
-  TFun (simply typed)      : neither - TOTAL and safe, but NO recursion
-  TRec (typed + [Fix])     : SAFE (no stuck terms) but non-total again
+  Func / Rec (untyped)     : can get _stuck_   and can _diverge_
+  TFun (simply typed)      : neither - _total_ and safe, but _no_ recursion
+  TRec (typed + [Fix])     : _safe_ (no stuck terms) but non-total again
 
 [Fix] trades the normalization guarantee for Turing power, while the
 type system still rules out every stuck (type-error) program.
@@ -88,6 +91,6 @@ type system still rules out every stuck (type-error) program.
 
 (**
 With a type-safe recursive language in hand, the course turns to
-structuring the interpreter itself as a MONAD (Reader/Either), and then
-to STATE.
+structuring the interpreter itself as a _monad_ (Reader/Either), and then
+to _state_.
  *)

@@ -22,21 +22,25 @@ Source chapter (PLIH, Haskell):
 
 (**
 FOR STUDENTS:
-  1. Finish TFun/TRec first - this chapter refactors their type checker.
-  2. Read plih_rmon_lecture.v.
-  3. Work plih_rmon_exercises.v ([Admitted] -> [Qed]).
-  4. Check against plih_rmon_solutions.v.
+#<ol>#
+#<li>#Finish TFun/TRec first - this chapter refactors their type checker.#</li>#
+#<li>#Read plih_rmon_lecture.v.#</li>#
+#<li>#Work plih_rmon_exercises.v ([Admitted] -> [Qed]).#</li>#
+#<li>#Check against plih_rmon_solutions.v.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_rmon_instructor_guide.v.
-  2. Assign the exercises; grade by building the file.
+#<ol>#
+#<li>#Read plih_rmon_instructor_guide.v.#</li>#
+#<li>#Assign the exercises; grade by building the file.#</li>#
+#</ol>#
  *)
 
 (** * THE BIG IDEA *)
 
 (**
-The type checker of TFun/TRec threads a type CONTEXT through every case
-by hand.  A READER MONAD - a computation "with access to a fixed
+The type checker of TFun/TRec threads a type _context_ through every case
+by hand.  A _Reader monad_ - a computation "with access to a fixed
 environment", [Reader E A = E -> option A] - makes that threading
 implicit:
   - [askR]        reads the context (used by [Id]);
@@ -45,14 +49,14 @@ implicit:
   - [bindR]/[;;]  carries the context from one step to the next;
   - [retR]/[failR] succeed/fail without touching it.
 
-The monadic checker [typeofR] has NO [ctx] parameter, yet computes
+The monadic checker [typeofR] has _no_ [ctx] parameter, yet computes
 exactly what the explicit [typeof] does:
 
     typeofR e ctx = typeof ctx e          ([typeofR_agrees])
 
-The Reader monad is a change of STYLE, proven not to change MEANING.
+The Reader monad is a change of _style_, proven not to change _meaning_.
 (This is a technique chapter: the language is TRec's and the evaluator
-is unchanged; only the CHECKER is restructured.)
+is unchanged; only the _checker_ is restructured.)
  *)
 
 (** * KEY DEFINITIONS AND RESULTS *)
@@ -73,6 +77,6 @@ is unchanged; only the CHECKER is restructured.)
 (**
 The Reader monad still reports failure as a bare [None] - "ill-typed",
 with no reason.  The next chapter (Reader-and-Either) upgrades failure
-to an informative error MESSAGE while keeping the Reader threading, so a
-rejected program can say WHY it was rejected.
+to an informative error _message_ while keeping the Reader threading, so a
+rejected program can say _why_ it was rejected.
  *)
