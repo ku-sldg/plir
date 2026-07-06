@@ -134,6 +134,28 @@ Fixpoint eval (e : AE) : nat :=
   end.
 
 (**
+The [match] is the heart of [eval]: it inspects [e], asks _which constructor_
+built it, and runs the corresponding branch.  There is one branch per
+constructor of [AE], and each pattern to the left of [=>] names the arguments
+that constructor carried, so the expression on the right can use them:
+
+  - [Num x => x] - a numeric literal already _is_ its value, so [eval] hands
+    back the [x] it holds;
+  - [Plus x y => eval x + eval y] - evaluate the two subexpressions and add
+    their values;
+  - [Minus x y => eval x - eval y] - likewise, but subtracting.  On [nat] this
+    is _truncated_ subtraction, so [eval (Minus (Num 2) (Num 5)) = 0], not a
+    negative number.
+
+Two properties make this a good definition.  It is _exhaustive_ - every
+constructor of [AE] has a branch, which Rocq checks - so [eval] yields a value
+for _every_ expression.  And it is _structurally recursive_: the recursive
+calls [eval x] and [eval y] are on strict subterms of [e], which is exactly
+why Rocq accepts the [Fixpoint] as total.  The three branches are the meaning
+of the language - reading them top to bottom is reading the semantics of AE.
+*)
+
+(**
 Let's test eval on our examples
 *)
 
@@ -150,18 +172,17 @@ Example test_eval_4 : eval (Plus (Num 1) (Plus (Num 2) (Num 3))) = 6.
 Proof. reflexivity. Qed.
 
 (**
-Each [Example] defines a proof that looks and behaves a great deal like a test
-case.  [test_eval_1] is defined as [eval (Num 5) = 5] meaning exactly what you
-would think.  Evaluating [(Num 5)] should equal [5].  The period creates a goal
-that must be discharged.
+Each [Example] is a named claim that Rocq checks for us - a _machine-checked
+test_.  [test_eval_1] states [eval (Num 5) = 5]: evaluating [Num 5] gives [5].
+The period ends the statement and opens a _goal_ we now have to prove.
 
-[Proof] tells Rocq to open a proof and [reflexivity] is our first proof tactic.
-[reflexivity] simplifies both sides of the equality and determines if they are
-identical. If they are the goal is discharged and [Qed] ends the proof.  If they
-are not, nothing changes and a different path must be chosen.
+[Proof] enters proof mode, and [reflexivity] is our first tactic.  It reduces
+both sides of the equality - here computing [eval] - and succeeds if they
+become the _same_ term; then [Qed] closes and records the proof.  If the two
+sides do not match, [reflexivity] fails and the goal stays open for a
+different tactic.
 
-Periods are important.  They tell the Rocq system to evaluate the tactic or
-preceding definition.
+Every command ends in a period: that is what tells Rocq to run it.
 *)
 
 (** * SECTION 3: SIMPLE PROPERTIES *)
@@ -183,6 +204,29 @@ Proof.
   intro e.
   reflexivity.
 Qed.
+
+(**
+[eval_deterministic] is our first goal with a [forall]: [forall e, eval e =
+eval e] claims the equation holds for _every_ AE [e].  We do not prove that by
+trying all expressions - instead [intro e] introduces the quantified variable,
+read as "let [e] be an arbitrary AE".  It moves [e] out of the goal and into
+the _context_ (the facts and variables we may use), leaving the simpler goal
+[eval e = eval e] for that fixed-but-arbitrary [e].  Proving it for an
+arbitrary [e] proves it for all of them.
+
+[intros] just does several at once: [intros e1 e2] is two [intro]s (see
+[eval_plus] below).  The same tactic also introduces the _hypothesis_ of an
+implication - on a goal [P -> Q], [intro H] assumes [P], names it [H], and
+leaves [Q] to prove.
+
+A proof is a sequence of _tactics_, each transforming the goal (and context) a
+step at a time until nothing is left to prove, at which point [Qed] rechecks
+and seals the result.  Besides [intro]/[intros] and [reflexivity], this chapter
+uses [simpl] (compute/unfold a definition), [rewrite] (replace a term using an
+equation), [induction] (prove a property of _every_ AE by cases on how it is
+built), and [lia] (discharge linear-arithmetic goals) - each introduced where
+it first appears.
+*)
 
 (** This is too trivial! Let's prove something more interesting. *)
 
@@ -220,6 +264,24 @@ Proof.
   reflexivity.
 Qed.
 
+(**
+[simpl] simplifies the goal by _computing_: it unfolds definitions like [eval]
+and reduces whatever it can.  Before [simpl] the goal is
+[eval (Plus e1 e2) = eval (Plus e2 e1)]; [simpl] runs [eval]'s [Plus] branch on
+each side to leave [eval e1 + eval e2 = eval e2 + eval e1].  It does not finish
+the proof - it just exposes the underlying [+] so an arithmetic lemma can
+apply.  (Relatives: [cbn] is a more controllable version, [compute] reduces
+fully, and [unfold f] expands one definition by name.)
+
+[rewrite] then uses an equation to replace equals by equals in the goal.  Given
+a lemma [L : a = b], [rewrite L] finds [a] and rewrites it to [b].  Here
+[rewrite Nat.add_comm] (with [Nat.add_comm : forall a b, a + b = b + a]) turns
+the left-hand [eval e1 + eval e2] into [eval e2 + eval e1], leaving both sides
+identical, so [reflexivity] closes the goal.  Variants: [rewrite <- L] rewrites
+right-to-left ([b] to [a]), and [rewrite L in H] rewrites inside a hypothesis
+instead of the goal.
+*)
+
 (** PROPERTY 4: Plus is associative on AE *)
 
 Lemma plus_associative : forall e1 e2 e3,
@@ -233,6 +295,17 @@ Proof.
   symmetry.
   apply Nat.add_assoc.
 Qed.
+
+(**
+[symmetry] swaps the two sides of an equality goal: it turns [a = b] into
+[b = a].  It proves nothing on its own - it just _reorients_ the goal so a
+lemma lines up.  Here the goal after [simpl] is
+[(eval e1 + eval e2) + eval e3 = eval e1 + (eval e2 + eval e3)], but the
+library states associativity the other way round
+([Nat.add_assoc : forall a b c, a + (b + c) = (a + b) + c]).  [symmetry] flips
+the goal so it matches [Nat.add_assoc] exactly, and then [apply Nat.add_assoc]
+finishes.
+*)
 
 (** PROPERTY 5: Minus is not commutative (obviously) *)
 
@@ -248,9 +321,35 @@ Proof.
   discriminate.
 Qed.
 
+(**
+A note on [exists] - in the statement and as a tactic.
+
+In a claim, [exists x, P x] is an _existential_: it asserts that _some_ [x]
+makes [P x] hold.  It is the dual of [forall] (which asserts [P x] for _every_
+[x]).  [minus_not_commutative : exists e1 e2, eval (Minus e1 e2) <>
+eval (Minus e2 e1)] says only that there is _at least one_ pair of expressions
+for which subtraction is not commutative - not that it fails for all of them.
+
+To _prove_ an existential you must exhibit a _witness_.  The [exists t] tactic
+supplies the concrete [t] and leaves you to prove [P t].  Here [exists (Num 5)]
+then [exists (Num 3)] pick the two witnesses, reducing the goal to
+[eval (Minus (Num 5) (Num 3)) <> eval (Minus (Num 3) (Num 5))] - that is
+[5 - 3 <> 3 - 5], i.e. [2 <> 0].  (The rest finishes it: [<>] is
+[_ = _ -> False], so [intro H] assumes the equality, [simpl in H] reduces it to
+[2 = 0], and [discriminate] closes the goal because [2] and [0] are different
+constructors of [nat] and can never be equal.)
+
+Note the neat opposition with [forall]/[intro]: to prove a [forall] you [intro]
+an _arbitrary_ element; to prove an [exists] you [exists] a _specific_ one you
+choose.  [eval_produces_nat] below combines both - [forall e, exists n,
+eval e = n] - and its proof, [intro e] then [exists (eval e)], does exactly
+that, choosing the witness [n := eval e].
+*)
+
 (** PROPERTY 6: Every AE evaluates to some natural number
 
-This is TRIVIAL because eval always produces a nat, but it's good to state explicitly.
+This is TRIVIAL because eval always produces a nat, but it's good to state
+explicitly.  Once again [exists] plays a central role.
  *)
 
 Lemma eval_produces_nat : forall e,
@@ -261,44 +360,42 @@ Proof.
   reflexivity.
 Qed.
 
+
+
 (** * SECTION 4: INDUCTION OVER AE *)
 
 (**
-The real power of formal verification comes when we use induction.
-Since AE is inductively defined, we can prove properties * induction over its structure.
+The real power of formal verification shows up with _induction_.  The [Example]
+tests above each check _one_ concrete expression; induction lets us prove a
+property of _every_ AE at once, in finitely many cases.
+
+The key is that [AE] is an _inductively defined_ type: every value is built by
+finitely many applications of its constructors, from a base case ([Num n]) and
+combinations of smaller expressions ([Plus e1 e2], [Minus e1 e2]).  Structural
+induction is the proof principle that comes with such a definition - to show a
+property [P] holds for _all_ [e : AE] it suffices to show:
+
+  - [P (Num n)] for every [n] (the base case); and
+  - [P (Plus e1 e2)] and [P (Minus e1 e2)] _given_ that [P] already holds of
+    the subexpressions [e1] and [e2] (the inductive cases).
+
+Those assumptions about the parts are the _induction hypotheses_.  Since any AE
+is assembled from smaller AEs down to [Num] leaves, covering the base and
+inductive cases covers every expression there is.
+
+This is the proof-level mirror of _recursion_.  [eval] _computes_ on an
+expression by calling itself on the subexpressions ([eval x], [eval y]);
+induction _reasons_ about an expression by assuming the property of those same
+subexpressions.  Definition recurses on the structure; proof inducts on the
+same structure.  In Rocq the tactic is
+[induction e as [n | e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2]]: it splits the goal
+into one subgoal per constructor and, in the [Plus]/[Minus] cases, hands you
+the induction hypotheses [IHe1] and [IHe2] for the subterms.
  *)
 
-(** PROPERTY 7: Multiplication distributes over addition
+(** PROPERTY 7: Every AE is >= 0 (when interpreted)
 
-For any k: k * (e1 + e2) = k * e1 + k * e2
- *)
-
-Lemma distribute_mult : forall k e1 e2,
-  k * eval (Plus e1 e2) = k * eval e1 + k * eval e2.
-Proof.
-  intro k.
-  intro e1.
-  intro e2.
-  simpl.
-  (* Now: k * (eval e1 + eval e2) = k * eval e1 + k * eval e2 *)
-  lia.
-Qed.
-
-(** PROPERTY 8: Zero is identity for addition
-
-For any e: eval (Plus (Num 0) e) = eval e
- *)
-
-Lemma zero_plus_identity : forall e,
-  eval (Plus (Num 0) e) = eval e.
-Proof.
-  intro e.
-  reflexivity.
-Qed.
-
-(** PROPERTY 9: Every AE is >= 0 (when interpreted)
-
- This uses induction on the structure of AE.
+This is our first proof by induction on the structure of AE.
  *)
 
 Lemma eval_nonnegative : forall e,
@@ -324,6 +421,66 @@ Proof.
     (* Goal: 0 <= eval e1 - eval e2 *)
     (* In Rocq, nat subtraction is truncated, so this is always true *)
   lia.
+Qed.
+
+(**
+A note on [induction], the bullets [-], and [lia] - all first used here.
+
+[induction e as [n | e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2]] applies the structural
+induction principle for [AE].  It replaces the single goal with _one subgoal
+per constructor_, in declaration order, and the bracketed pattern names what
+each case gets: the [Num] case binds its number [n]; the [Plus] case binds the
+two subexpressions [e1] [e2] together with the _induction hypotheses_ [IHe1]
+and [IHe2] (the property, already assumed to hold of [e1] and [e2]); the [Minus]
+case likewise.  Those [IH...] names are the whole point of induction.
+
+The [-] are _bullets_: focusing markers that structure a multi-goal proof.
+After [induction] there are three subgoals; each [-] focuses the next one, so
+you prove them one at a time, in order.  They are not decoration - Rocq
+enforces them: you cannot start the second case until the first is closed, and
+it complains if a bulleted case is left unfinished.  Nested case splits use the
+next bullet levels, [+] then [*], and braces [{ ... }] group a subproof.
+
+[lia] ("Linear Integer Arithmetic") is a _decision procedure_: it automatically
+proves goals that follow from linear arithmetic over integers and naturals -
+things built from [+], [-], constants, and the relations [<], [<=], [=], [<>],
+plus the logical connectives - and it draws on the hypotheses in context.  That
+is why each case here needs nothing more: in the [Plus] case [lia] finds
+[IHe1]/[IHe2] on its own and uses them; in the [Minus] case it knows [nat]
+subtraction is _truncated_, so [0 <= eval e1 - eval e2] holds outright.  ([lia]
+comes from the [Lia] library required at the top of the file.)
+*)
+
+(** PROPERTY 8: Multiplication distributes over addition
+
+Not every property needs induction.  When a goal reduces to plain arithmetic or
+computes away on its own, a direct tactic is enough - the next two properties
+are like that.  Reach for induction when a property must hold for an
+_arbitrary_ expression and its proof needs a fact about the subexpressions (the
+way the [Plus]/[Minus] cases above needed [IHe1] and [IHe2]).
+*)
+
+Lemma distribute_mult : forall k e1 e2,
+  k * eval (Plus e1 e2) = k * eval e1 + k * eval e2.
+Proof.
+  intro k.
+  intro e1.
+  intro e2.
+  simpl.
+  (* Now: k * (eval e1 + eval e2) = k * eval e1 + k * eval e2 *)
+  lia.
+Qed.
+
+(** PROPERTY 9: Zero is identity for addition
+
+For any e: eval (Plus (Num 0) e) = eval e
+ *)
+
+Lemma zero_plus_identity : forall e,
+  eval (Plus (Num 0) e) = eval e.
+Proof.
+  intro e.
+  reflexivity.
 Qed.
 
 (** * SECTION 5: AUXILIARY FUNCTIONS AND THEIR PROPERTIES *)
