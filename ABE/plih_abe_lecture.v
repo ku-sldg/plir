@@ -31,7 +31,8 @@ ABE extends AE with:
 
 We give the boolean and comparison operators each their _own_ constructor -
 rather than folding several of them into one - so that every proof exercises a
-single idea at a time.
+single idea at a time.  A concrete syntax and parser for ABE are found at the
+end of this file.
  *)
 
 Inductive ABE : Type :=
@@ -56,15 +57,61 @@ Definition abe_example_3 : ABE := LessThan (Num 3) (Num 5).
 (** * SECTION 2: SEMANTICS - EVALUATION WITH MULTIPLE TYPES *)
 
 (**
-Evaluation is the _key difference_ from AE:
+Evaluation is the _key difference_ from AE.  In AE every expression is a
+number, so [eval : AE -> nat] and it always succeeds.  ABE breaks both of those
+assumptions:
 
-  - it can return either a number or a boolean (a [Value]);
-  - it can _fail_ when an operator's operands do not have the types it
-    expects (a type mismatch);
-  - so it returns an [option Value] rather than a bare [nat], with [None]
-    standing for a type error.
+  - an expression can evaluate to a number _or_ to a boolean, so one result
+    type has to be able to hold either kind; and
+  - some syntactically fine expressions are nonsense - [Plus BTrue (Num 3)]
+    adds a boolean to a number - so evaluation must be able to _fail_.
 
-The [Value] type ([NumV] / [BoolV]) lives in plih_rocq_abe_shared.v.
+Two standard tools handle these, and [eval] combines them into the return type
+[option Value].
+ *)
+
+(**
+_The [Value] type_ lets one result type be either a number or a boolean.  It is
+a small tagged union, defined in plih_rocq_abe_shared.v and re-exported here:
+<<
+    Inductive Value : Type :=
+    | NumV  : nat  -> Value
+    | BoolV : bool -> Value.
+>>
+
+A [Value] is either [NumV n] (a [nat] tagged as a value) or [BoolV b] (a
+[bool]).  The constructor _is_ the tag recording which kind it is; you recover
+the underlying [nat] or [bool] by pattern-matching on it.  [NumV] and [BoolV]
+are exactly what let [eval] return a number in one case and a boolean in
+another while keeping a single return type - since [nat] and [bool] are
+themselves different types, neither alone could serve.
+ *)
+
+(**
+_The [option] type_ models "a value, or nothing" - success or failure.  It is
+the standard-library type constructor
+<<
+    Inductive option (A : Type) : Type :=
+    | Some : A -> option A
+    | None : option A.
+>>
+
+so [option A] is either [Some a] (an [A] is present) or [None] (absent).  This
+is how Rocq writes a _partial_ function: rather than raising an exception, a
+function that might have no answer returns an [option], and the caller
+pattern-matches on [Some] / [None].  The [A] is a parameter, so [option] works
+for any type - [option nat], [option bool], and here [option Value].
+
+Putting the two together, [eval : ABE -> option Value] stacks them: [option]
+wraps _success-or-failure_ around a [Value], which in turn wraps
+_number-or-boolean_.  A result is therefore read in two layers:
+
+  - [Some (NumV n)] - it succeeded, and the value is the number [n];
+  - [Some (BoolV b)] - it succeeded, and the value is the boolean [b];
+  - [None] - a type error, with no value at all.
+
+All three appear in [eval] below: [Num n] gives [Some (NumV n)], [BTrue] gives
+[Some (BoolV true)], and any operand-type mismatch gives [None].
  *)
 
 Fixpoint eval (e : ABE) : option Value :=
@@ -152,25 +199,36 @@ Proof. reflexivity. Qed.
 (** * SECTION 3: CLASSIFYING EXPRESSIONS *)
 
 (**
-Some expressions are guaranteed to produce a number, some a boolean.  We
-capture these classes with _inductive predicates_.
+Some expressions are guaranteed to produce a number, some a boolean.  Each such
+class is a _set_ of expressions, and we define these sets with _inductive
+predicates_.
 
-An [Inductive] whose result is [Prop] (like [is_numeric] below) is not a
-datatype of values but a set of _inference rules_: each constructor is a rule
-saying when the predicate holds.  [numeric_num] says [Num n] is numeric with no
-premises; [numeric_plus] says [Plus a b] is numeric _provided_ [a] and [b] are.
-A proof that a particular expression is [is_numeric] is therefore a small
-derivation built from these rules - and, like any inductive definition, we can
-run [induction] on it.
+An inductive predicate does not compute a value the way a [Fixpoint] does - it
+_defines a set_.  Its cases are closure conditions on membership: [numeric_num]
+puts every [Num n] into the set; [numeric_plus] puts [Plus a b] in it _whenever_
+[a] and [b] are already in it; [numeric_minus] likewise.  The set that
+[is_numeric] names is the _least_ collection of [ABE] terms closed under these
+cases - the least fixedpoint of the cases - equivalently, the terms reachable by
+applying the cases finitely many times.  So [is_numeric : ABE -> Prop] picks out
+a subset of [ABE], with [is_numeric e] holding exactly when [e] lies in that
+subset (a proof of it is a finite derivation witnessing membership).
+
+The same construction over tuples defines a _relation_ instead of a set: a
+two-argument predicate [R : A -> A -> Prop] has a set of _pairs_ as its
+fixedpoint - a binary relation - which is how relations such as evaluation or
+typing are commonly defined.  And because the set is a fixedpoint of its cases,
+it carries an induction principle: that is what lets us prove a property of
+_every_ member by [induction] on the membership evidence, as
+[numeric_never_fails] does below.
  *)
 
-(* An expression is "numeric" if it is built only from number operations. *)
+(** An expression is "numeric" if it is built only from number operations. *)
 Inductive is_numeric : ABE -> Prop :=
 | numeric_num   : forall n, is_numeric (Num n)
 | numeric_plus  : forall a b, is_numeric a -> is_numeric b -> is_numeric (Plus a b)
 | numeric_minus : forall a b, is_numeric a -> is_numeric b -> is_numeric (Minus a b).
 
-(* An expression is "boolean" if it ultimately produces a boolean.
+(** An expression is "boolean" if it ultimately produces a boolean.
    Note that comparisons take numeric operands but produce booleans. *)
 Inductive is_boolean : ABE -> Prop :=
 | boolean_true  : is_boolean BTrue
@@ -181,7 +239,7 @@ Inductive is_boolean : ABE -> Prop :=
 | boolean_lt    : forall a b, is_numeric a -> is_numeric b -> is_boolean (LessThan a b)
 | boolean_eq    : forall a b, is_numeric a -> is_numeric b -> is_boolean (Equal a b).
 
-(* Numeric expressions always evaluate successfully to a number. *)
+(** Numeric expressions always evaluate successfully to a number. *)
 Lemma numeric_never_fails : forall e,
   is_numeric e -> exists n, eval e = Some (NumV n).
 Proof.
@@ -201,7 +259,7 @@ Proof.
     simpl. rewrite H1, H2. reflexivity.
 Qed.
 
-(* Boolean expressions always evaluate successfully to a boolean. *)
+(** Boolean expressions always evaluate successfully to a boolean. *)
 Lemma boolean_never_fails : forall e,
   is_boolean e -> exists b, eval e = Some (BoolV b).
 Proof.
@@ -386,6 +444,13 @@ runs a _different_ tactic on each subgoal the [;] produced.)
     fails.  Eight of the nine combinations close immediately; [try] disposes of
     them and leaves only the genuine bool/bool case, finished by
     [destruct b1; destruct b2; reflexivity].
+
+Note that [;] and [try] are not tactics but _tacticals_ - operators that take
+tactics as arguments and combine them into a bigger tactic.  [t1 ; t2] runs
+[t2] on every goal [t1] leaves; the branching form [t1 ; [ g1 | g2 | ... ]]
+runs a chosen tactic on each of those goals; and [try t] runs [t] but succeeds
+either way.  A primitive tactic ([reflexivity], [destruct], ...) acts on the
+goal directly, whereas a tactical composes such tactics into a larger step.
  *)
 
 (** * SECTION 7: BOOLEAN PROPERTIES *)
@@ -709,7 +774,7 @@ the first time:
 #<li>#[destruct (eval e) as [ [n|b] | ]] - a nested pattern that case-splits an [option Value] into [NumV], [BoolV], and [None] in a single step.#</li>#
 #<li>#[injection] - use constructor injectivity to turn [C x = C y] into [x = y] (here [Some (NumV n) = Some v] into [NumV n = v]).#</li>#
 #<li>#[cbn] - simplify by computation like [simpl], but gentler and more predictable.#</li>#
-#<li>#[try t] - attempt tactic [t] and do nothing if it fails; used to clear the easy cases of a large case split ([try reflexivity]).#</li>#
-#<li>#[t; [ g1 | g2 | ... ]] - after [t] leaves several goals, run a different tactic on each of them.#</li>#
+#<li>#[try t] - _a tactical_: attempt tactic [t] and do nothing if it fails; used to clear the easy cases of a large case split ([try reflexivity]).#</li>#
+#<li>#[t; [ g1 | g2 | ... ]] - _a tactical_: the branching form of the [;] sequencing operator - after [t] leaves several goals, run a different tactic on each.#</li>#
 #</ul>#
  *)
