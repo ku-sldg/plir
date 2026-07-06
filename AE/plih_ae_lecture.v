@@ -193,7 +193,7 @@ This is what differentiates Rocq from Haskell: we can prove
 that our interpreter has certain desirable properties.
  *)
 
-(** PROPERTY 1: Evaluation is deterministic
+(** ** PROPERTY 1: Evaluation is deterministic
 
 If we evaluate the same expression twice, we get the same result. This is obvious from the definition, but let's prove it formally.
  *)
@@ -230,7 +230,7 @@ it first appears.
 
 (** This is too trivial! Let's prove something more interesting. *)
 
-(** PROPERTY 2: Eval distributes over Plus
+(** ** PROPERTY 2: Eval distributes over Plus
 
 This is obvious from the definition, but it's good practice.
  *)
@@ -244,7 +244,7 @@ Proof.
   reflexivity.
 Qed.
 
-(** PROPERTY 3: Plus is commutative on AE
+(** ** PROPERTY 3: Plus is commutative on AE
 
 [eval (Plus e1 e2) = eval (Plus e2 e1)]
 
@@ -282,7 +282,7 @@ right-to-left ([b] to [a]), and [rewrite L in H] rewrites inside a hypothesis
 instead of the goal.
 *)
 
-(** PROPERTY 4: Plus is associative on AE *)
+(** ** PROPERTY 4: Plus is associative on AE *)
 
 Lemma plus_associative : forall e1 e2 e3,
   eval (Plus (Plus e1 e2) e3) = eval (Plus e1 (Plus e2 e3)).
@@ -307,7 +307,7 @@ the goal so it matches [Nat.add_assoc] exactly, and then [apply Nat.add_assoc]
 finishes.
 *)
 
-(** PROPERTY 5: Minus is not commutative (obviously) *)
+(** ** PROPERTY 5: Minus is not commutative (obviously) *)
 
 Lemma minus_not_commutative : exists e1 e2,
   eval (Minus e1 e2) <> eval (Minus e2 e1).
@@ -346,7 +346,7 @@ eval e = n] - and its proof, [intro e] then [exists (eval e)], does exactly
 that, choosing the witness [n := eval e].
 *)
 
-(** PROPERTY 6: Every AE evaluates to some natural number
+(** ** PROPERTY 6: Every AE evaluates to some natural number
 
 This is TRIVIAL because eval always produces a nat, but it's good to state
 explicitly.  Once again [exists] plays a central role.
@@ -393,7 +393,7 @@ into one subgoal per constructor and, in the [Plus]/[Minus] cases, hands you
 the induction hypotheses [IHe1] and [IHe2] for the subterms.
  *)
 
-(** PROPERTY 7: Every AE is >= 0 (when interpreted)
+(** ** PROPERTY 7: Every AE is >= 0 (when interpreted)
 
 This is our first proof by induction on the structure of AE.
  *)
@@ -451,12 +451,12 @@ subtraction is _truncated_, so [0 <= eval e1 - eval e2] holds outright.  ([lia]
 comes from the [Lia] library required at the top of the file.)
 *)
 
-(** PROPERTY 8: Multiplication distributes over addition
+(** ** PROPERTY 8: Multiplication distributes over addition
 
 Not every property needs induction.  When a goal reduces to plain arithmetic or
-computes away on its own, a direct tactic is enough - the next two properties
-are like that.  Reach for induction when a property must hold for an
-_arbitrary_ expression and its proof needs a fact about the subexpressions (the
+computes away on its own, a direct tactic is enough.  The next two properties
+are like that.  Useinduction when a property must hold for an
+_arbitrary_ expression and its proof needs a fact about its subexpressions (the
 way the [Plus]/[Minus] cases above needed [IHe1] and [IHe2]).
 *)
 
@@ -471,9 +471,7 @@ Proof.
   lia.
 Qed.
 
-(** PROPERTY 9: Zero is identity for addition
-
-For any e: eval (Plus (Num 0) e) = eval e
+(** ** PROPERTY 9: Zero is identity for addition
  *)
 
 Lemma zero_plus_identity : forall e,
@@ -487,10 +485,9 @@ Qed.
 
 (**
 Often we want helper functions to manipulate AE terms.
-Let's prove properties about these helpers.
- *)
-
-(** Helper: Count the number of operations in an AE *)
+Let's prove properties about one such helpers that
+counts the number of operations in an AE
+*)
 
 Fixpoint count_ops (e : AE) : nat :=
   match e with
@@ -498,6 +495,9 @@ Fixpoint count_ops (e : AE) : nat :=
   | Plus x y => 1 + count_ops x + count_ops y
   | Minus x y => 1 + count_ops x + count_ops y
   end.
+
+(* * Once again we use simple `Example` theorems that serve as the verification
+  equivalent of test cases. *)
 
 Example count_ops_test_1 : count_ops (Num 5) = 0.
 Proof. reflexivity. Qed.
@@ -512,13 +512,35 @@ Proof. reflexivity. Qed.
 (** * SECTION 6: EQUIVALENCE OF EXPRESSIONS *)
 
 (**
-Two expressions are semantically equivalent if they evaluate to
-the same value.
+[ae_equiv] captures _semantic_ equivalence: two expressions are equivalent when
+they [eval] to the same number.  It is deliberately coarser than syntactic
+equality [=] on [AE], which would ask the two trees to be _identical_.  For
+instance [Plus (Num 1) (Num 2)] and [Plus (Num 2) (Num 1)] are different trees
+(so not [=]) yet both evaluate to [3], so they _are_ [ae_equiv].
+
+Note the result type is [Prop], not [bool]: [ae_equiv e1 e2] is the
+_proposition_ [eval e1 = eval e2] - a claim we prove, not a value we compute.
  *)
 
 Definition ae_equiv (e1 e2 : AE) : Prop := eval e1 = eval e2.
 
-(** Show that equivalence is an equivalence relation *)
+(**
+Calling [ae_equiv] an "equivalence" is a promise we should keep.  A relation is
+an _equivalence relation_ exactly when it has three properties, and the next
+three lemmas establish each in turn:
+
+  - _reflexive_ - every expression is equivalent to itself ([ae_equiv e e]);
+  - _symmetric_ - if [e1] is equivalent to [e2] then [e2] is equivalent to [e1]
+    ([ae_equiv e1 e2 -> ae_equiv e2 e1]);
+  - _transitive_ - equivalences chain: [ae_equiv e1 e2] and [ae_equiv e2 e3]
+    together give [ae_equiv e1 e3].
+
+Together these let us reason about [ae_equiv] the way we reason about [=], and
+they partition [AE] into classes of expressions that all compute the same
+value.  Each proof is short because, once [ae_equiv] is unfolded to
+[eval _ = eval _], it reduces to the matching fact about equality of [nat] -
+reflexivity, [symmetry], and [transitivity] respectively.
+ *)
 
 Lemma ae_equiv_refl : forall e,
   ae_equiv e e.
@@ -553,6 +575,33 @@ Proof.
   - exact H23.
 Qed.
 
+(**
+A note on [unfold] and [exact], both first used here.
+
+[unfold f] replaces the defined name [f] by its definition in the goal.  A goal
+like [ae_equiv e e] shows only the _name_ [ae_equiv], and the equality tactics
+cannot act on it directly.  [unfold ae_equiv] rewrites it to the underlying
+[eval e = eval e], and now [reflexivity] (or [symmetry], [transitivity])
+applies.  This works precisely because a [Definition] is _transparent_ (see the
+note on [Definition] above): the name and its body are interchangeable.
+
+[unfold ae_equiv in *] does the same everywhere - not only the goal but every
+hypothesis too ([in *] means "in all locations").  That is why [ae_equiv_sym]
+and [ae_equiv_trans] unfold: it turns the hypotheses [H], [H12], [H23] into
+plain [nat] equalities.  (Compared with [simpl], which unfolds _and_ keeps
+reducing, [unfold] just expands the one name and stops - handy when you want the
+definition exposed but nothing else changed.)
+
+[exact H] then finishes a goal by supplying a term whose type is _exactly_ the
+goal.  In [ae_equiv_sym], after unfolding and [symmetry] the goal is
+[eval e1 = eval e2] and the hypothesis [H] has that very type, so [exact H]
+closes it.  In [ae_equiv_trans], [transitivity (eval e2)] leaves two goals,
+[eval e1 = eval e2] and [eval e2 = eval e3], discharged by [exact H12] and
+[exact H23].  (Contrast [apply L], which matches a lemma's _conclusion_ to the
+goal and leaves its premises as new goals; [exact] demands a complete, exact
+match with nothing left over.)
+ *)
+
 (** * SECTION 7: PROVING INEQUALITIES *)
 
 (**
@@ -581,14 +630,28 @@ Proof.
   lia.
 Qed.
 
+(**
+Both inequalities are proved with [lia] - the same linear-arithmetic _decision
+procedure_ introduced in Section 4 (the note after [eval_nonnegative]), so we
+do not re-explain it here.  Once [simpl] exposes the [+], each goal is a plain
+fact about [nat]: [>=] in [plus_increases_value], and [>] from the hypotheses
+[H1]/[H2] in [plus_both_positive].  [lia] handles [<], [<=], [>], [>=], [=],
+and [<>] uniformly and draws on the hypotheses on its own, so nothing more is
+needed.  (The idea of a _decision procedure_ - computing a yes/no answer and
+then proving it correct - is taken up properly in Section 9.)
+ *)
+
 (** * SECTION 8: OPTIMIZATIONS AND CORRECTNESS PROOFS *)
 
 (**
-A common task is to prove that an "optimized" version of
-an interpreter is correct.
+A common verification task is showing that an _optimization_ is correct: that
+rewriting a program into a faster or simpler form does not change what it means.
+Here [optimize_zero] strips a useless [+ 0], and [optimize_zero_correct] proves
+it preserves meaning - the optimized and original expressions [eval] to the
+same value, [eval (optimize_zero e) = eval e].
  *)
 
-(* An optimization: replace (Plus e (Num 0)) with e *)
+(** An optimization: replace (Plus e (Num 0)) with e *)
 
 Fixpoint optimize_zero (e : AE) : AE :=
   match e with
@@ -598,7 +661,7 @@ Fixpoint optimize_zero (e : AE) : AE :=
   | Minus x y => Minus (optimize_zero x) (optimize_zero y)
   end.
 
-(* Prove that optimization preserves meaning *)
+(** Prove that optimization preserves meaning *)
 
 Lemma optimize_zero_correct : forall e,
   eval (optimize_zero e) = eval e.
@@ -615,6 +678,23 @@ Proof.
     -- simpl. reflexivity.
   - simpl. lia.
 Qed.
+
+(**
+Two small things to notice in that proof.
+
+[rewrite <- IHe1] uses an equation _backwards_.  A plain [rewrite H] with
+[H : a = b] turns [a] into [b]; the [<-] arrow goes the other way, turning [b]
+into [a].  Here [IHe1 : eval (optimize_zero e1) = eval e1], and we want the
+goal's [eval e1] replaced by [eval (optimize_zero e1)] - the right-to-left
+direction - so [rewrite <- IHe1] is what fits.
+
+The proof also _nests_: after the outer [induction] we case further with
+[destruct], and each deeper split gets a deeper bullet delimiter - [-] at the
+top level, then [--], then [---].  The delimiters keep the sub-cases separate,
+exactly as the single [-] bullets did earlier, just stacked.  (Rocq also
+accepts the cycling [- + *] style for the same purpose; repeated dashes are
+simply another convention.)
+ *)
 
 (** * SECTION 9: REFLECTION / DECISION PROCEDURES *)
 
@@ -669,24 +749,52 @@ Proof.
     -- simpl. rewrite IHe2_1. rewrite IHe2_2. reflexivity.
 Qed.
 
+(**
+A few tactics in that proof.
+
+Two are familiar: [apply] (explained in the note after [ae_equiv_trans]) and
+[discriminate] (in the note after [minus_not_commutative]) - reappearing here
+to use a lemma and to reject impossible constructor cases.
+
+[split] breaks a goal made of two parts into those parts.  The statement is an
+_if and only if_, [ae_eq_dec e1 e2 = true <-> e1 = e2]; [split] turns it into
+the two implications - the forward direction [... = true -> e1 = e2] and the
+backward direction [e1 = e2 -> ... = true] - which become the proof's two [-]
+bullets.  ([split] works the same way on a conjunction [P /\ Q].)
+
+Optional at this stage: [generalize dependent e2] and [specialize] set up and
+then use a strong enough induction hypothesis, and you can treat them as a
+black box for now.  [generalize dependent e2] is the opposite of [intro]: it
+puts [e2] back into the goal, re-quantifying it, so the following [induction
+e1] yields a hypothesis general over _every_ [e2] rather than the single one
+fixed in the context (an [induction] with [e2] still fixed would be too weak to
+go through).  [specialize IHe1_1 with e2_1] then instantiates that general
+hypothesis at the value it is needed for, turning "for all e2, ..." into the
+concrete instance about [e2_1].
+ *)
+
 (** * SECTION 10: CONCRETE SYNTAX - A NOTATION PARSER *)
 
 (**
-Every AE term so far has been written in ABSTRACT syntax - the raw
+Every AE term so far has been written in _abstract_ syntax - the raw
 constructors [Num], [Plus], [Minus].  That is precise but verbose:
 [Plus (Num 1) (Plus (Num 2) (Num 3))] is a mouthful for "1 + (2 + 3)".
-Section 1 even warned that we were "NOT implementing parsing from
-text".  We can now lift that restriction.
+While it is not necessary to understand the implementation of language
+parsers in Rocq, they are darn handy.  Glance through this description
+and use the [<{ e }>] notation freely to translate concrete syntax.
 
 Following Software Foundations' treatment of Imp, we give AE a layer of
-CONCRETE syntax so that
+_concrete_ syntax so that
 
-  <{ 1 + (2 + 3) }>
+[<{ 1 + (2 + 3) }>]
 
-parses directly into the abstract tree [Plus (Num 1) (Plus (Num 2)
-(Num 3))].  The parser is built entirely from Rocq NOTATIONS - there is
+parses directly into the abstract tree:
+
+ [Plus (Num 1) (Plus (Num 2) (Num 3))]
+ 
+The parser is built entirely from Rocq notations - there is
 no separate lexer or parser generator, and the whole thing elaborates
-away, so a concrete term is DEFINITIONALLY EQUAL to the abstract tree
+away, so a concrete term is definitionally equal to the abstract tree
 it denotes.  Three ingredients do the work.
  *)
 
@@ -809,4 +917,36 @@ we can prove properties that would be difficult or impossible
 to verify in Haskell alone.
 
 Next: We'll add booleans, error handling, and environments.
+ *)
+
+(** * PROOF TACTICS INTRODUCED IN THIS CHAPTER *)
+
+(**
+The proofs above build up a working toolkit of tactics.  For reference, here is
+each one introduced in this chapter with a one-sentence reminder:
+
+#<ul>#
+#<li>#[intro] / [intros] - move universally quantified variables (or an implication's premise) from the goal into the context and name them.#</li>#
+#<li>#[reflexivity] - close an equality goal whose two sides reduce to the same term.#</li>#
+#<li>#[simpl] - simplify the goal by computing: unfold definitions like [eval] and reduce.#</li>#
+#<li>#[rewrite] - replace equals by equals in the goal using an equation ([rewrite <-] rewrites right-to-left).#</li>#
+#<li>#[symmetry] - swap the two sides of an equality goal, turning [a = b] into [b = a].#</li>#
+#<li>#[apply] - use a lemma whose conclusion matches the goal, leaving its premises as new goals.#</li>#
+#<li>#[exact] - close a goal by giving a term (often a hypothesis) whose type is exactly the goal.#</li>#
+#<li>#[transitivity] - prove [a = c] through an intermediate [b], by proving [a = b] and [b = c].#</li>#
+#<li>#[exists] - supply a concrete witness for an existential goal [exists x, ...].#</li>#
+#<li>#[discriminate] - close any goal from an impossible equation between two different constructors.#</li>#
+#<li>#[induction] - prove a property of every value of an inductive type, one case per constructor, with induction hypotheses for the subterms.#</li>#
+#<li>#[lia] - a decision procedure that automatically proves goals of linear arithmetic over integers and naturals.#</li>#
+#<li>#[unfold] - replace a defined name by its definition (append [in *] to do so in the hypotheses too).#</li>#
+#<li>#[destruct] - case-split a value on its constructors (or a hypothesis into its parts) without induction hypotheses.#</li>#
+#<li>#[split] - break a conjunction or "if and only if" goal into its component goals.#</li>#
+#<li>#[generalize dependent] - move a variable (and anything depending on it) back into the goal, the opposite of [intro], to strengthen an induction.#</li>#
+#<li>#[specialize] - instantiate a universally quantified hypothesis at specific values.#</li>#
+#<li>#[subst] - eliminate a variable by substituting it away using an equation about it in the context.#</li>#
+#</ul>#
+
+The structuring markers - the bullets [-], [--], [---] (Rocq also accepts the
+cycling [- + *]) and [Proof]/[Qed] - are not tactics themselves, but they run
+throughout these proofs.
  *)
