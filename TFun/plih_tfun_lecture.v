@@ -1,29 +1,19 @@
-(**
-Programming Languages in Rocq - Typed Functions Lecture
-A static type system for the functional language
+(** * Programming Languages in Rocq - Typed Functions *)
 
-Func and Rec gave us a Turing-powerful UNTYPED language: it can loop
-([omega]), and it can get STUCK - [Plus (Boolean true) (Num 1)] is
+(**
+Func and Rec gave us a Turing-powerful _untyped_ language: it can loop
+([omega]), and it can get _stuck_ - [Plus (Boolean true) (Num 1)] is
 nonsense that the interpreter only rejects (as [None]) at run time,
-after it has already started evaluating.  This chapter adds a STATIC
-TYPE SYSTEM that rejects such programs BEFORE evaluation.
+after it has already started evaluating.  This chapter adds a _static
+type system_ that rejects such programs _before_ evaluation.
 
 The plan:
 #<ol>#
-#<li>#A TYPE language [Ty]: numbers, Booleans, and FUNCTION types.#</li>#
-#<li>#The typed term language [TFBAEC]: Rec's FBAEC, except [Lambda] now
-ASCRIBES its parameter's type (you cannot infer a domain type from
-a function that has not yet been applied).#</li>#
-#<li>#The TYPE CHECKER [typeof] - "an interpreter that returns TYPES
-instead of values", carrying an identifier->type CONTEXT exactly
-like [evalM] carries a value environment.#</li>#
-#<li>#The STRICT interpreter [evalM] (call-by-value, fuel-driven) - the
-ONLY interpreter now (no more lazy [evalL]) - with FUEL
-MONOTONICITY carried over from Rec.#</li>#
-#<li>#TYPE SOUNDNESS: well-typed programs do not get stuck.  We witness
-it with a battery of machine-checked examples - good programs run
-to a value of the predicted type, and every classic stuck term is
-rejected by [typeof].#</li>#
+#<li>#A _type language_ [Ty]: numbers, Booleans, and _function_ types.#</li>#
+#<li>#The typed term language [TFBAEC]: Rec's FBAEC, except [Lambda] now _ascribes_ its parameter's type (you cannot infer a domain type from a function that has not yet been applied).#</li>#
+#<li>#The _type checker_ [typeof] - "an interpreter that returns _types_ instead of values", carrying an identifier->type _context_ exactly like [evalM] carries a value environment.#</li>#
+#<li>#The _strict_ interpreter [evalM] (call-by-value, fuel-driven) - the _only_ interpreter now (no more lazy [evalL]) - with _fuel monotonicity_ carried over from Rec.#</li>#
+#<li>#_Type soundness_: well-typed programs do not get stuck.  We witness it with a battery of machine-checked examples - good programs run to a value of the predicted type, and every classic stuck term is rejected by [typeof].#</li>#
 #</ol>#
 
 This mirrors the "Typed Functions" unit of PLIH:
@@ -43,7 +33,7 @@ Import ListNotations.
 (** * SECTION 1: THE TYPE LANGUAGE *)
 
 (**
-Types are numbers, Booleans, and FUNCTION types [TArr d r] ("d -> r"),
+Types are numbers, Booleans, and _function_ types [TArr d r] ("d -> r"),
 the type of a function from domain [d] to range [r].  Function types
 are what make this more than a flat set of base types - they let the
 checker track what a lambda expects and what an application produces.
@@ -54,7 +44,7 @@ Inductive Ty : Type :=
 | TArr  : Ty -> Ty -> Ty.
 
 (**
-Type checking needs to COMPARE types (does the argument's type match
+Type checking needs to _compare_ types (does the argument's type match
 the function's domain?), so we need decidable equality on [Ty].
  *)
 Fixpoint Ty_eqb (a b : Ty) : bool :=
@@ -90,10 +80,10 @@ Qed.
 (** * SECTION 2: THE TYPED TERM LANGUAGE *)
 
 (**
-[TFBAEC] is Rec's FBAEC with ONE change: [Lambda] now carries the
+[TFBAEC] is Rec's FBAEC with one change: [Lambda] now carries the
 declared type of its parameter.  We cannot infer a parameter's type
 from the function alone - its value is not known until application -
-so, as in PLIH, the programmer ASCRIBES it: [Lambda x T b] is
+so, as in PLIH, the programmer _ascribes_ it: [Lambda x T b] is
 "lambda (x : T) in b".  Everything else is unchanged.
  *)
 Inductive TFBAEC : Type :=
@@ -112,7 +102,7 @@ Inductive TFBAEC : Type :=
 (** * SECTION 3: THE TYPE CHECKER *)
 
 (**
-A TYPE CONTEXT maps identifiers to their types - the static analogue of
+A _type context_ maps identifiers to their types - the static analogue of
 an evaluation environment.  It is literally [Env Ty], reusing the same
 association lists (and [lookup]/[extend]) that [evalM] uses for values.
  *)
@@ -129,11 +119,11 @@ Definition tnumBinop (a b : option Ty) : option Ty :=
 (**
 [typeof ctx e] computes the type of [e] under [ctx], or [None] if [e]
 is ill-typed.  Compare it to [evalM]: same shape, same recursion, but
-it returns TYPES and needs no fuel - type checking always terminates.
+it returns _types_ and needs no fuel - type checking always terminates.
 
   - arithmetic wants numbers, yields a number;
   - [IsZero] wants a number, yields a Boolean;
-  - [If] wants a Boolean condition and TWO BRANCHES OF THE SAME TYPE,
+  - [If] wants a Boolean condition and _two branches of the same type_,
     which is that common type (a static term cannot know which branch
     runs, so both must agree);
   - [Lambda x T b] : with [x:T] in scope [b] has some type [R], so the
@@ -198,11 +188,11 @@ Inductive TVal : Type :=
 | ClosureV : string -> TFBAEC -> list (string * TVal) -> TVal.
 
 (**
-The STRICT (call-by-value) interpreter, identical to Rec's [evalM]
+The _strict_ (call-by-value) interpreter, identical to Rec's [evalM]
 except that [Lambda] now has a type annotation to ignore.  It is still
 fuel-driven: types will guarantee well-typed programs terminate, but
-[evalM] is defined on ALL terms, including ill-typed ones, so the fuel
-stays.  This is the ONLY interpreter in this chapter - no lazy [evalL].
+[evalM] is defined on _all_ terms, including ill-typed ones, so the fuel
+stays.  This is the _only_ interpreter in this chapter - no lazy [evalL].
  *)
 Fixpoint evalM (fuel : nat) (env : Env TVal) (e : TFBAEC) : option TVal :=
   match fuel with
@@ -262,7 +252,7 @@ Definition eval (e : TFBAEC) : option TVal := evalM 1000 nil e.
 
 (**
 As in Func and Rec, no measure bounds the fuel, so the well-definedness
-result is MONOTONICITY: more fuel never changes an answer already
+result is _monotonicity_: more fuel never changes an answer already
 produced.  The proof is Rec's verbatim, with [Lambda]'s new type
 argument the only difference (still just [exact H]).
  *)
@@ -316,6 +306,12 @@ Qed.
 
 (** * SECTION 6: TYPE CHECKING IN ACTION *)
 
+(**
+A gallery of well-typed terms followed by _rejections_: every classic
+stuck term is caught statically.  Good programs pass [typecheck] and
+run; bad programs never reach [eval].
+ *)
+
 (* [inc] : a well-typed increment function, Nat -> Nat. *)
 Definition inc : TFBAEC := Lambda "x" TNum (Plus (Id "x") (Num 1)).
 
@@ -338,7 +334,7 @@ Example ty_bind :
   typecheck (Bind "x" (Num 5) (IsZero (Id "x"))) = Some TBool.
 Proof. reflexivity. Qed.
 
-(* ---- and now the REJECTIONS: every classic "stuck" term is caught ---- *)
+(* ---- and now the _rejections_: every classic "stuck" term is caught ---- *)
 
 (* Adding a Boolean to a number is nonsense - rejected statically. *)
 Example ill_plus_bool :
@@ -370,11 +366,11 @@ Example ill_unbound : typecheck (Id "y") = None.
 Proof. reflexivity. Qed.
 
 (**
-THE POINT OF TYPES.  Rec's [omega] = [selfApp selfApp] with
+_The point of types._  Rec's [omega] = [selfApp selfApp] with
 [selfApp = \x. x x] cannot be typed: for [x x] to make sense [x] must
 be both a function [D -> R] AND its own argument [D], i.e. [D = D -> R],
 which no finite [Ty] satisfies.  So even with a parameter annotation,
-self-application is REJECTED - the type checker rules out the very term
+self-application is _rejected_ - the type checker rules out the very term
 that made the untyped language diverge.
  *)
 Definition selfApp (t : Ty) : TFBAEC :=
@@ -389,8 +385,8 @@ Proof. reflexivity. Qed.
 (** * SECTION 7: TYPE SOUNDNESS (well-typed programs do not get stuck) *)
 
 (**
-TYPE SOUNDNESS is the payoff: a well-typed program never gets stuck -
-evaluated with enough fuel it produces a VALUE, and that value has the
+_Type soundness_ is the payoff: a well-typed program never gets stuck -
+evaluated with enough fuel it produces a value, and that value has the
 type [typeof] predicted.  Symbolically, the guarantee we are after is
 
     typecheck e = Some t  ->  exists v, eval e = Some v /\ v : t.
@@ -401,7 +397,7 @@ constrains the environments captured inside closures); we set that up
 in the exercises and leave the full development as advanced material,
 exactly as PLIH states soundness informally at this point.
 
-What we CAN check right now, concretely and completely, is soundness on
+What we can check right now, concretely and completely, is soundness on
 whole programs: a well-typed term and its value, side by side, with the
 value's kind matching the predicted type.  Together with Section 6's
 rejections (bad programs never reach [eval] at all) these witness the
@@ -431,7 +427,7 @@ Example sound_fun_val :
 Proof. eexists. eexists. eexists. reflexivity. Qed.
 
 (**
-CANONICAL FORMS, provably: if a CLOSED VALUE has a base type, we know
+_Canonical forms_, provably: if a closed value has a base type, we know
 exactly which constructor it is.  This is the value-level half of
 soundness and is fully provable now.  We phrase "value [v] has base
 type" directly by [evalM], since a value's number/Boolean nature is
@@ -463,16 +459,26 @@ Proof.
   injection H as H; subst v. reflexivity.
 Qed.
 
+(**
+[intros [| k]] (used in both lemmas above) destructs a hypothesis at
+introduction time, combining [intros] with [destruct].  Writing
+[intros [| k] env e v H] instead of [intros f env e v H; destruct f as
+[| k]] saves a step and keeps the goal tidy.  The pattern [| k] matches
+a [nat]: the left branch is zero, the right branch binds the predecessor
+as [k].  After the intro the subgoal for zero is closed by [discriminate]
+(evaluation under zero fuel is [None], not [Some v]) and the non-zero
+case proceeds.
+ *)
+
 (** * SECTION 8: CONCRETE SYNTAX - TERMS AND TYPES *)
 
 (**
-Typing adds one thing to the surface syntax: a type ASCRIPTION on the
-lambda parameter, classically written [v : T].  This is the ONLY place
+Typing adds one thing to the surface syntax: a type _ascription_ on the
+lambda parameter, classically written [v : T].  This is the only place
 a type appears in a term - [Lambda] is the only constructor carrying a
-[Ty] (a [Bind]'s type is inferred, not written), so [v : T] is needed
-exactly there.
+[Ty] - so [v : T] is needed exactly there.
 
-To support it we build TWO notations: a small grammar for TYPES, and
+To support it we build two notations: a small grammar for _types_, and
 the FBAEC term grammar from Rec with [lambda ID in body] replaced by
 [lambda ID : T in body].
  *)
@@ -481,9 +487,9 @@ Coercion Num : nat >-> TFBAEC.
 Coercion Id  : string >-> TFBAEC.
 
 (**
-THE TYPE GRAMMAR.  Types are written between [<[ ... ]>]: [Nat] and
+_The type grammar._  Types are written between [<[ ... ]>]: [Nat] and
 [Bool] are the base types, and [->] is the function arrow,
-RIGHT-associative (so [Nat -> Nat -> Nat] is [Nat -> (Nat -> Nat)], a
+_right_-associative (so [Nat -> Nat -> Nat] is [Nat -> (Nat -> Nat)], a
 function returning a function), matching the usual convention.
  *)
 
@@ -498,9 +504,9 @@ Notation "'Bool'" := TBool (in custom ty at level 0) : tfun_scope.
 Notation "d -> r" := (TArr d r) (in custom ty at level 50, right associativity) : tfun_scope.
 
 (**
-THE TERM GRAMMAR.  Exactly Rec's FBAEC grammar - numerals/identifiers
+_The term grammar._  Exactly Rec's FBAEC grammar - numerals/identifiers
 via coercion, [*], [+], [-], [iszero], [true]/[false], [if], [bind], and
-JUXTAPOSITION application - with the one change that a function value
+_juxtaposition_ application - with the one change that a function value
 now carries its parameter type: [lambda ID : T in body].
  *)
 
@@ -583,26 +589,28 @@ Proof. reflexivity. Qed.
 (**
 In this lecture we:
 #<ol>#
-#<li>#Added a TYPE language [Ty] with numbers, Booleans, and FUNCTION
-types, plus decidable type equality [Ty_eqb] (proved correct).#</li>#
-#<li>#Typed the term language: [Lambda] now ASCRIBES its parameter type,
-because a domain type cannot be inferred before application.#</li>#
-#<li>#Built the TYPE CHECKER [typeof] - an "interpreter that returns
-types" - and saw it ACCEPT good programs and REJECT every classic
-stuck term, including self-application ([omega]'s core).#</li>#
-#<li>#Kept a single STRICT interpreter [evalM] (no lazy [evalL]) and
-re-proved FUEL MONOTONICITY.#</li>#
-#<li>#Stated TYPE SOUNDNESS and witnessed it: good programs run to a
-value of the predicted type; bad programs never type-check.  We
-proved the canonical-forms slices for the base types.#</li>#
-#<li>#Added CONCRETE SYNTAX in two parts: a type grammar [<[ Nat -> Bool ]>]
-and the term grammar with the classical ascription
-[lambda ID : T in body] - the one place a type is written.#</li>#
+#<li>#Added a _type language_ [Ty] with numbers, Booleans, and _function_ types, plus decidable type equality [Ty_eqb] (proved correct).#</li>#
+#<li>#Typed the term language: [Lambda] now _ascribes_ its parameter type, because a domain type cannot be inferred before application.#</li>#
+#<li>#Built the _type checker_ [typeof] - an "interpreter that returns _types_" - and saw it accept good programs and reject every classic stuck term, including self-application ([omega]'s core).#</li>#
+#<li>#Kept a single _strict_ interpreter [evalM] (no lazy [evalL]) and re-proved _fuel monotonicity_.#</li>#
+#<li>#Stated _type soundness_ and witnessed it: good programs run to a value of the predicted type; bad programs never type-check.  We proved the canonical-forms slices for the base types.#</li>#
+#<li>#Added concrete syntax in two parts: a type grammar [<[ Nat -> Bool ]>] and the term grammar with the classical ascription [lambda ID : T in body] - the one place a type is written.#</li>#
 #</ol>#
 
-The catch: typing is now so strict that RECURSION is gone - the Y and Z
+The catch: typing is now so strict that recursion is gone - the Y and Z
 combinators relied on self-application, which no longer type-checks.
 The next chapter, Typed Recursion, adds a typed [fix] to put recursion
-back deliberately, and its payoff is NORMALIZATION: every well-typed
+back deliberately, and its payoff is normalization: every well-typed
 term terminates.
+ *)
+
+(** * NEW PROOF TACTICS IN THIS CHAPTER *)
+
+(**
+Two new patterns appear, both in the canonical-forms lemmas:
+
+#<ul>#
+#<li>#[intros [| k]] - destructs a value at introduction time by combining [intros] with a match pattern.  Writing [intros [| k] env e v H] is sugar for [intros f env e v H; destruct f as [| k]].  Useful for types with just a few constructors (naturals, options, Booleans) where you want to case-split immediately.#</li>#
+#<li>#[eexists] - instantiates an existential goal with a fresh metavariable, deferring the choice of witness to later tactics.  Repeated [eexists. eexists. eexists.] peels off the three existentials in [exists i b env, ...] before [reflexivity] resolves them all at once.#</li>#
+#</ul>#
  *)

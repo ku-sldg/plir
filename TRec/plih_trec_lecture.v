@@ -1,32 +1,25 @@
-(**
-Programming Languages in Rocq - Typed Recursion Lecture
-Putting recursion back with a primitive typed [Fix]
+(** * Programming Languages in Rocq - Typed Recursion *)
 
-Typing in TFun became so strict that RECURSION disappeared: the Y and Z
+(**
+Typing in TFun became so strict that recursion disappeared: the Y and Z
 combinators relied on self-application ([x x]), which cannot be typed.
-In fact the simply-typed language TFun left is STRONGLY NORMALIZING -
+In fact the simply-typed language TFun left is _strongly normalizing_ -
 every well-typed term terminates.  That is a lovely guarantee, but a
 language with no recursion cannot compute much.
 
-This chapter adds recursion back the honest way: a PRIMITIVE typed
+This chapter adds recursion back the honest way: a _primitive_ typed
 [Fix] with its own typing rule.  The bargain is explicit:
-  - we KEEP type safety - well-typed programs never get stuck;
-  - we GIVE UP normalization - [Fix] can loop, so a well-typed term may
+  - we _keep_ type safety - well-typed programs never get stuck;
+  - we _give up_ normalization - [Fix] can loop, so a well-typed term may
     once again diverge, and the interpreter stays fuel-driven/partial.
 
 The plan:
 #<ol>#
-#<li>#TFun's type language [Ty] and typed terms [TFBAEC], plus ONE new
-form [Fix f] and a term-level [subst] to unfold it.#</li>#
-#<li>#The type checker [typeof] with the [Fix] rule: if [f : T -> T] then
-[Fix f : T].#</li>#
-#<li>#The STRICT interpreter [evalM]: [Fix f] unfolds by substituting the
-whole recursion back in for the recursive-call parameter - "fix
-sets up what replaces the recursive call", it does not step once.#</li>#
-#<li>#Real recursion: FACTORIAL and SUMMATION, well-typed and computed.#</li>#
-#<li>#The trade-off, machine-checked: self-application is STILL rejected,
-yet [Fix] lets a well-typed term DIVERGE ([loopT]).  Type soundness
-survives; normalization does not.#</li>#
+#<li>#TFun's type language [Ty] and typed terms [TFBAEC], plus one new form [Fix f] and a term-level [subst] to unfold it.#</li>#
+#<li>#The type checker [typeof] with the [Fix] rule: if [f : T -> T] then [Fix f : T].#</li>#
+#<li>#The _strict_ interpreter [evalM]: [Fix f] unfolds by substituting the whole recursion back in for the recursive-call parameter.#</li>#
+#<li>#Real recursion: factorial and summation, well-typed and computed.#</li>#
+#<li>#The trade-off, machine-checked: self-application is _still_ rejected, yet [Fix] lets a well-typed term _diverge_ ([loopT]).  Type soundness survives; normalization does not.#</li>#
 #</ol>#
 
 This mirrors the "Typed Recursion" unit of PLIH:
@@ -47,7 +40,7 @@ Import ListNotations.
 
 (**
 Types are exactly as in Typed Functions: numbers, Booleans, and
-function types [TArr d r].  [Fix] adds no new TYPE - it recurses at an
+function types [TArr d r].  [Fix] adds no new type - it recurses at an
 existing type - so [Ty] and its decidable equality carry over verbatim.
  *)
 Inductive Ty : Type :=
@@ -85,7 +78,7 @@ Qed.
 (** * SECTION 2: THE TERM LANGUAGE + SUBSTITUTION *)
 
 (**
-[TFBAEC] is TFun's typed language with ONE new constructor, [Fix].
+[TFBAEC] is TFun's typed language with one new constructor, [Fix].
 [Fix f] denotes the fixed point of [f]: if [f] is a function that takes
 "the recursive call" as its argument and returns the recursive
 function, [Fix f] ties the knot.
@@ -105,7 +98,7 @@ Inductive TFBAEC : Type :=
 | Id      : string -> TFBAEC.
 
 (**
-To UNFOLD a [Fix] we substitute a term for an identifier - the same
+To _unfold_ a [Fix] we substitute a term for an identifier - the same
 capture-naive [subst] as the Func chapter's substitution interpreter,
 now over the typed syntax.  Both binders ([Bind] and [Lambda]) shadow
 the substituted name in their body; [Fix] is not a binder.
@@ -141,16 +134,16 @@ Definition tnumBinop (a b : option Ty) : option Ty :=
   end.
 
 (**
-[typeof] is TFun's checker with the [Fix] rule added.  THE RULE:
+[typeof] is TFun's checker with the [Fix] rule added.  _The rule_:
 
     ctx |- f : T -> T
   ----------------------
     ctx |- Fix f : T
 
-[f] must be a function whose domain and range are the SAME type [T]
+[f] must be a function whose domain and range are the _same_ type [T]
 (it maps "a recursive function of type [T]" to "a recursive function of
 type [T]"), and then [Fix f] has that type [T].  Requiring domain =
-range is what keeps typing SOUND; PLIH states the rule as "take the
+range is what keeps typing _sound_; PLIH states the rule as "take the
 range", which coincides here because the two are equal.
  *)
 Fixpoint typeof (ctx : Ctx) (e : TFBAEC) : option Ty :=
@@ -204,7 +197,7 @@ Definition typecheck (e : TFBAEC) : option Ty := typeof nil e.
 
 (**
 Values are TFun's [NumV]/[BoolV]/[ClosureV].  Unlike TFun, the closure
-now also stores the parameter's TYPE: [Fix] needs to reconstruct the
+now also stores the parameter's _type_: [Fix] needs to reconstruct the
 lambda [Lambda i t b] from the closure in order to substitute the whole
 recursion back in, and that term requires the ascription [t].
  *)
@@ -216,9 +209,9 @@ Inductive TVal : Type :=
 (**
 The strict (call-by-value) interpreter, TFun's [evalM] plus [Fix].
 
-THE [Fix] RULE.  Evaluate [f] to a closure [ClosureV i t b e] (its
+_The [Fix] rule._  Evaluate [f] to a closure [ClosureV i t b e] (its
 parameter [i] is the recursive-call name, [b] the body).  Then unfold:
-substitute the WHOLE recursion [Fix (Lambda i t b)] for [i] in [b], and
+substitute the _whole_ recursion [Fix (Lambda i t b)] for [i] in [b], and
 evaluate that in the closure's environment.  [Fix] does not take one
 recursion step; it installs "what the recursive call means" and lets
 ordinary evaluation proceed - looping only as far as the program forces
@@ -288,7 +281,7 @@ Definition eval (e : TFBAEC) : option TVal := evalM 1000 nil e.
 
 (**
 [Fix] can diverge, so - as in Func and Rec - the well-definedness
-result is MONOTONICITY: more fuel never changes an answer.  The proof is
+result is _monotonicity_: more fuel never changes an answer.  The proof is
 TFun's, with the closure's new type field and a new [Fix] case (whose
 unfolded body is handled by the IH exactly like [Bind]'s body).
  *)
@@ -347,7 +340,7 @@ Qed.
 (** * SECTION 6: TYPED RECURSION IN ACTION *)
 
 (**
-A recursive GENERATOR takes the recursive call [g] as a parameter and
+A recursive _generator_ takes the recursive call [g] as a parameter and
 returns the recursive function.  For it to be a legal argument to [Fix]
 its type must be [T -> T]; here [T = TNum -> TNum].
 
@@ -373,7 +366,7 @@ Proof. reflexivity. Qed.
 Example ty_fact_app : typecheck (App fact (Num 5)) = Some TNum.
 Proof. reflexivity. Qed.
 
-(* And it RUNS: 5! = 120, real recursion under a strict interpreter. *)
+(* And it _runs_: 5! = 120, real recursion under a strict interpreter. *)
 Example run_fact5 : eval (App fact (Num 5)) = Some (NumV 120).
 Proof. reflexivity. Qed.
 
@@ -399,9 +392,9 @@ Proof. reflexivity. Qed.
 (** * SECTION 7: THE TRADE-OFF (safety kept, normalization lost) *)
 
 (**
-TYPE SAFETY SURVIVES.  Self-application still cannot be typed - the term
+_Type safety survives._  Self-application still cannot be typed - the term
 that made the untyped language loop is rejected before evaluation, so
-[Fix] is the ONLY way to write a loop, and it is a deliberate,
+[Fix] is the _only_ way to write a loop, and it is a deliberate,
 well-typed one.
  *)
 Definition selfApp (t : Ty) : TFBAEC :=
@@ -420,9 +413,9 @@ Example ill_fix_mismatch :
 Proof. reflexivity. Qed.
 
 (**
-NORMALIZATION IS GONE.  This is the price of [Fix].  In pure TFun every
-well-typed term terminates; here [loopT] is WELL-TYPED (it has type
-[TNum]) yet DIVERGES - [Fix] of the identity endlessly reinstalls
+_Normalization is gone._  This is the price of [Fix].  In pure TFun every
+well-typed term terminates; here [loopT] is _well-typed_ (it has type
+[TNum]) yet _diverges_ - [Fix] of the identity endlessly reinstalls
 itself with nothing to force a base case.  So [evalM] is genuinely
 partial again, and the fuel is not a convenience but a necessity.
  *)
@@ -435,10 +428,10 @@ Example loopT_diverges : evalM 500 nil loopT = None.
 Proof. reflexivity. Qed.
 
 (**
-So the arc completes.  Untyped (Func/Rec): can get STUCK and can
-DIVERGE.  Simply typed (TFun): neither - total and safe, but no
-recursion.  Typed recursion (here): SAFE again (no stuck terms) but
-intentionally NON-total - [Fix] buys back Turing power at the cost of
+So the arc completes.  Untyped (Func/Rec): can get _stuck_ and can
+_diverge_.  Simply typed (TFun): neither - total and safe, but no
+recursion.  Typed recursion (here): _safe_ again (no stuck terms) but
+intentionally _non-total_ - [Fix] buys back Turing power at the cost of
 the normalization guarantee.
  *)
 
@@ -483,11 +476,11 @@ Qed.
 (** * SECTION 9: CONCRETE SYNTAX - TERMS AND TYPES *)
 
 (**
-The surface syntax is TFun's, unchanged: a small grammar for TYPES
+The surface syntax is TFun's, unchanged: a small grammar for types
 between [<[ ... ]>], and the term grammar between [<{ ... }>] with the
 ascribed lambda [lambda ID : T in body] (the one place a type appears).
-[Fix] adds no new TYPE, so the type grammar carries over verbatim; the
-term grammar gains exactly ONE notation for this chapter's one new form,
+[Fix] adds no new type, so the type grammar carries over verbatim; the
+term grammar gains exactly one notation for this chapter's one new form,
 the prefix [fix f].
  *)
 
@@ -495,8 +488,8 @@ Coercion Num : nat >-> TFBAEC.
 Coercion Id  : string >-> TFBAEC.
 
 (**
-THE TYPE GRAMMAR (verbatim from TFun).  [Nat] and [Bool] are the base
-types; [->] is the RIGHT-associative function arrow.
+_The type grammar_ (verbatim from TFun).  [Nat] and [Bool] are the base
+types; [->] is the _right_-associative function arrow.
  *)
 Declare Custom Entry ty.
 Declare Scope trec_scope.
@@ -509,8 +502,8 @@ Notation "'Bool'" := TBool (in custom ty at level 0) : trec_scope.
 Notation "d -> r" := (TArr d r) (in custom ty at level 50, right associativity) : trec_scope.
 
 (**
-THE TERM GRAMMAR.  TFun's grammar - numerals/identifiers via coercion,
-[*], [+], [-], [iszero], [true]/[false], [if], [bind], JUXTAPOSITION
+_The term grammar._  TFun's grammar - numerals/identifiers via coercion,
+[*], [+], [-], [iszero], [true]/[false], [if], [bind], _juxtaposition_
 application, and the ascribed [lambda ID : T in body] - plus the new
 prefix [fix f], which takes the recursion-generator (typically a
 lambda) and ties the knot.
@@ -590,22 +583,26 @@ Proof. reflexivity. Qed.
 (**
 In this lecture we:
 #<ol>#
-#<li>#Added a primitive [Fix] to TFun's typed language, with a term-level
-[subst] to unfold it.#</li>#
-#<li>#Gave [Fix] a typing rule - [f : T -> T] yields [Fix f : T] - and an
-evaluation rule that substitutes the whole recursion back in for
-the recursive-call parameter.#</li>#
-#<li>#Wrote real, well-typed RECURSION: factorial (5! = 120) and
-summation (0..5 = 15), running under the strict interpreter.#</li>#
-#<li>#Re-proved FUEL MONOTONICITY (now with a [Fix] case).#</li>#
-#<li>#Made the bargain explicit and machine-checked: self-application is
-still rejected (safety kept), but [Fix] lets a well-typed term
-DIVERGE ([loopT]) - normalization is deliberately traded away.#</li>#
-#<li>#Added CONCRETE SYNTAX (Section 9): TFun's type grammar
-[<[ Nat -> Bool ]>] and term grammar [<{ ... }>], extended with the
-prefix [fix f] for the fixed-point form.#</li>#
+#<li>#Added a primitive [Fix] to TFun's typed language, with a term-level [subst] to unfold it.#</li>#
+#<li>#Gave [Fix] a typing rule - [f : T -> T] yields [Fix f : T] - and an evaluation rule that substitutes the whole recursion back in for the recursive-call parameter.#</li>#
+#<li>#Wrote real, well-typed recursion: factorial (5! = 120) and summation (0..5 = 15), running under the strict interpreter.#</li>#
+#<li>#Re-proved _fuel monotonicity_ (now with a [Fix] case).#</li>#
+#<li>#Made the bargain explicit and machine-checked: self-application is still rejected (safety kept), but [Fix] lets a well-typed term _diverge_ ([loopT]) - normalization is deliberately traded away.#</li>#
+#<li>#Added concrete syntax (Section 9): TFun's type grammar [<[ Nat -> Bool ]>] and term grammar [<{ ... }>], extended with the prefix [fix f] for the fixed-point form.#</li>#
 #</ol>#
 
-Next: the course turns to modeling evaluation itself as a MONAD (the
-Reader/Either interpreters), and then to STATE.
+Next: the course turns to modeling evaluation itself as a monad (the
+Reader/Either interpreters), and then to state.
+ *)
+
+(** * NEW PROOF TACTICS IN THIS CHAPTER *)
+
+(**
+This chapter introduces no new proof tactics.  All proofs reuse the
+patterns from TFun: [intros [| k]] to destruct fuel at introduction,
+[discriminate] and [try discriminate] for impossible cases,
+[ltac:(lia)] for inline arithmetic side-conditions, and
+[injection H as H; subst] to unwrap constructor equations.
+
+See TFun's "New Proof Tactics" section for the full glossary.
  *)
