@@ -3,9 +3,9 @@ Programming Languages in Rocq - AE Lecture
 Arithmetic Expressions
 
 This lecture covers:
-1. Defining a simple language of arithmetic expressions
-2. Writing an interpreter for the language
-3. Proving basic properties about the interpreter
+- Defining a simple language of arithmetic expressions
+- Writing an interpreter for the language
+- Proving basic properties about the interpreter
 
 This mirrors the first section of PLIH but with added proofs.
  *)
@@ -22,13 +22,7 @@ An arithmetic expression (AE) is one of:
   - A number (literal)
   - The sum of two expressions
   - The difference of two expressions
-
-This is an abstract syntax tree (AST). We're NOT implementing
-parsing from text; we assume expressions are already in this form.
-
-Compare to Haskell:
-  data AE = Num Int | Plus AE AE | Minus AE AE
- *)
+*)
 
 Inductive AE : Type :=
 | Num : nat -> AE
@@ -36,36 +30,34 @@ Inductive AE : Type :=
 | Minus : AE -> AE -> AE.
 
 (**
-Examples of AE terms (these are VALUES of type AE):
+This is an abstract syntax tree (AST). We will implement concrete syntax and a
+parser later in this lesson.
+*)
 
-  Num 5              represents: 5
-  Plus (Num 3) (Num 4)  represents: 3 + 4
-  Minus (Num 10) (Num 2) represents: 10 - 2
-  Plus (Num 1) (Plus (Num 2) (Num 3))  represents: 1 + (2 + 3)
+(**
+Examples of AE terms (these are VALUES of type AE):
  *)
 
-(* Some example AE values *)
-Definition ae_example_1 : AE := Num 5.
-Definition ae_example_2 : AE := Plus (Num 3) (Num 4).
-Definition ae_example_3 : AE := Minus (Num 10) (Num 2).
-Definition ae_example_4 : AE := Plus (Num 1) (Plus (Num 2) (Num 3)).
+Definition ae_example_1 : AE := Num 5. (* 5 *)
+Definition ae_example_2 : AE := Plus (Num 3) (Num 4). (* 3+4 *)
+Definition ae_example_3 : AE := Minus (Num 10) (Num 2). (* 10-2 *)
+Definition ae_example_4 : AE := Plus (Num 1) (Plus (Num 2) (Num 3)). (* 1+(2+3) *)
+
+(**
+[Definition name : type := value] creates a binding from [name] to [value].
+Note that [Definition] cannot be used to define recursive constructions.
+*)
 
 (** * SECTION 2: SEMANTICS - Defining Evaluation *)
 
 (**
-Now we define what these expressions MEAN writing an interpreter.
+Now we define what these expressions mean by writing an interpreter.
 
-The eval function maps an AE to a natural number (its value).
+The [eval] function maps an AE to a natural number (its value).
 
-Rocq requires that eval be TOTAL (terminates on all inputs).
+Rocq requires that [eval] be total (terminates on all inputs).
 This is enforced requiring structural recursion on the AE argument.
-
-Compare to Haskell:
-  eval :: AE -> Int
-  eval (Num n) = n
-  eval (Plus e1 e2) = eval e1 + eval e2
-  eval (Minus e1 e2) = eval e1 - eval e2
- *)
+*)
 
 Fixpoint eval (e : AE) : nat :=
   match e with
@@ -74,7 +66,9 @@ Fixpoint eval (e : AE) : nat :=
   | Minus x y => eval x - eval y
   end.
 
-(* Let's test eval on our examples *)
+(**
+Let's test eval on our examples
+*)
 
 Example test_eval_1 : eval (Num 5) = 5.
 Proof. reflexivity. Qed.
@@ -88,6 +82,21 @@ Proof. reflexivity. Qed.
 Example test_eval_4 : eval (Plus (Num 1) (Plus (Num 2) (Num 3))) = 6.
 Proof. reflexivity. Qed.
 
+(**
+Each [Example] defines a proof that looks and behaves a great deal like a test
+case.  [test_eval_1] is defined as [eval (Num 5) = 5] meaning exactly what you
+would think.  Evaluating [(Num 5)] should equal [5].  The period creates a goal
+that must be discharged.
+
+[Proof] tells Rocq to open a proof and [reflexivity] is our first proof tactic.
+[reflexivity] simplifies both sides of the equality and determines if they are
+identical. If they are the goal is discharged and [Qed] ends the proof.  If they
+are not, nothing changes and a different path must be chosen.
+
+Periods are important.  They tell the Rocq system to evaluate the tactic or
+preceding definition.
+*)
+
 (** * SECTION 3: SIMPLE PROPERTIES *)
 
 (**
@@ -96,10 +105,9 @@ This is what differentiates Rocq from Haskell: we can prove
 that our interpreter has certain desirable properties.
  *)
 
-(* PROPERTY 1: Evaluation is deterministic
- * 
- * If we evaluate the same expression twice, we get the same result.
- * This is OBVIOUS from the definition, but let's prove it formally.
+(** PROPERTY 1: Evaluation is deterministic
+
+If we evaluate the same expression twice, we get the same result. This is obvious from the definition, but let's prove it formally.
  *)
 
 Lemma eval_deterministic : forall e,
@@ -109,11 +117,11 @@ Proof.
   reflexivity.
 Qed.
 
-(* This is too trivial! Let's prove something more interesting. *)
+(** This is too trivial! Let's prove something more interesting. *)
 
-(* PROPERTY 2: Eval distributes over Plus
- * 
- * This is obvious from the definition, but it's good practice.
+(** PROPERTY 2: Eval distributes over Plus
+
+This is obvious from the definition, but it's good practice.
  *)
 
 Lemma eval_plus : forall e1 e2,
@@ -125,11 +133,11 @@ Proof.
   reflexivity.
 Qed.
 
-(* PROPERTY 3: Plus is commutative on AE
- * 
- * eval (Plus e1 e2) = eval (Plus e2 e1)
- * 
- * Why? Because addition of natural numbers is commutative.
+(** PROPERTY 3: Plus is commutative on AE
+
+[eval (Plus e1 e2) = eval (Plus e2 e1)]
+
+Why? Because addition of natural numbers is commutative.
  *)
 
 Lemma plus_commutative : forall e1 e2,
@@ -145,7 +153,7 @@ Proof.
   reflexivity.
 Qed.
 
-(* PROPERTY 4: Plus is associative on AE *)
+(** PROPERTY 4: Plus is associative on AE *)
 
 Lemma plus_associative : forall e1 e2 e3,
   eval (Plus (Plus e1 e2) e3) = eval (Plus e1 (Plus e2 e3)).
@@ -159,7 +167,7 @@ Proof.
   apply Nat.add_assoc.
 Qed.
 
-(* PROPERTY 5: Minus is not commutative (obviously) *)
+(** PROPERTY 5: Minus is not commutative (obviously) *)
 
 Lemma minus_not_commutative : exists e1 e2,
   eval (Minus e1 e2) <> eval (Minus e2 e1).
@@ -173,10 +181,9 @@ Proof.
   discriminate.
 Qed.
 
-(* PROPERTY 6: Every AE evaluates to some natural number
- * 
- * This is TRIVIAL because eval always produces a nat,
- * but it's good to state explicitly.
+(** PROPERTY 6: Every AE evaluates to some natural number
+
+This is TRIVIAL because eval always produces a nat, but it's good to state explicitly.
  *)
 
 Lemma eval_produces_nat : forall e,
@@ -194,9 +201,9 @@ The real power of formal verification comes when we use induction.
 Since AE is inductively defined, we can prove properties * induction over its structure.
  *)
 
-(* PROPERTY 7: Multiplication distributes over addition
- * 
- * For any k: k * (e1 + e2) = k * e1 + k * e2
+(** PROPERTY 7: Multiplication distributes over addition
+
+For any k: k * (e1 + e2) = k * e1 + k * e2
  *)
 
 Lemma distribute_mult : forall k e1 e2,
@@ -210,9 +217,9 @@ Proof.
   lia.
 Qed.
 
-(* PROPERTY 8: Zero is identity for addition
- * 
- * For any e: eval (Plus (Num 0) e) = eval e
+(** PROPERTY 8: Zero is identity for addition
+
+For any e: eval (Plus (Num 0) e) = eval e
  *)
 
 Lemma zero_plus_identity : forall e,
@@ -222,9 +229,9 @@ Proof.
   reflexivity.
 Qed.
 
-(* PROPERTY 9: Every AE is >= 0 (when interpreted)
- * 
- * This uses induction on the structure of AE.
+(** PROPERTY 9: Every AE is >= 0 (when interpreted)
+
+ This uses induction on the structure of AE.
  *)
 
 Lemma eval_nonnegative : forall e,
@@ -259,7 +266,7 @@ Often we want helper functions to manipulate AE terms.
 Let's prove properties about these helpers.
  *)
 
-(* Helper: Count the number of operations in an AE *)
+(** Helper: Count the number of operations in an AE *)
 
 Fixpoint count_ops (e : AE) : nat :=
   match e with
@@ -287,7 +294,7 @@ the same value.
 
 Definition ae_equiv (e1 e2 : AE) : Prop := eval e1 = eval e2.
 
-(* Show that equivalence is an equivalence relation *)
+(** Show that equivalence is an equivalence relation *)
 
 Lemma ae_equiv_refl : forall e,
   ae_equiv e e.
@@ -402,7 +409,7 @@ Fixpoint ae_eq_dec (e1 e2 : AE) : bool :=
   | _,_ => false
   end.
                        
-(* Prove that the decision procedure is correct *)
+(** Prove that the decision procedure is correct *)
 
 Search andb.
          
@@ -558,16 +565,20 @@ Qed.
 (**
 In this lecture, we:
 
-1. Defined a simple language (AE) using an inductive datatype
-2. Wrote an interpreter (eval) that is guaranteed to terminate
-3. Proved basic properties:
-   - Commutativity of plus
-   - Associativity of plus
-   - Non-negativity of evaluation
-4. Proved correctness of optimizations
-5. Proved correctness of decision procedures
-6. Added CONCRETE SYNTAX with a notation-based parser, so that
-   [<{ 1 + (2 + 3) }>] elaborates to the abstract AE tree
+#<ol>#
+#<li>#Defined a simple language (AE) using an inductive datatype#</li>#
+#<li>#Wrote an interpreter ([eval]) that is guaranteed to terminate#</li>#
+#<li>#Proved basic properties:
+#<ul>#
+#<li>#Commutativity of plus#</li>#
+#<li>#Associativity of plus#</li>#
+#<li>#Non-negativity of evaluation#</li>#
+#</ul>#
+#</li>#
+#<li>#Proved correctness of optimizations#</li>#
+#<li>#Proved correctness of decision procedures#</li>#
+#<li>#Added CONCRETE SYNTAX with a notation-based parser, so that [<{ 1 + (2 + 3) }>] elaborates to the abstract AE tree#</li>#
+#</ol>#
 
 Key insight: By formalizing our language and interpreter in Rocq,
 we can prove properties that would be difficult or impossible
