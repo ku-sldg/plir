@@ -1,7 +1,6 @@
-(**
-Programming Languages in Rocq - AE Lecture
-Arithmetic Expressions
+(** * Programming Languages in Rocq - Arithmetic Expressions *)
 
+(**
 This lecture covers:
 - Defining a simple language of arithmetic expressions
 - Writing an interpreter for the language
