@@ -1,7 +1,6 @@
-(**
-Programming Languages in Rocq - IDs Lecture
-Adding Identifiers
+(** * Programming Languages in Rocq - Adding Identifiers *)
 
+(**
 This lecture covers:
 #<ol>#
 #<li>#Extending AE with identifiers (Id) and local bindings (Bind)#</li>#
@@ -30,19 +29,13 @@ Local Open Scope string_scope.
 
 (**
 BAE ("Bind and Arithmetic Expressions") is AE plus two new forms:
-  - [Id x]         : a use (an instance) of an identifier
-  - [Bind x v b]   : bind [x] to the value of [v], then evaluate [b]
 
-Concrete syntax:
+  - [Id x]       : a use (an _instance_) of an identifier;
+  - [Bind x v b] : bind [x] to the value of [v], then evaluate the body [b].
+
+Its concrete grammar (made real by the parser at the end of this file) is
+
   t ::= NUM | ID | t + t | t - t | bind ID = t in t
-
-Compare to the Haskell course:
-  data BAE where
-    Num   :: Int -> BAE
-    Plus  :: BAE -> BAE -> BAE
-    Minus :: BAE -> BAE -> BAE
-    Bind  :: String -> BAE -> BAE -> BAE
-    Id    :: String -> BAE
  *)
 
 Inductive BAE : Type :=
@@ -53,7 +46,7 @@ Inductive BAE : Type :=
 | Id    : string -> BAE.
 
 (**
-BINDING TERMINOLOGY (from the chapter):
+Binding terminology (from the chapter):
   - Instance:          any occurrence of an identifier.
   - Binding instance:  where an identifier is declared and given a
                        value - the [x] in [Bind x v b].
@@ -72,7 +65,7 @@ Definition bae_example_1 : BAE :=
 Definition bae_example_2 : BAE :=
   Bind "x" (Num 4) (Bind "y" (Num 5) (Minus (Plus (Id "x") (Id "y")) (Num 4))).
 
-(* [Id "x"] on its own is a FREE instance - it has no binding. *)
+(* [Id "x"] on its own is a _free_ instance - it has no binding. *)
 Definition bae_free : BAE := Plus (Id "x") (Num 1).
 
 (** * SECTION 2: FREE IDENTIFIERS AND CLOSED TERMS *)
@@ -103,22 +96,14 @@ Proof. reflexivity. Qed.
 (** * SECTION 3: SUBSTITUTION *)
 
 (**
-[subst i v e] replaces every FREE instance of [i] in [e] with the
-term [v].  Notationally the chapter writes this [ [i |-> v] e ].
+[subst i v e] replaces every _free_ instance of [i] in [e] with the term [v]
+(the chapter writes this [ [i |-> v] e ]).
 
-The only subtle case is [Bind i' v' b']: we always substitute inside
-the bound value [v'] (it is evaluated in the OUTER scope), but we
-substitute inside the body [b'] only when [i <> i'] - a matching
-inner binding SHADOWS the outer [i].
-
-Compare to Haskell:
-  subst _ _ (Num x)          = Num x
-  subst i v (Plus l r)       = Plus (subst i v l) (subst i v r)
-  subst i v (Minus l r)      = Minus (subst i v l) (subst i v r)
-  subst i v (Bind i' v' b')  = if i==i'
-                               then Bind i' (subst i v v') b'
-                               else Bind i' (subst i v v') (subst i v b')
-  subst i v (Id i')          = if i==i' then v else Id i'
+The only subtle case is [Bind i' v' b'].  We always substitute inside the bound
+value [v'] - it is evaluated in the _outer_ scope - but we substitute inside the
+body [b'] only when [i <> i']: a matching inner binding _shadows_ the outer [i],
+so the substitution must stop there.  The [Fixpoint] below reads exactly that
+way.
  *)
 
 Fixpoint subst (i : string) (v : BAE) (e : BAE) : BAE :=
@@ -164,10 +149,10 @@ Lemma size_pos : forall e, 1 <= size e.
 Proof. induction e; simpl; lia. Qed.
 
 (**
-THE KEY INVARIANT.  Substituting a NUMBER for an identifier does not
-change the size of a term: it only replaces [Id] leaves (size 1) by
-[Num] leaves (size 1).  This is exactly what will let evaluation
-recurse "through" a substitution without shrinking structurally.
+_The key invariant._  Substituting a _number_ for an identifier does not change
+the size of a term: it only replaces [Id] leaves (size 1) by [Num] leaves
+(size 1).  This is exactly what lets evaluation recurse "through" a
+substitution without shrinking structurally.
  *)
 
 Lemma size_subst_num : forall e i n,
@@ -187,23 +172,22 @@ Qed.
 (** * SECTION 5: SEMANTICS - A SUBSTITUTION INTERPRETER (WITH FUEL) *)
 
 (**
-We now write the interpreter.  The natural definition is:
+We now write the interpreter.  The natural definition is
 
   eval (Bind i v b) = eval v >>= fun n => eval (subst i (Num n) b)
 
-But there is a catch that does not arise in Haskell: [subst i (Num
-n) b] is a BRAND NEW term, not a structural subterm of [Bind i v b].
-Rocq's termination checker cannot see that the recursion shrinks, so
-a plain [Fixpoint] on the expression is REJECTED.
+but there is a catch that a termination checker forces into the open: [subst i
+(Num n) b] is a _brand-new_ term, not a structural subterm of [Bind i v b].
+Rocq cannot see that the recursion shrinks, so a plain [Fixpoint] on the
+expression is _rejected_.
 
-The fix is to recurse on a decreasing FUEL counter instead.  Because
-substituting a number preserves [size] (Section 4), starting with
-fuel [= size e] is always enough.
+The fix is to recurse on a decreasing _fuel_ counter instead.  Because
+substituting a number preserves [size] (Section 4), starting with fuel
+[= size e] is always enough.
 
-(Foreshadowing: the next chapter, "Adding Environments", removes
-substitution entirely, and the resulting interpreter IS a clean
-structural [Fixpoint] with no fuel.  That is one more reason
-environments are the better design.)
+(Foreshadowing: the next chapter, "Adding Environments", removes substitution
+entirely, and the resulting interpreter _is_ a clean structural [Fixpoint] with
+no fuel - one more reason environments are the better design.)
  *)
 
 Fixpoint evalF (fuel : nat) (e : BAE) : option nat :=
@@ -235,9 +219,9 @@ Fixpoint evalF (fuel : nat) (e : BAE) : option nat :=
 Definition eval (e : BAE) : option nat := evalF (size e) e.
 
 (**
-FUEL MONOTONICITY.  Any two fuel amounts that are both large enough
-(at least [size e]) compute the same answer.  This is what makes
-[eval] well defined regardless of the exact fuel we picked.
+_Fuel monotonicity._  Any two fuel amounts that are both large enough (at least
+[size e]) compute the same answer.  This is what makes [eval] well defined
+regardless of the exact fuel we picked.
  *)
 Lemma evalF_mono : forall f1 f2 e,
   size e <= f1 -> size e <= f2 -> evalF f1 e = evalF f2 e.
@@ -258,6 +242,22 @@ Proof.
       * reflexivity.
 Qed.
 
+(**
+Three proof-engineering tactics appear for the first time in this fuel proof.
+
+  - [pose proof (size_pos e)] adds a _copy_ of an already-proved fact to the
+    context (here [1 <= size e]) so that [lia] can then use it.  It is how you
+    hand a specific lemma instance to automation.
+  - [rewrite (IH h l) by lia] rewrites with the induction hypothesis at chosen
+    arguments, and the [by lia] clause immediately discharges the side condition
+    the rewrite raises (that [size l <= h]).  Any [rewrite ... by tac] works
+    this way: do the rewrite, then run [tac] on the leftover obligations.
+  - [destruct (evalF h v) as [n |] eqn:Ev] case-splits a subexpression's result
+    _and_ records the case in a hypothesis [Ev : evalF h v = ...].  The [eqn:]
+    annotation is what saves that equation for later rewriting - without it the
+    information would be lost.
+ *)
+
 (* Running with any sufficient fuel agrees with [eval]. *)
 Lemma evalF_eval : forall f e,
   size e <= f -> evalF f e = eval e.
@@ -266,9 +266,9 @@ Proof.
 Qed.
 
 (**
-CLEAN EQUATIONS.  With monotonicity in hand we can prove the
-"obvious" recursive equations for [eval], hiding the fuel entirely.
-These are the lemmas we actually use to reason about [eval].
+_Clean equations._  With monotonicity in hand we can prove the "obvious"
+recursive equations for [eval], hiding the fuel entirely.  These are the lemmas
+we actually use to reason about [eval].
  *)
 
 Lemma eval_Num : forall n, eval (Num n) = Some n.
@@ -320,6 +320,11 @@ Qed.
 
 (** * SECTION 6: TESTING THE INTERPRETER *)
 
+(**
+A few concrete runs of [eval]: the two examples from Section 1, a free
+identifier (which fails), and an inner binding shadowing an outer one.
+ *)
+
 Example test_eval_1 :
   eval bae_example_1 = Some 10.
 Proof. reflexivity. Qed.
@@ -361,6 +366,16 @@ Proof.
     + rewrite IHb by assumption. reflexivity.
   - rewrite H. reflexivity.
 Qed.
+
+(**
+Two more tactics debut here.  [apply orb_false_iff in H] applies a lemma
+_forward_, to a hypothesis: from [H : free_in i l || free_in i r = false] it
+yields [H : free_in i l = false /\ free_in i r = false] (which [destruct] then
+splits).  The plain [apply L] from AE transforms the _goal_; [apply L in H]
+transforms a hypothesis instead.  And [rewrite IHl by assumption] uses
+[assumption] - "close this side condition with whatever matching hypothesis is
+already in context".
+ *)
 
 (* Substituting into a closed term does nothing. *)
 Lemma subst_closed : forall e i v,
@@ -606,5 +621,21 @@ abstract tree (numerals coerce to [Num], strings to [Id]).#</li>#
 
 Next: "Adding Environments" replaces eager substitution with a
 deferred environment, yielding a clean structural interpreter, and
-we PROVE the two interpreters always agree.
+we _prove_ the two interpreters always agree.
+ *)
+
+(** * NEW PROOF TACTICS IN THIS CHAPTER *)
+
+(**
+Building on AE and ABE, this chapter adds a handful of proof-engineering
+tactics, mostly for driving the fuel-based interpreter:
+
+#<ul>#
+#<li>#[assumption] - close the goal with whatever hypothesis already in context matches it.#</li>#
+#<li>#[apply L in H] - apply a lemma _forward_, transforming a hypothesis [H] rather than the goal (contrast [apply L], which acts on the goal).#</li>#
+#<li>#[pose proof t] - add a copy of an already-proved fact [t] to the context, e.g. [pose proof (size_pos e)] so [lia] can use it.#</li>#
+#<li>#[rewrite ... by tac] - rewrite and immediately discharge the side conditions it raises with [tac] (typically [by lia] or [by assumption]).#</li>#
+#<li>#[destruct t eqn:E] - case-split [t] while recording the chosen case as a hypothesis [E : t = ...] for later rewriting.#</li>#
+#<li>#[unfold f at n] - unfold only the [n]-th occurrence of [f] (used as [unfold eval at 1] to expose one side of an equation).#</li>#
+#</ul>#
  *)
