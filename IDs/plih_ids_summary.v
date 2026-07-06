@@ -22,17 +22,19 @@ Source chapter (PLIH, Haskell):
 
 (**
 FOR STUDENTS:
-  1. Read plih_ids_lecture.v for concepts and worked examples.
-  2. Work through plih_ids_exercises.v, replacing each [Admitted]
-     with a real proof ending in [Qed].
-  3. Check your work against plih_ids_solutions.v.
-  4. Build with [make] at the repo root to confirm everything
-     compiles.
+#<ol>#
+#<li>#Read plih_ids_lecture.v for concepts and worked examples.#</li>#
+#<li>#Work through plih_ids_exercises.v, replacing each [Admitted] with a real proof ending in [Qed].#</li>#
+#<li>#Check your work against plih_ids_solutions.v.#</li>#
+#<li>#Build with [make] at the repo root to confirm everything compiles.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_ids_instructor_guide.v for teaching strategies.
-  2. Assign plih_ids_exercises.v in increments.
-  3. Grade with plih_ids_solutions.v (Rocq checks correctness).
+#<ol>#
+#<li>#Read plih_ids_instructor_guide.v for teaching strategies.#</li>#
+#<li>#Assign plih_ids_exercises.v in increments.#</li>#
+#<li>#Grade with plih_ids_solutions.v (Rocq checks correctness).#</li>#
+#</ol>#
  *)
 
 (** * WHAT IS NEW RELATIVE TO AE / ABE *)
@@ -42,19 +44,15 @@ BAE = AE + identifiers.  Two new constructors:
   - [Id x]       : a use of an identifier.
   - [Bind x v b] : bind [x] to the value of [v] in the body [b].
 
-The meaning of a binding is given by SUBSTITUTION:
+The meaning of a binding is given by _substitution_:
   [bind x = v in b] evaluates [v] to a number, then replaces every
   free [x] in [b] with that number.
 
 Two ideas dominate this chapter:
-  1. BINDING STRUCTURE - free vs bound instances, scope, shadowing,
-     and closed terms.
-  2. A ROCQ-SPECIFIC SURPRISE - a substitution interpreter is not
-     structurally recursive (substitution builds a NEW term), so the
-     naive [Fixpoint] is rejected.  We drive evaluation with a
-     [size]-bounded fuel and recover clean equations via a fuel
-     monotonicity lemma.  This friction is precisely what the next
-     chapter (Environments) removes.
+#<ol>#
+#<li>#_Binding structure_ - free vs bound instances, scope, shadowing, and closed terms.#</li>#
+#<li>#_A Rocq-specific surprise_ - a substitution interpreter is not structurally recursive (substitution builds a _new_ term), so the naive [Fixpoint] is rejected.  We drive evaluation with a [size]-bounded fuel and recover clean equations via a fuel monotonicity lemma.  This friction is precisely what the next chapter (Environments) removes.#</li>#
+#</ol>#
  *)
 
 (** * MODULE STRUCTURE *)
@@ -82,7 +80,7 @@ LAYER 2: Lecture (plih_ids_lecture.v)
     the abstract tree (after Software Foundations' Imp)
 
 LAYER 3: Exercises (plih_ids_exercises.v)
-  24 exercises + 2 challenges (fuel independence; PROGRESS for
+  24 exercises + 2 challenges (fuel independence; _progress_ for
   closed programs) + 4 concrete-syntax exercises, graduated in
   difficulty, each an [Admitted] stub.
 
@@ -107,13 +105,13 @@ Challenges:                   fuel independence; progress theorem.
 (** * TRANSITION TO NEXT SECTION *)
 
 (**
-The next chapter, "Adding Environments" (Env/), keeps the SAME BAE
+The next chapter, "Adding Environments" (Env/), keeps the _same_ BAE
 language but replaces eager substitution with a deferred
-ENVIRONMENT of identifier/value bindings.  Highlights:
+_environment_ of identifier/value bindings.  Highlights:
   - [evalE : Env nat -> BAE -> option nat] is a clean structural
     [Fixpoint] (no fuel needed).
-  - We PROVE the two interpreters always agree:
+  - We _prove_ the two interpreters always agree:
       [forall e, evalE [] e = eval e].
   This makes precise the chapter's claim that environments do not
-  change WHAT eval does - only HOW efficiently it does it.
+  change _what_ eval does - only _how_ efficiently it does it.
  *)

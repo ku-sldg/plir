@@ -5,10 +5,12 @@ Arithmetic + Boolean Expressions
 Documentation only - no Rocq code.  Compiles trivially.
 
 ABE is more involved than AE because it introduces:
-  1. Multiple value types
-  2. Error handling with option
-  3. Type-consistency reasoning
-  4. Conditional evaluation
+#<ol>#
+#<li>#Multiple value types#</li>#
+#<li>#Error handling with option#</li>#
+#<li>#Type-consistency reasoning#</li>#
+#<li>#Conditional evaluation#</li>#
+#</ol>#
  *)
 
 (** * PART 1: KEY DIFFERENCES FROM AE *)
@@ -18,15 +20,10 @@ AE was simple: every expression evaluated to a nat.
 ABE is more realistic: multiple types plus error handling.
 
 Conceptual shifts:
-  1. From "every expression succeeds" to "some expressions fail with
-     a type error".
-       AE:  eval (Num 5) = 5
-       ABE: eval (Num 5) = Some (NumV 5)
-            eval (Plus BTrue (Num 3)) = None     (* type error *)
- *
- *   2. From a single result type (nat) to a value type with several
- *      alternatives:
- *        Value ::= NumV nat | BoolV bool
+#<ol>#
+#<li>#From "every expression succeeds" to "some expressions fail with a type error": in AE [eval (Num 5) = 5], but in ABE [eval (Num 5) = Some (NumV 5)] and [eval (Plus BTrue (Num 3)) = None] (a type error).#</li>#
+#<li>#From a single result type ([nat]) to a value type with several alternatives: [Value ::= NumV nat | BoolV bool].#</li>#
+#</ol>#
  *)
 
 (** * PART 2: THREE-HOUR LESSON PLAN *)
@@ -47,42 +44,42 @@ HOUR 2 - Boolean operations and conditionals.
     - And / Or / Not require boolean operands:
         eval (And BTrue BFalse) = Some (BoolV false)
         eval (And (Num 3) BTrue) = None        (* type error *)
- *     - Comparisons take numbers, produce booleans:
- *         eval (LessThan (Num 3) (Num 5)) = Some (BoolV true)
- *     - Conditionals need a boolean condition:
- *         eval (IfThenElse (LessThan (Num 3) (Num 5)) (Num 10) (Num 20))
- *           = Some (NumV 10)
- *         eval (IfThenElse (Num 3) e1 e2) = None  (* condition not bool *)
- *     - Lazy evaluation: only the taken branch is evaluated, so
- *         eval (IfThenElse BFalse (Plus BTrue (Num 1)) (Num 42))
- *           = Some (NumV 42)
- *   Assign: exercises 9-25.
- *
- * HOUR 3 - Type consistency and proof patterns.
- *   Objectives: is_numeric / is_boolean; "well-typed expressions do not
- *   error"; connection to formal type checking.
- *   Strategy:
- *     - Define the predicates, then prove numeric_never_fails and
- *       boolean_never_fails by induction on the derivation.
- *     - Stress that this is the seed of a type-soundness theorem.
- *   Assign: exercises 26-40 and the challenges.
- *
- * HOUR 4 - Concrete syntax (Section 11).
- *   Objectives: distinguish concrete from abstract syntax; build a parser
- *   from Rocq notations alone; understand PRECEDENCE and associativity.
- *   Strategy:
- *     - Reuse the AE recipe (coercion + custom entry) but note the larger
- *       grammar: [true]/[false] keywords, [+ - < = ~ && ||] and
- *       [if _ then _ else _].
- *     - Draw the precedence ladder (arithmetic 50 < comparison 70 < ~ 75
- *       < && 80 < || 85 < if 89); higher level = looser binding.  Work
- *       [1 + 2 < 4] and [a || b && c] by hand, then confirm by
- *       [reflexivity].
- *     - Emphasize [<{ e }>] and its abstract tree are the SAME term, so
- *       [eval] is unchanged.
- *   Common mistake: expecting an operator with no notation to parse
- *   inside [<{ }>]; only the operators above are in the grammar.
- *   Assign: exercises 41-44.
+    - Comparisons take numbers, produce booleans:
+        eval (LessThan (Num 3) (Num 5)) = Some (BoolV true)
+    - Conditionals need a boolean condition:
+        eval (IfThenElse (LessThan (Num 3) (Num 5)) (Num 10) (Num 20))
+          = Some (NumV 10)
+        eval (IfThenElse (Num 3) e1 e2) = None  (* condition not bool *)
+    - Lazy evaluation: only the taken branch is evaluated, so
+        eval (IfThenElse BFalse (Plus BTrue (Num 1)) (Num 42))
+          = Some (NumV 42)
+  Assign: exercises 9-25.
+
+HOUR 3 - Type consistency and proof patterns.
+  Objectives: is_numeric / is_boolean; "well-typed expressions do not
+  error"; connection to formal type checking.
+  Strategy:
+    - Define the predicates, then prove numeric_never_fails and
+      boolean_never_fails by induction on the derivation.
+    - Stress that this is the seed of a type-soundness theorem.
+  Assign: exercises 26-40 and the challenges.
+
+HOUR 4 - Concrete syntax (Section 11).
+  Objectives: distinguish concrete from abstract syntax; build a parser
+  from Rocq notations alone; understand _precedence_ and associativity.
+  Strategy:
+    - Reuse the AE recipe (coercion + custom entry) but note the larger
+      grammar: [true]/[false] keywords, [+ - < = ~ && ||] and
+      [if _ then _ else _].
+    - Draw the precedence ladder (arithmetic 50 < comparison 70 < ~ 75
+      < && 80 < || 85 < if 89); higher level = looser binding.  Work
+      [1 + 2 < 4] and [a || b && c] by hand, then confirm by
+      [reflexivity].
+    - Emphasize [<{ e }>] and its abstract tree are the _same_ term, so
+      [eval] is unchanged.
+  Common mistake: expecting an operator with no notation to parse
+  inside [<{ }>]; only the operators above are in the grammar.
+  Assign: exercises 41-44.
  *)
 
 (** * PART 3: COMMON STUDENT MISTAKES *)
@@ -98,7 +95,7 @@ MISTAKE 2: Confusing syntax (ABE) with values (Value).
   A claim like [forall v, eval v = v] is ill-typed.
 
 MISTAKE 3: Expecting untyped identities to hold.
-  "And BTrue e = e" is FALSE when [e] is numeric.  The correct lemma
+  "And BTrue e = e" is _false_ when [e] is numeric.  The correct lemma
   assumes [eval e = Some (BoolV b)].  Use this to motivate typing.
 
 MISTAKE 4: Trying [lia] on goals with unresolved option cases.
@@ -115,9 +112,11 @@ MISTAKE 5: Attacking De Morgan without case analysis.
 
 (**
 Because Rocq checks correctness mechanically, grading is fast:
-  1. Run the build (see the project README / _CoqProject).
-  2. Confirm there are no remaining [Admitted] (Rocq warns on each).
-  3. Spot-check a few proofs for clarity and good naming.
+#<ol>#
+#<li>#Run the build (see the project README / _CoqProject).#</li>#
+#<li>#Confirm there are no remaining [Admitted] (Rocq warns on each).#</li>#
+#<li>#Spot-check a few proofs for clarity and good naming.#</li>#
+#</ol>#
 
 A suggested rubric:
   - Compilation, no Admitted (50%)
@@ -134,7 +133,7 @@ VARIANT 1: More comparison operators (GreaterThan, LessEqual, ...)
 VARIANT 2: A third value kind, e.g. StringV, extending Value and eval.
 
 VARIANT 3: Short-circuit semantics for And/Or, and prove the
-  short-circuit lemma WITHOUT the extra "e2 is a boolean" hypothesis
+  short-circuit lemma _without_ the extra "e2 is a boolean" hypothesis
   that the current (eager) semantics requires.  A great way to show
   how semantics choices change which theorems hold.
 
@@ -174,10 +173,12 @@ and unfinished proofs use [Admitted] (not Lean's [sorry]).
 
 (**
 ABE is the chapter where students learn:
-  1. Multiple value types - not everything is a number.
-  2. Error handling with option.
-  3. Type consistency: well-formed expressions do not fail.
-  4. How a type discipline changes which equivalences hold.
+#<ol>#
+#<li>#Multiple value types - not everything is a number.#</li>#
+#<li>#Error handling with option.#</li>#
+#<li>#Type consistency: well-formed expressions do not fail.#</li>#
+#<li>#How a type discipline changes which equivalences hold.#</li>#
+#</ol>#
 
 It is the bridge from simple interpreters to type-safe languages.
  *)

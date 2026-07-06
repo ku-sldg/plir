@@ -10,18 +10,22 @@ guide to the ABE module.  It compiles trivially.
 
 (**
 FOR STUDENTS:
-  1. Complete the AE (Arithmetic Expressions) module first.
-  2. Read plih_abe_lecture.v, sections 1-3, for the core concepts.
-  3. Work through plih_abe_exercises.v, exercises 1-20.
-  4. Check your work against plih_abe_solutions.v.
-  5. Continue with exercises 21-40 and the challenges.
+#<ol>#
+#<li>#Complete the AE (Arithmetic Expressions) module first.#</li>#
+#<li>#Read plih_abe_lecture.v, sections 1-3, for the core concepts.#</li>#
+#<li>#Work through plih_abe_exercises.v, exercises 1-20.#</li>#
+#<li>#Check your work against plih_abe_solutions.v.#</li>#
+#<li>#Continue with exercises 21-40 and the challenges.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Review plih_abe_instructor_guide.v.
-  2. Prepare three one-hour lectures.
-  3. Assign exercises in increments.
-  4. Grade with plih_abe_solutions.v (Rocq checks correctness for you).
-  5. Move on to the Identifiers section.
+#<ol>#
+#<li>#Review plih_abe_instructor_guide.v.#</li>#
+#<li>#Prepare three one-hour lectures.#</li>#
+#<li>#Assign exercises in increments.#</li>#
+#<li>#Grade with plih_abe_solutions.v (Rocq checks correctness for you).#</li>#
+#<li>#Move on to the Identifiers section.#</li>#
+#</ol>#
  *)
 
 (** * FILE STRUCTURE *)
@@ -76,7 +80,7 @@ AE  (Arithmetic Expressions)
   Syntax: Num, Plus, Minus
   Semantics: eval returns nat; every expression succeeds.
 
-ABE (Arithmetic + Boolean Expressions)   <-- YOU ARE HERE
+ABE (Arithmetic + Boolean Expressions)   <-- _you are here_
   Syntax: add BTrue, BFalse, And, Or, Not, LessThan, Equal, IfThenElse
   Semantics: eval returns option Value; some expressions fail
   (type errors).  Key insight: well-typed expressions do not fail.
@@ -114,7 +118,7 @@ CONCEPT 3: Type classifiers (is_numeric, is_boolean).
  *)
 
 (**
-CONCEPT 4: De Morgan's laws hold for our evaluator, INCLUDING the
+CONCEPT 4: De Morgan's laws hold for our evaluator, _including_ the
   error cases:
     abe_equiv (Not (And e1 e2)) (Or (Not e1) (Not e2))
     abe_equiv (Not (Or  e1 e2)) (And (Not e1) (Not e2))
@@ -132,7 +136,7 @@ CONCEPT 5: Lazy / short-path conditionals.
 
 (**
 CONCEPT 6: Type-checking changes which identities hold.
-  In an UNTYPED setting one expects "And BTrue e = e".  Here that is
+  In an _untyped_ setting one expects "And BTrue e = e".  Here that is
   false in general: if [e] evaluates to a number, [And BTrue e] is a
   type error (None) while [e] is not.  The true statements therefore
   carry a hypothesis such as [eval e = Some (BoolV b)].  The same
@@ -192,18 +196,21 @@ PATTERN 5: De Morgan (exercises 34-35).
 
 (**
 FOR STUDENTS:
-  1. Read the lecture before attempting the exercises.
-  2. Understand WHEN and WHY evaluation returns None.
-  3. Use case analysis liberally: destruct (eval e), destruct b.
-  4. Study the De Morgan proof; that pattern recurs throughout logic.
-  5. Ask for help early rather than grinding on one proof.
+#<ol>#
+#<li>#Read the lecture before attempting the exercises.#</li>#
+#<li>#Understand _when_ and _why_ evaluation returns None.#</li>#
+#<li>#Use case analysis liberally: destruct (eval e), destruct b.#</li>#
+#<li>#Study the De Morgan proof; that pattern recurs throughout logic.#</li>#
+#<li>#Ask for help early rather than grinding on one proof.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Emphasize the key insight: type checking prevents errors.
-  2. Contrast with AE, where every expression succeeds.
-  3. Do live proofs; let students watch the case analysis unfold.
-  4. Highlight where type-checking breaks untyped intuitions
-     (And BTrue e, double negation): these motivate static typing.
+#<ol>#
+#<li>#Emphasize the key insight: type checking prevents errors.#</li>#
+#<li>#Contrast with AE, where every expression succeeds.#</li>#
+#<li>#Do live proofs; let students watch the case analysis unfold.#</li>#
+#<li>#Highlight where type-checking breaks untyped intuitions (And BTrue e, double negation): these motivate static typing.#</li>#
+#</ol>#
  *)
 
 (** * SUMMARY *)

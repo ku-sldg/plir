@@ -35,6 +35,42 @@ parser later in this lesson.
 *)
 
 (**
+** From an English expression to abstract syntax
+
+How do we turn an ordinary arithmetic expression, written the way you would
+say it out loud, into an [AE] value? We translate it recursively, working
+from the _outside in_:
+
+  - Find the _outermost_ operation - the one that is performed _last_ when you
+    evaluate the expression by hand. Ordinary precedence and parentheses
+    tell you which one that is.
+  - Choose the constructor for that operation: a sum becomes [Plus], a
+    difference becomes [Minus], and a bare number becomes [Num n].
+  - The operands of that operation become the constructor's two arguments.
+    Repeat these steps on each operand until every piece is a plain number.
+
+Worked example - "one plus the quantity two plus three", i.e. [1 + (2 + 3)]:
+
+  - The outermost operation is the _first_ [+] (the parentheses force
+    [2 + 3] to happen first, so the leftmost [+] is performed last).
+    That gives [Plus _ _].
+  - Its left operand is [1], a bare number: [Num 1].
+  - Its right operand is [2 + 3]. Recurse: the outermost operation there is
+    [+], giving [Plus _ _], with operands [2] and [3] becoming [Num 2] and
+    [Num 3]. So [2 + 3] translates to [Plus (Num 2) (Num 3)].
+  - Assembling: [Plus (Num 1) (Plus (Num 2) (Num 3))], which is
+    [ae_example_4] below.
+
+Notice that the parenthesis disappear. The shape of the tree records
+the grouping. Writing [(1 + 2) + 3] instead would make the second [+] the
+outermost operation and yield a different tree,
+[Plus (Plus (Num 1) (Num 2)) (Num 3)]. Abstract syntax is unambiguous for
+exactly this reason - there is nothing left to parenthesize. (Turning the
+English text back _into_ a tree, precedence and all, is the job of the parser
+we write later; here we simply build the trees by hand.)
+*)
+
+(**
 Examples of AE terms (these are VALUES of type AE):
  *)
 
@@ -44,8 +80,39 @@ Definition ae_example_3 : AE := Minus (Num 10) (Num 2). (* 10-2 *)
 Definition ae_example_4 : AE := Plus (Num 1) (Plus (Num 2) (Num 3)). (* 1+(2+3) *)
 
 (**
-[Definition name : type := value] creates a binding from [name] to [value].
-Note that [Definition] cannot be used to define recursive constructions.
+** How [Definition] works
+
+[Definition] introduces a new named constant. Every definition above follows
+the same three-part shape:
+
+    Definition name : type := value.
+
+read as "let [name], of type [type], stand for [value]." Each part has a job:
+
+  - [name] is the fresh identifier you are introducing. After this command it
+    is available everywhere below as a permanent, global binding.
+  - [: type] is a type ascription. Rocq checks that [value] really does have
+    this type and rejects the definition otherwise, so the annotation doubles
+    as a machine-checked claim about [value]. In [ae_example_2 : AE := ...]
+    it promises the value is an [AE]. The ascription is _optional_ - Rocq can
+    usually infer the type from [value] - but writing it documents intent and
+    catches mistakes early.
+  - [:= value] is the defining term. It is type-checked once, now, against
+    [type]; from then on [name] is just another way of writing it.
+  - The closing period ends the command and tells Rocq to process it.
+
+Definitions are _transparent_: [name] and [value] are interchangeable, and Rocq
+may _unfold_ [name] back into [value] during computation. That is why a later
+proof can compute straight through a definition - e.g. [eval ae_example_2]
+reduces by first replacing [ae_example_2] with [Plus (Num 3) (Num 4)]. A
+[Definition] is therefore not a copy or a runtime variable; it is a name for a
+term that Rocq can always see inside.
+
+Note that [Definition] cannot be used to define recursive constructions: the
+[value] may not refer to [name] itself, because the name is not yet in scope
+while its own defining term is being checked. Self-reference needs the
+structural-recursion machinery of [Fixpoint] - which is exactly why [eval]
+below is a [Fixpoint] and not a [Definition].
 *)
 
 (** * SECTION 2: SEMANTICS - Defining Evaluation *)

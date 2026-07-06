@@ -23,45 +23,29 @@ Source chapter (PLIH, Haskell):
 
 (**
 FOR STUDENTS:
-  1. Finish the IDs and Env chapters first - this chapter reuses the
-     environment machinery and the substitution ideas.
-  2. Read plih_func_lecture.v.
-  3. Work plih_func_exercises.v ([Admitted] -> [Qed]).
-  4. Check against plih_func_solutions.v.
+#<ol>#
+#<li>#Finish the IDs and Env chapters first - this chapter reuses the environment machinery and the substitution ideas.#</li>#
+#<li>#Read plih_func_lecture.v.#</li>#
+#<li>#Work plih_func_exercises.v ([Admitted] -> [Qed]).#</li>#
+#<li>#Check against plih_func_solutions.v.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_func_instructor_guide.v.
-  2. Assign the exercises; grade by building the file.
+#<ol>#
+#<li>#Read plih_func_instructor_guide.v.#</li>#
+#<li>#Assign the exercises; grade by building the file.#</li>#
+#</ol>#
  *)
 
 (** * THE BIG IDEA *)
 
 (**
-FBAE adds FIRST-CLASS FUNCTIONS ([Lambda]/[App]) to BAE.  Two things
+FBAE adds _first-class functions_ ([Lambda]/[App]) to BAE.  Two things
 change in a fundamental way:
-
-1. THE LANGUAGE CAN DIVERGE.  With self-application we can write
-   [omega], which loops forever.  So - unlike AE/BAE - there is NO
-   measure that bounds evaluation, and BOTH interpreters (the
-   substitution [evalS] and the environment [evalM]) must be driven
-   by explicit FUEL.  Running out of fuel yields [None].
-
-   The well-definedness result that replaces "size is enough fuel"
-   (proved in IDs/Env) is FUEL MONOTONICITY:
-
-       evalM_mono : f1 <= f2 -> evalM f1 env e = Some v
-                             -> evalM f2 env e = Some v
-
-   i.e. more fuel never changes a definite answer.
-
-2. SCOPING BECOMES A CHOICE.  A function value must remember the
-   environment in force where it was DEFINED - a CLOSURE - to get
-   STATIC scoping.  Evaluating a called function's body in the
-   CALLER's environment instead gives DYNAMIC scoping.  We build both
-   ([evalM] with [ClosureV], [evalDyn] with a bare lambda value) and
-   exhibit a term on which they disagree (4 vs 5).  The substitution
-   interpreter [evalS] agrees with the closure interpreter: both are
-   static.
+#<ol>#
+#<li>#_The language can diverge._ With self-application we can write [omega], which loops forever.  So - unlike AE/BAE - there is _no_ measure that bounds evaluation, and _both_ interpreters (the substitution [evalS] and the environment [evalM]) must be driven by explicit _fuel_.  Running out of fuel yields [None].  The well-definedness result that replaces "size is enough fuel" (proved in IDs/Env) is _fuel monotonicity_, [evalM_mono]: [f1 <= f2 -> evalM f1 env e = Some v -> evalM f2 env e = Some v], i.e. more fuel never changes a definite answer.#</li>#
+#<li>#_Scoping becomes a choice._ A function value must remember the environment in force where it was _defined_ - a _closure_ - to get _static_ scoping.  Evaluating a called function's body in the _caller's_ environment instead gives _dynamic_ scoping.  We build both ([evalM] with [ClosureV], [evalDyn] with a bare lambda value) and exhibit a term on which they disagree (4 vs 5).  The substitution interpreter [evalS] agrees with the closure interpreter: both are static.#</li>#
+#</ol>#
  *)
 
 (** * MODULE STRUCTURE *)
@@ -73,7 +57,7 @@ LAYER 1: Foundations (plih_rocq_func_shared.v)
 
 LAYER 2: Lecture (plih_func_lecture.v)
   Section 1: Syntax - the FBAE language ([Lambda], [App])
-  Section 2: Free identifiers, size, substitution (which can GROW)
+  Section 2: Free identifiers, size, substitution (which can _grow_)
   Section 3: The substitution interpreter [evalS] (fuel)
   Section 4: Values and closures; the environment interpreter [evalM]
   Section 5: Running the interpreters
@@ -83,7 +67,7 @@ LAYER 2: Lecture (plih_func_lecture.v)
   Section 9: Divergence ([omega]); strict vs lazy binding
   (Elaboration and the recursion teaser follow; the lecture closes with)
   Section 12: Concrete syntax - a notation-based parser with
-    [lambda ID in body] and JUXTAPOSITION [f a] for application, so
+    [lambda ID in body] and _juxtaposition_ [f a] for application, so
     [<{ (lambda "x" in "x" + 1) 4 }>] elaborates to the abstract tree
 
 LAYER 3: Exercises (plih_func_exercises.v)
@@ -117,7 +101,7 @@ IDs/Env:  substitution preserves [size], so [size e] is enough fuel
           and (for Env) the interpreter is even a clean structural
           [Fixpoint].  Every closed term terminates.
 
-Func:     substitution can GROW a term (we substitute functions), and
+Func:     substitution can _grow_ a term (we substitute functions), and
           self-application diverges.  No measure works; fuel is
           essential and can genuinely run out.  The metatheory shifts
           from "termination" to "monotone approximation of a partial
@@ -128,8 +112,8 @@ Func:     substitution can GROW a term (we substitute functions), and
 
 (**
 The stuck states ("applying a non-function", "unbound identifier")
-and the divergence that forced fuel on us are exactly what a TYPE
-SYSTEM sets out to control.  The next chapter, "Typed Functions",
+and the divergence that forced fuel on us are exactly what a _type
+system_ sets out to control.  The next chapter, "Typed Functions",
 adds function types; well-typed programs no longer get stuck, and the
 story regains a total, structural flavour.
  *)

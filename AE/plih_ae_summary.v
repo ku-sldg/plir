@@ -19,18 +19,20 @@ FILES (in AE/):
 
 (**
 FOR STUDENTS:
-  1. Read plih_ae_lecture.v for concepts and worked examples.
-  2. Work through plih_ae_exercises.v, replacing each [Admitted]
-     with a real proof ending in [Qed].
-  3. Check your work against plih_ae_solutions.v.
-  4. Build with [make] at the repo root to confirm everything
-     compiles.
+#<ol>#
+#<li>#Read plih_ae_lecture.v for concepts and worked examples.#</li>#
+#<li>#Work through plih_ae_exercises.v, replacing each [Admitted] with a real proof ending in [Qed].#</li>#
+#<li>#Check your work against plih_ae_solutions.v.#</li>#
+#<li>#Build with [make] at the repo root to confirm everything compiles.#</li>#
+#</ol>#
 
 FOR INSTRUCTORS:
-  1. Read plih_ae_instructor_guide.v for teaching strategies.
-  2. Assign plih_ae_exercises.v in weekly increments.
-  3. Grade with plih_ae_solutions.v (Rocq checks correctness).
-  4. Adapt the lecture examples to your class style.
+#<ol>#
+#<li>#Read plih_ae_instructor_guide.v for teaching strategies.#</li>#
+#<li>#Assign plih_ae_exercises.v in weekly increments.#</li>#
+#<li>#Grade with plih_ae_solutions.v (Rocq checks correctness).#</li>#
+#<li>#Adapt the lecture examples to your class style.#</li>#
+#</ol>#
  *)
 
 (** * MODULE STRUCTURE *)
@@ -164,10 +166,12 @@ Expressions):
 
 (**
 This module demonstrates formal verification in miniature:
-  1. eval is an executable specification - a working interpreter.
-  2. Every lemma is machine-checked; no step is hand-waved.
-  3. If it compiles, it is correct.
-  4. Proofs compose, so an error in one lemma surfaces early.
+#<ol>#
+#<li>#eval is an executable specification - a working interpreter.#</li>#
+#<li>#Every lemma is machine-checked; no step is hand-waved.#</li>#
+#<li>#If it compiles, it is correct.#</li>#
+#<li>#Proofs compose, so an error in one lemma surfaces early.#</li>#
+#</ol>#
 
 By completing it, students have written a language implementation,
 proven it correct, and prepared for booleans, identifiers,

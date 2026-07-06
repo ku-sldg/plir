@@ -18,30 +18,13 @@ interpreter [eval].  This chapter reuses all of it.  New machinery:
 (** * PART 2: THE ARC OF THE LECTURE *)
 
 (**
-1. MOTIVATE.  Recall that the substitution interpreter re-walks the
-   body on every binding, and (in Rocq) even needed fuel because
-   substitution is not structural.  An environment fixes both: defer
-   the substitution, record the binding, and look it up on demand.
-
-2. DEFINE [evalE].  Stress that it is a plain [Fixpoint]: every
-   recursive call is on a subterm; the environment is a parameter.
-   No fuel, no [size] measure.
-
-3. REASON.  Prove [evalE_ext] (equal lookups => equal results) and
-   the shadowing/swapping lookup lemmas.  These are the algebra of
-   environments.
-
-4. THE KEY LEMMA.
-     evalE (extend i n env) e = evalE env (subst i (Num n) e)
-   "an environment binding is a deferred substitution."  The [Bind]
-   case is where shadowing (names equal) and reordering (names
-   different) show up - hence the two lookup lemmas.
-
-5. AGREEMENT.  [evalE nil e = eval e].  We reason against the fuel
-   form [evalF]; the [Bind] case uses the key lemma to turn a pushed
-   binding back into a substitution, and [size_subst_num] keeps the
-   fuel bound honest.  Emphasize the payoff: environments are proven
-   to be a pure optimization.
+#<ol>#
+#<li>#_Motivate._ Recall that the substitution interpreter re-walks the body on every binding, and (in Rocq) even needed fuel because substitution is not structural.  An environment fixes both: defer the substitution, record the binding, and look it up on demand.#</li>#
+#<li>#_Define [evalE]._ Stress that it is a plain [Fixpoint]: every recursive call is on a subterm; the environment is a parameter.  No fuel, no [size] measure.#</li>#
+#<li>#_Reason._ Prove [evalE_ext] (equal lookups => equal results) and the shadowing/swapping lookup lemmas.  These are the algebra of environments.#</li>#
+#<li>#_The key lemma:_ [evalE (extend i n env) e = evalE env (subst i (Num n) e)] - "an environment binding is a deferred substitution."  The [Bind] case is where shadowing (names equal) and reordering (names different) show up - hence the two lookup lemmas.#</li>#
+#<li>#_Agreement:_ [evalE nil e = eval e].  We reason against the fuel form [evalF]; the [Bind] case uses the key lemma to turn a pushed binding back into a substitution, and [size_subst_num] keeps the fuel bound honest.  Emphasize the payoff: environments are proven to be a pure optimization.#</li>#
+#</ol>#
  *)
 
 (** * PART 3: LESSON PLAN (one week) *)
@@ -56,7 +39,7 @@ HOUR 3 - The key lemma and agreement.  Walk the [Bind] case slowly;
 HOUR 4 - Prelude and error reporting.  Introduce a prelude
   environment; develop [evalErr] and prove it refines [evalE].
 HOUR 5 - Concrete syntax (Section 8, brief).  No new mechanism: the
-  [<{ ... }>] parser is INHERITED from IDs (re-exported through the
+  [<{ ... }>] parser is _inherited_ from IDs (re-exported through the
   shared library), so the only new command is [Open Scope bae_scope].
   Point out that the same concrete programs now run under [evalE], and
   that concrete agreement goals close by [apply evalEnv_agrees_eval].
@@ -67,12 +50,12 @@ HOUR 5 - Concrete syntax (Section 8, brief).  No new mechanism: the
 
 (**
 MISTAKE 1: Looking up in the wrong direction.  [lookup] finds the
-  FIRST (most recent) binding; [extend x n env = (x,n)::env] pushes
+  _first_ (most recent) binding; [extend x n env = (x,n)::env] pushes
   on the front, so inner binds shadow outer ones automatically.
 
 MISTAKE 2: Forgetting extensionality is the tool.  To equate two
   environments, reduce to "every lookup agrees" via [evalE_ext];
-  do NOT try to [rewrite] one environment into the other.
+  do _not_ try to [rewrite] one environment into the other.
 
 MISTAKE 3: Reproving agreement per example.  Once
   [evalE_agrees_eval] is available, concrete agreement goals are
@@ -104,8 +87,8 @@ most of the grade.  Rocq tactics only - never Lean [sorry].
 (**
 The next unit adds first-class functions.  Environments become the
 heart of the story: a function value must capture the environment in
-force at its definition (a CLOSURE) to get STATIC scoping right, and
-the difference from DYNAMIC scoping is exactly a difference in which
+force at its definition (a _closure_) to get _static_ scoping right, and
+the difference from _dynamic_ scoping is exactly a difference in which
 environment the body sees.  Everything here - [evalE], [evalE_ext],
 the key lemma - is the groundwork.
  *)

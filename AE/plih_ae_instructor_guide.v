@@ -11,18 +11,16 @@ student mistakes, time estimates, and extensions.
 
 (**
 WEEK 1 - Rocq basics (prerequisite).  Before AE, students need:
-
-  1. Inductive types.  AE is like a Haskell data type; Num n and
-     Plus e1 e2 are CONSTRUCTORS (values, not programs).
-  2. Pattern matching via Fixpoint.  Like Haskell, but Rocq
-     requires structural recursion - eval MUST terminate.
-  3. Basic tactics: intro, reflexivity, simpl (unfold/compute),
-     lia (linear arithmetic).
+#<ol>#
+#<li>#Inductive types.  AE is like a Haskell data type; Num n and Plus e1 e2 are _constructors_ (values, not programs).#</li>#
+#<li>#Pattern matching via Fixpoint.  Like Haskell, but Rocq requires structural recursion - eval _must_ terminate.#</li>#
+#<li>#Basic tactics: intro, reflexivity, simpl (unfold/compute), lia (linear arithmetic).#</li>#
+#</ol>#
 
 Warm-up examples to demo:
   eval (Num 5) = 5                      (* reflexivity *)
- *   eval (Plus (Num 2) (Num 3)) = 5       (* reflexivity *)
- *   eval (Plus e1 e2) = eval e1 + eval e2 (* simpl; reflexivity *)
+  eval (Plus (Num 2) (Num 3)) = 5       (* reflexivity *)
+  eval (Plus e1 e2) = eval e1 + eval e2 (* simpl; reflexivity *)
  *)
 
 (** * PART 2: LESSON PLAN (one week) *)
@@ -72,7 +70,7 @@ HOUR 6 - Concrete syntax (Section 10).
   Num : nat >-> AE], the [Declare Custom Entry ae] grammar with the
   [<{ }>] / parenthesis / escape-hatch notations, and one notation per
   operator carrying its precedence.  Emphasize that [<{ 3 + 4 }>] and
-  [Plus (Num 3) (Num 4)] are the SAME term (every example closes by
+  [Plus (Num 3) (Num 4)] are the _same_ term (every example closes by
   [reflexivity]), so [eval] is unchanged.  Contrast with a real lexer
   + parser, which this replaces at the meta level.  Then have students
   do concrete-syntax exercises 32-35.
@@ -102,7 +100,7 @@ MISTAKE 4: Not simplifying.  Many goals need [simpl] before [lia]
   or [reflexivity] can make progress.
 
 MISTAKE 5: Confusing = with <->.  [eval e1 = eval e2] (semantic
-  equivalence) is NOT [e1 = e2] (syntactic equality).
+  equivalence) is _not_ [e1 = e2] (syntactic equality).
  *)
 
 (** * PART 4: PEDAGOGICAL TIPS *)
@@ -170,14 +168,12 @@ VARIANT 5: Equivalence classes - explore ae_equiv as an
 
 (**
 After AE, introduce ABE (Arithmetic + Booleans).  Key changes:
-  1. Multiple result types: AE evaluates to nat; ABE evaluates to a
-     Value (NumV nat | BoolV bool).
-  2. Type-mismatch errors: (3 + True) is well-formed syntax but
-     semantic nonsense, so eval returns option Value (None = error).
-  3. New properties: type consistency ("well-formed expressions do
-     not fail") and error analysis.
-  4. Optimization gets subtler: a type discipline changes which
-     equivalences hold (see the ABE notes).
+#<ol>#
+#<li>#Multiple result types: AE evaluates to nat; ABE evaluates to a Value (NumV nat | BoolV bool).#</li>#
+#<li>#Type-mismatch errors: (3 + True) is well-formed syntax but semantic nonsense, so eval returns option Value (None = error).#</li>#
+#<li>#New properties: type consistency ("well-formed expressions do not fail") and error analysis.#</li>#
+#<li>#Optimization gets subtler: a type discipline changes which equivalences hold (see the ABE notes).#</li>#
+#</ol>#
  *)
 
 (** * PART 8: RESOURCES *)
@@ -195,10 +191,12 @@ After AE, introduce ABE (Arithmetic + Booleans).  Key changes:
 
 (**
 The AE section teaches:
-  1. SYNTAX - defining a language with an inductive type.
-  2. SEMANTICS - specifying meaning with a Fixpoint interpreter.
-  3. PROOF - verifying properties with Rocq tactics.
-  4. PRACTICE - applying these ideas across 31 exercises.
+#<ol>#
+#<li>#_Syntax_ - defining a language with an inductive type.#</li>#
+#<li>#_Semantics_ - specifying meaning with a Fixpoint interpreter.#</li>#
+#<li>#_Proof_ - verifying properties with Rocq tactics.#</li>#
+#<li>#_Practice_ - applying these ideas across 31 exercises.#</li>#
+#</ol>#
 
 It prepares students for booleans (ABE), identifiers, functions,
 types, and state.

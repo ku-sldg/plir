@@ -10,42 +10,23 @@ Documentation only - no Rocq code.  Compiles trivially.
 Students should have completed IDs (substitution, [subst], free/bound
 instances, closed terms) and Env ([Env]/[lookup]/[extend], the
 environment interpreter).  New machinery:
-  - a value type SEPARATE from the term type ([FBAEVal]);
-  - CLOSURES: a value that captures an environment;
-  - reasoning about a FUEL-driven partial interpreter when NO measure
+  - a value type _separate_ from the term type ([FBAEVal]);
+  - _closures_: a value that captures an environment;
+  - reasoning about a _fuel_-driven partial interpreter when _no_ measure
     bounds it (contrast the [size]-bounded story of IDs/Env).
  *)
 
 (** * PART 2: THE ARC OF THE LECTURE *)
 
 (**
-1. MOTIVATE.  Functions are values: they can be bound, passed, and
-   returned.  Add [Lambda]/[App]; give the substitution interpreter
-   [evalS] (beta reduction = substitute the argument into the body).
-
-2. THE FUEL SURPRISE.  In IDs we substituted only numbers, so [size]
-   was preserved and bounded the fuel.  Now we substitute FUNCTIONS,
-   so substitution can GROW a term ([subst_grows]) - and [omega]
-   diverges outright.  There is NO measure; fuel is unavoidable and
-   can run out.  This is the central conceptual step of the chapter.
-
-3. CLOSURES.  A returned function must remember the bindings in force
-   where it was defined, or free variables lose their meaning.  Define
-   [FBAEVal] with [ClosureV i b env] and the environment interpreter
-   [evalM].  Stress the [App] case: run the body in the CLOSURE's
-   environment, extended with the argument.
-
-4. METATHEORY.  With no measure, the well-definedness result is FUEL
-   MONOTONICITY ([evalM_mono]): more fuel never changes an answer.
-   Prove it by induction on fuel (the proof is a good template - the
-   exercises ask students to redo it for [evalDyn]).
-
-5. SCOPING.  Build [evalDyn] (function values carry NO environment;
-   the body runs in the caller's environment) and evaluate [scopeTest]
-   under both: 4 (static) vs 5 (dynamic).  Point out that [evalS]
-   (substitution) also gives 4 - substitution is inherently static.
-
-6. CURRYING and STRICT/LAZY round out the picture.
+#<ol>#
+#<li>#_Motivate._ Functions are values: they can be bound, passed, and returned.  Add [Lambda]/[App]; give the substitution interpreter [evalS] (beta reduction = substitute the argument into the body).#</li>#
+#<li>#_The fuel surprise._ In IDs we substituted only numbers, so [size] was preserved and bounded the fuel.  Now we substitute _functions_, so substitution can _grow_ a term ([subst_grows]) - and [omega] diverges outright.  There is _no_ measure; fuel is unavoidable and can run out.  This is the central conceptual step of the chapter.#</li>#
+#<li>#_Closures._ A returned function must remember the bindings in force where it was defined, or free variables lose their meaning.  Define [FBAEVal] with [ClosureV i b env] and the environment interpreter [evalM].  Stress the [App] case: run the body in the _closure's_ environment, extended with the argument.#</li>#
+#<li>#_Metatheory._ With no measure, the well-definedness result is _fuel monotonicity_ ([evalM_mono]): more fuel never changes an answer.  Prove it by induction on fuel (the proof is a good template - the exercises ask students to redo it for [evalDyn]).#</li>#
+#<li>#_Scoping._ Build [evalDyn] (function values carry _no_ environment; the body runs in the caller's environment) and evaluate [scopeTest] under both: 4 (static) vs 5 (dynamic).  Point out that [evalS] (substitution) also gives 4 - substitution is inherently static.#</li>#
+#<li>#_Currying_ and _strict/lazy_ round out the picture.#</li>#
+#</ol>#
  *)
 
 (** * PART 3: LESSON PLAN (one week) *)
@@ -59,8 +40,8 @@ HOUR 3 - Closures and static scoping.  [FBAEVal], [evalM]; trace a
   returned function; contrast [evalDyn] on [scopeTest] (4 vs 5).
 HOUR 4 - Currying, strict/lazy, and the error interpreter [evalErr].
 HOUR 5 - Concrete syntax (Section 12).
-  Objectives: extend the parser with functions; understand APPLICATION
-  BY JUXTAPOSITION and its precedence.
+  Objectives: extend the parser with functions; understand _application
+  by juxtaposition_ and its precedence.
   Strategy:
     - Reuse the IDs recipe (two coercions + [bind]); add [lambda ID in
       body] and the juxtaposition rule [f a] = [App f a] at the tightest
@@ -68,7 +49,7 @@ HOUR 5 - Concrete syntax (Section 12).
     - Work [f a b] = [(f a) b] and [f a + b] = [(f a) + b] by hand, then
       confirm by [reflexivity]; reproduce [addFun] concretely and curry
       it: [(lambda "x" in lambda "y" in "x" + "y") 3 4].
-  Common mistakes: forgetting that application binds TIGHTER than the
+  Common mistakes: forgetting that application binds _tighter_ than the
   operators (so [f x + 1] is [(f x) + 1], not [f (x + 1)]); and
   forgetting the quotes on identifiers.
   Assign: exercises 23-26.
@@ -77,12 +58,12 @@ HOUR 5 - Concrete syntax (Section 12).
 (** * PART 4: COMMON STUDENT MISTAKES *)
 
 (**
-MISTAKE 1: "size e is enough fuel."  It was in IDs/Env; it is NOT
+MISTAKE 1: "size e is enough fuel."  It was in IDs/Env; it is _not_
   here.  Substituting a function grows the term, and [omega] never
   terminates.  Fuel can legitimately run out; that is not a bug.
 
 MISTAKE 2: Applying the body in the wrong environment.  Static scoping
-  uses the CLOSURE's captured environment ([cenv]), not the caller's.
+  uses the _closure's_ captured environment ([cenv]), not the caller's.
   Using the caller's environment is precisely the [evalDyn] bug -
   demonstrated deliberately.
 
@@ -117,10 +98,10 @@ most of the grade.  Rocq tactics only - never Lean [sorry].
 (** * PART 6: TRANSITION TO TYPED FUNCTIONS *)
 
 (**
-This chapter leaves two loose ends that a TYPE SYSTEM ties off:
-  - STUCK terms (adding a function, applying a number) - ruled out by
+This chapter leaves two loose ends that a _type system_ ties off:
+  - _stuck_ terms (adding a function, applying a number) - ruled out by
     typing, so [evalM] would no longer need its error cases;
-  - the DIVERGENCE that forced fuel on us - a simply-typed calculus is
+  - the _divergence_ that forced fuel on us - a simply-typed calculus is
     strongly normalizing, restoring a total, measure-bounded story.
 The next chapter, "Typed Functions", introduces function types and a
 type checker, and proves that well-typed programs do not get stuck.

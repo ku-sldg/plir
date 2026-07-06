@@ -22,20 +22,20 @@ induction / destruct.  New machinery in this chapter:
 (** * PART 2: THE TWO BIG IDEAS *)
 
 (**
-IDEA 1 - BINDING STRUCTURE.  Spend time on the vocabulary: instance,
+IDEA 1 - Binding structure.  Spend time on the vocabulary: instance,
 binding instance, scope, bound instance, free instance.  Draw the
 AST of [bind x = 5+2 in x+x-4] and circle the binding instance and
 the bound instances.  Then show a free instance ([x+1] with no
 enclosing bind).  Formalize with [free_in] and [closed].
 
-IDEA 2 - SUBSTITUTION AND TERMINATION.  Present [subst] and the rule
+IDEA 2 - Substitution and termination.  Present [subst] and the rule
 
     a |-> v_a      [i |-> v_a] s |-> v_s
     ------------------------------------  [BindE]
          (bind i = a in s) |-> v_s
 
 Then hit the Rocq-specific wall: the interpreter would recurse on
-[subst i (Num n) b], which is NOT a structural subterm, so a plain
+[subst i (Num n) b], which is _not_ a structural subterm, so a plain
 [Fixpoint] is rejected.  This is a genuine teaching moment - Haskell
 hides it because it allows non-terminating definitions.  Introduce
 the [size]-bounded fuel [evalF] and [eval e := evalF (size e) e], and
@@ -62,12 +62,12 @@ HOUR 3 - The interpreter and fuel.
 
 HOUR 4 - Properties and the progress challenge.
   Prove [bind_num_subst], [bind_unused]; discuss [free_in_subst_num]
-  and [closed_after_subst]; sketch PROGRESS (closed programs never
+  and [closed_after_subst]; sketch _progress_ (closed programs never
   get stuck) as the capstone.
 
 HOUR 5 - Concrete syntax (Section 10).
   Objectives: build the [<{ ... }>] parser from notations; understand
-  the TWO leaf coercions (numerals to [Num], strings to [Id]) and the
+  the _two_ leaf coercions (numerals to [Num], strings to [Id]) and the
   [bind ID = e1 in e2] binding form.
   Strategy:
     - Reuse the AE/ABE recipe (custom entry + escape hatch), then add
@@ -99,13 +99,13 @@ MISTAKE 2: Expecting a plain [Fixpoint] interpreter.  Emphasize that
   faithful encoding of a size-decreasing recursion.
 
 MISTAKE 3: Fighting the fuel.  Students should reason with the
-  equation lemmas ([eval_Plus], [eval_Bind], ...), NOT by unfolding
+  equation lemmas ([eval_Plus], [eval_Bind], ...), _not_ by unfolding
   [evalF].  Point them at these lemmas early.
 
 MISTAKE 4: Concrete strings compute.  [String.eqb "x" "x"] reduces to
   [true] under [simpl]/[compute], so goals about literal identifiers
   often close by [reflexivity]/[compute]/[discriminate] without any
-  [String.eqb_refl] rewrite (which is needed only for VARIABLE names).
+  [String.eqb_refl] rewrite (which is needed only for _variable_ names).
 
 MISTAKE 5: Confusing syntactic and semantic equality, as in AE:
   [bae_equiv e1 e2] is [eval e1 = eval e2], not [e1 = e2].
@@ -130,11 +130,11 @@ correctness of the stated claim, and clarity.  Use Rocq tactics only
 
 (**
 The next chapter reuses this exact BAE language but replaces eager
-substitution with a deferred ENVIRONMENT.  Preview the payoff:
-  1. [evalE] is a clean structural [Fixpoint] - no fuel.
-  2. The equivalence theorem [evalE [] e = eval e] proves the two
-     interpreters compute the same answers, so environments are a
-     pure EFFICIENCY optimization.
+substitution with a deferred _environment_.  Preview the payoff:
+#<ol>#
+#<li>#[evalE] is a clean structural [Fixpoint] - no fuel.#</li>#
+#<li>#The equivalence theorem [evalE [] e = eval e] proves the two interpreters compute the same answers, so environments are a pure _efficiency_ optimization.#</li>#
+#</ol>#
 The substitution lemmas proven here ([subst_not_free],
 [free_in_subst_num]) reappear as the workhorses of that proof.
  *)
