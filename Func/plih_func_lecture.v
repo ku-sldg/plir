@@ -39,10 +39,12 @@ new forms:
 
 Its concrete grammar (made real by the parser at the end of this file) is
 
+<<
   t ::= NUM | ID | t + t | t - t
       | bind ID = t in t
       | lambda ID in t
       | t t
+>>
  *)
 
 Inductive FBAE : Type :=
@@ -54,18 +56,58 @@ Inductive FBAE : Type :=
 | App    : FBAE -> FBAE -> FBAE
 | Id     : string -> FBAE.
 
-(* The identity function and a "successor" function. *)
+(**
+Two observations about the new constructors that matter straight away.
+
+_[Lambda] is a value_, on the same footing as [Num].  Just as [Num 5] is
+already the number 5 with nothing left to compute, [Lambda "x" (Id "x")] is
+already a function with nothing left to compute - evaluation returns it as-is.
+This is a departure from the earlier chapters, where every expression eventually
+reduced to a number.  FBAE has two kinds of values: numbers and functions.
+
+_Naming a function uses [Bind]_, exactly as naming a number does.  There is no
+special declaration form.  [Bind "f" (Lambda "x" (Plus (Id "x") (Num 1))) body]
+introduces [f] as the increment function for the duration of [body], just as
+[Bind "n" (Num 5) body] introduces [n] as [5].  The language treats functions
+and numbers uniformly as values that can be bound, passed, and returned.
+ *)
+
+(** Define a pair of example functions - the identity function and an increment
+  function
+*)
 Definition idFun : FBAE := Lambda "x" (Id "x").
 Definition incFun : FBAE := Lambda "x" (Plus (Id "x") (Num 1)).
 
-(* [(lambda x in x) 7]. *)
+(**
+[idFun] and [incFun] are _Rocq_ names, not FBAE names.  A Rocq [Definition]
+lives in the metatheory: it is a shorthand we the implementors use so we do not
+have to write out the full tree every time.  The FBAE evaluator has no knowledge
+of [idFun]; inside the language the function is anonymous.  By contrast, a _FBAE
+name_ is introduced by [Bind] and lives inside the language: [Bind "inc" incFun
+(App (Id "inc") (Num 3))] makes ["inc"] available as a name within FBAE for the
+duration of the body.  A Rocq [Definition] is erased before evaluation begins; a
+[Bind] is evaluated and its result placed in the environment at runtime.
+ *)
+
+(**
+[App f a] is _function application_: [f] is the function expression and [a] is
+the argument expression.  Evaluation runs [f] to obtain a function, runs [a] to
+obtain a value, and then runs the function's body with its parameter bound to
+that value - the same substitution-or-environment story as [Bind], but driven by
+the call rather than a declaration.
+
+[apply_id] applies the identity function to [7].  Written in the surface
+language it is [(lambda x in x) 7], and it evaluates to [7].
+ *)
 Definition apply_id : FBAE := App idFun (Num 7).
 
 (** * SECTION 2: FREE IDENTIFIERS, SIZE, AND SUBSTITUTION *)
 
 (**
 As in BAE, [free_in] tracks free instances; now _both_ [Bind] and
-[Lambda] are binders, so both shadow their bound name in their body.
+[Lambda] are binders because both introduce new identifiers and define their
+scopes and both shadow their bound name in their body.  Note that both [Lambda]
+and [Bind] introduce only one new identifier each.
  *)
 Fixpoint free_in (x : string) (e : FBAE) : bool :=
   match e with
@@ -78,8 +120,10 @@ Fixpoint free_in (x : string) (e : FBAE) : bool :=
   | App f a    => free_in x f || free_in x a
   end.
 
+(** A closed term has no free instances. *)
 Definition closed (e : FBAE) : Prop := forall x, free_in x e = false.
 
+(** Size remains unchanged other than adding new terms. *)
 Fixpoint size (e : FBAE) : nat :=
   match e with
   | Num _      => 1
@@ -92,9 +136,11 @@ Fixpoint size (e : FBAE) : nat :=
   end.
 
 (**
-Substitution [subst i v e] replaces every free [i] in [e] with the
-term [v].  Both binders ([Bind] and [Lambda]) shadow [i] when their
-bound name matches.
+Substitution [(subst i v e)] replaces every _free_ instance of [i] in [e] with
+[v].  Bound occurrences must not be replaced: a [Lambda "i" b] or
+[Bind "i" _ b] introduces a _new_, distinct [i] scoped to its body - replacing
+it would corrupt that inner binding rather than instantiate the outer one.  Both
+binders therefore stop the substitution when their parameter name matches [i].
  *)
 Fixpoint subst (i : string) (v : FBAE) (e : FBAE) : FBAE :=
   match e with
@@ -129,13 +175,14 @@ The values of FBAE are numbers and functions.  The substitution
 interpreter returns an FBAE term that is one of these: [Num x] for a
 number, or [Lambda i b] for a function (functions are _values_, not
 stuck).
-
+<<
   evalS (Num x)      = Some (Num x)
   evalS (Lambda i b) = Some (Lambda i b)
   evalS (App f a)    = do { Lambda i b <- evalS f ;
                              a'         <- evalS a ;
                              evalS (subst i a' b) }   (* beta-reduction *)
   evalS (Id _)       = None
+>>
 
 Because [App] and [Bind] recurse on freshly-built [subst ...] terms -
 and because those terms can be _larger_ than the original (Section 2) -
@@ -246,7 +293,11 @@ Fixpoint evalM (fuel : nat) (env : Env FBAEVal) (e : FBAE) : option FBAEVal :=
    in this file.  There is no "right" default: a program may need more. *)
 Definition eval (e : FBAE) : option FBAEVal := evalM 100 nil e.
 
-(** * SECTION 5: RUNNING THE INTERPRETERS *)
+(** * SECTION 5: RUNNING THE INTERPRETERS
+
+Following are a few test cases evaluating some function definition and
+application.
+*)
 
 Example test_id : eval apply_id = Some (NumV 7).
 Proof. reflexivity. Qed.
@@ -334,7 +385,8 @@ Lemma evalM_deterministic : forall f env e r1 r2,
   evalM f env e = r1 -> evalM f env e = r2 -> r1 = r2.
 Proof. intros f env e r1 r2 H1 H2. rewrite <- H1, <- H2. reflexivity. Qed.
 
-(* Values evaluate to themselves (given a positive amount of fuel). *)
+(* * Values evaluate to themselves (given a positive amount of fuel). This is
+  the definition of Value.*)
 Lemma evalM_num : forall k env n, evalM (S k) env (Num n) = Some (NumV n).
 Proof. reflexivity. Qed.
 
