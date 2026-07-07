@@ -37,19 +37,27 @@ from the shared library, specialised to numbers:
   extend x n env = (x, n) :: env
   lookup x env   = the first binding of x, or None
 
-Consider [bind x = 4 in bind y = 5 in x + y - 4].  Rather than rewriting the
+Consider:
+<<
+bind x = 4 in
+  bind y = 5 in
+    x + y - 4
+>> 
+
+Rather than rewriting the
 body twice, we push [(x,4)] then [(y,5)] onto the environment and consult it
-when we reach [Id x] / [Id y].
+when we reach [Id x] and [Id y].
  *)
 
 (** * SECTION 2: THE ENVIRONMENT INTERPRETER *)
 
 (**
-Unlike the substitution interpreter, _this_ one is structurally recursive:
+Unlike the substitution interpreter, this one is structurally recursive:
 every recursive call is on a subterm ([v] or [b]), and the environment is just
 an extra parameter carried along.  [Bind] evaluates the bound expression and
 then the body in the _extended_ environment; [Id] is simply a [lookup].  So
-Rocq accepts it as a plain [Fixpoint] - no fuel required this time.
+Rocq accepts it as a plain [Fixpoint] - no fuel required this time.  This is a
+major advantage of using an environment over simply substituting.
  *)
 
 Fixpoint evalE (env : Env nat) (e : BAE) : option nat :=
@@ -158,7 +166,7 @@ both [x <> i] and [x = i], and [contradiction] spots the clash and finishes.
 (** * SECTION 5: ENVIRONMENTS DEFER SUBSTITUTION *)
 
 (**
-_The key lemma._  Extending the environment with [(i, n)] is exactly the same
+The key lemma:  Extending the environment with [(i, n)] is exactly the same
 as substituting [Num n] for [i] first and then evaluating.  In other words, an
 environment binding is nothing more than a _deferred_ substitution.
 
@@ -249,10 +257,11 @@ Proof. intro e. apply evalE_agrees_eval. Qed.
 
 (**
 Because the two interpreters agree, every theorem proved about the substitution
-interpreter transfers for free.  For example _progress_ (a closed program never
-gets stuck, proved as [challenge2_progress] in the IDs solutions) immediately
-gives the same guarantee for the environment interpreter - see exercise
-[ex_progress_transfer].
+interpreter transfers for free.  Furthermore, when we need new theorems, we can
+choose the interpreter that best suits our purposes.  For example _progress_ (a
+closed program never gets stuck, proved as [challenge2_progress] in the IDs
+solutions) immediately gives the same guarantee for the environment interpreter
+- see exercise [ex_progress_transfer].
  *)
 
 (** * SECTION 7: PROPERTIES OF THE ENVIRONMENT INTERPRETER *)
@@ -290,7 +299,7 @@ nothing new to define.
 Open Scope bae_scope.
 
 (**
-The very same concrete terms now drive the _environment_ interpreter.
+The same concrete terms now drive the _environment_ interpreter.
 Here are the Section 3 tests, rewritten concretely.
  *)
 
@@ -311,7 +320,8 @@ Proof. reflexivity. Qed.
 
 (**
 And because the two interpreters _agree_ (Section 6), a concrete program
-has the same meaning under either one.
+has the same meaning under either one.  Choose the best interpreter as 
+dictated by a task.
  *)
 Example agree_concrete :
   evalEnv <{ bind "x" = 5 + 2 in "x" + "x" - 4 }>
