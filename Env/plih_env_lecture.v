@@ -137,14 +137,14 @@ Proof.
   - apply H.
 Qed.
 
-(* A shadowed binding is invisible to lookup. *)
+(** A shadowed binding is invisible to lookup. *)
 Lemma lookup_shadow_env : forall (env : Env nat) x m n y,
   lookup y (extend x m (extend x n env)) = lookup y (extend x m env).
 Proof.
   intros env x m n y. simpl. destruct (String.eqb y x); reflexivity.
 Qed.
 
-(* Bindings for distinct identifiers may be reordered. *)
+(** Bindings for distinct identifiers may be reordered. *)
 Lemma lookup_swap_env : forall (env : Env nat) x i m n y,
   x <> i ->
   lookup y (extend x m (extend i n env))
