@@ -300,7 +300,10 @@ function to iterate.  A fixpoint combinator [fix] satisfies
 [fix F ~> F (fix F)], so [F]'s recursive-call parameter is bound to
 another copy of the recursion - definable as an ordinary term.
 
-The Y combinator, Y = \f. (\x. f (x x)) (\x. f (x x)):
+The Y combinator:
+<<
+  Y = lambda f in (lambda x in f (x x)) (lambda x in f (x x))
+>>
  *)
 Definition Yc : FBAEC :=
   Lambda "f"
@@ -308,10 +311,13 @@ Definition Yc : FBAEC :=
          (Lambda "x" (App (Id "f") (App (Id "x") (Id "x"))))).
 
 (**
-The Z combinator, Y with the self-application _eta-guarded_ behind a
-lambda, Z = \f. (\x. f (\v. x x v)) (\x. f (\v. x x v)).  The delayed
-[\v. x x v] is a _value_, so strict evaluation can build the fixpoint
-without looping.
+The Z combinator, Y with the self-application _eta-guarded_ behind a lambda:
+<<
+  Z = lambda f in (lambda x in f (lambda v in x x v))
+                  (lambda x in f (lambda v in x x v))
+>>
+The delayed [lambda v in x x v] is a _value_, so strict evaluation can build
+the fixpoint without looping.
  *)
 Definition Zc : FBAEC :=
   Lambda "f"
@@ -326,7 +332,8 @@ Definition Zc : FBAEC :=
 A recursive generator takes its own recursive call as parameter [g].
 Summation, sum z = z + (z-1) + ... + 0, matching the PLIH chapter:
 
-  sumGen = \g. \z. if z = 0 then z else z + (g (z-1))
+  sumGen = lambda g in lambda z in
+             if iszero z then z else z + g (z - 1)
  *)
 Definition sumGen : FBAEC :=
   Lambda "g"
@@ -364,7 +371,8 @@ Proof. reflexivity. Qed.
 (**
 The canonical example: factorial, fact z = z * (z-1) * ... * 1.
 
-  factGen = \g. \z. if z = 0 then 1 else z * (g (z-1))
+  factGen = lambda g in lambda z in
+              if iszero z then 1 else z * g (z - 1)
  *)
 Definition factGen : FBAEC :=
   Lambda "g"
