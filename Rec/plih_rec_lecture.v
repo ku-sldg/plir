@@ -296,9 +296,43 @@ Proof. reflexivity. Qed.
 
 (**
 _Recursion_ is [omega] made useful: self-application _parameterised_ by the
-function to iterate.  A fixpoint combinator [fix] satisfies
-[fix F ~> F (fix F)], so [F]'s recursive-call parameter is bound to
-another copy of the recursion - definable as an ordinary term.
+function to iterate.
+
+_The fixpoint property._  A _fixpoint combinator_ [fix] is a closed FBAEC term
+satisfying
+
+<<
+  fix F  ~>  F (fix F)
+>>
+
+for every function [F].  Applying [F] to its own fixpoint gives that fixpoint
+back.  This is recursion.  Write a _generator_ - a function that takes its own
+recursive call as its first argument instead of naming itself - and [fix] ties
+the knot.  For example, the factorial generator
+
+<<
+  factGen = lambda g in lambda z in if iszero z then 1 else z * g (z - 1)
+>>
+
+never mentions itself; [g] stands for the recursive call.  [fix factGen] is
+the factorial function, because [fix factGen = factGen (fix factGen)], so [g]
+is always instantiated with another copy of the whole recursion.
+
+_Why Y works._  Let [w = lambda x in f (x x)] and trace [Y f]:
+
+<<
+  Y f  -->  (lambda x in f (x x)) w
+        -->  f (w w)
+        -->  f (f (w w))  --> ...
+>>
+
+Each unfolding produces [f] applied to the same self-application, which is
+[f (Y f)].  The fixpoint property holds.
+
+_Why Y diverges under strict evaluation._  Call-by-value must evaluate the
+argument of every application before the call.  [w w] reduces immediately to
+[f (w w)], which requires evaluating [w w] again - an infinite loop before
+[f] can test its base case and stop.
 
 The Y combinator:
 <<
@@ -311,13 +345,16 @@ Definition Yc : FBAEC :=
          (Lambda "x" (App (Id "f") (App (Id "x") (Id "x"))))).
 
 (**
-The Z combinator, Y with the self-application _eta-guarded_ behind a lambda:
+_The Z combinator_ breaks the strict-evaluation loop by eta-guarding the
+self-application: [lambda v in x x v] is a closure (already a value), so
+strict evaluation does not force [x x] immediately.  Only when that closure is
+eventually called with an argument does [x x v] reduce - by which point [f]'s
+base-case test may already have stopped the recursion.
+
 <<
   Z = lambda f in (lambda x in f (lambda v in x x v))
                   (lambda x in f (lambda v in x x v))
 >>
-The delayed [lambda v in x x v] is a _value_, so strict evaluation can build
-the fixpoint without looping.
  *)
 Definition Zc : FBAEC :=
   Lambda "f"
