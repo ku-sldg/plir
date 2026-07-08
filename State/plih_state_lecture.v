@@ -523,6 +523,82 @@ Example incTo_concrete :
   = incTo.
 Proof. reflexivity. Qed.
 
+(** * SECTION 9: A WHILE LOOP AS A DERIVED FORM *)
+
+(**
+We never added a [While] construct - like mutable variables (Section 6),
+a loop is DERIVED, not primitive.  It needs nothing new: the ingredients
+are already here - [Z] for recursion (Section 7), [If] to test the
+guard, and [Seq] to run the body for its store effect.
+
+THE IDEA.  [while c do b] is "if [c] then (run [b], then loop again) else
+stop".  That self-reference is exactly a recursive function, so we tie
+the knot with the [Z] combinator.  [Z g] expects a GENERATOR
+[g = lambda rec in lambda param in ...] where [rec] is the recursive
+call; we build the generator whose body is the [if] above and whose
+recursive call re-enters the loop:
+
+  while c do b  ==  Z (lambda loop in lambda _ in
+                         if c then (b ; loop 0) else 0)  0
+
+The parameter is a dummy (the loop carries no value; the mutable store
+carries all the state), so we pass [Num 0] both to prime the loop and on
+every recursive call.  When the guard is false the loop returns [0].
+
+WHY THIS WORKS UNDER THE INTERPRETER.  Each pass re-evaluates the whole
+[if c then ...], so the guard [c] is re-checked against the CURRENT
+store - a guard like [iszero !"r"] sees each new value as the body
+mutates [r].  [Seq] threads the body's updated store into the recursive
+call, and [Z]'s closure captures the definition-time environment, so the
+loop keeps hitting the SAME cells (static scoping + shared store, as in
+[counterProg]).  Because the store shrinks the guard toward falsehood,
+the loop is PRODUCTIVE and terminates - but nothing forces that, so, as
+with every FBAES program, evaluation stays fuel-driven: an unproductive
+guard would simply run out of gas.
+
+ONE HYGIENE CAVEAT.  The generator introduces the names [__loop] and
+[__u].  The environment interpreter binds them by SHADOWING, so if [c]
+or [b] themselves mention [__loop]/[__u] they would see the loop
+machinery instead of an outer binding.  The deliberately ugly names
+avoid clashes in practice; a production system would generate a
+guaranteed-fresh name.
+ *)
+Definition While (c b : FBAES) : FBAES :=
+  App (App Zc
+        (Lambda "__loop"
+           (Lambda "__u"
+              (If c
+                  (Seq b (App (Id "__loop") (Num 0)))
+                  (Num 0)))))
+      (Num 0).
+
+(**
+A concrete loop: count [r] down from 3 to 0, bumping counter [c] on each
+pass.  The guard [not (iszero !"r")] and the body (two assignments in
+sequence) are ordinary concrete FBAES terms.  After three passes [c] is
+3 and [r] is 0 - the loop ran, mutated shared cells, and stopped.
+ *)
+Definition countDownProg : FBAES :=
+  Bind "c" (New (Num 0))
+    (Bind "r" (New (Num 3))
+      (Seq (While <{ if iszero !"r" then false else true }>
+                  <{ "c" := !"c" + 1 ; "r" := !"r" - 1 }>)
+           <{ !"c" }>)).
+
+(* c lives at location 0, r at location 1; after the loop c = 3, r = 0. *)
+Example run_countDown :
+  eval countDownProg = Some (NumV 3, [NumV 3; NumV 0]).
+Proof. reflexivity. Qed.
+
+(* A guard false on entry runs the body zero times - the store is untouched. *)
+Example run_zeroIterations :
+  eval (Bind "r" (New (Num 0))
+          (Seq (While <{ if iszero !"r" then false else true }>
+                      <{ "r" := !"r" + 100 }>)
+               <{ !"r" }>))
+  = Some (NumV 0, [NumV 0]).
+Proof. reflexivity. Qed.
+
 (** * SUMMARY *)
 
 (**
@@ -546,6 +622,9 @@ a shared cell.#</li>#
 state forms [new e], [! e], [l := e], [a ; b] - reading like ML,
 with [!] binding tighter than arithmetic and [;] the loosest,
 right-associative operator.#</li>#
+#<li>#Built a [While] loop as a DERIVED FORM (Section 9): [Z] for the
+recursion, [If] for the guard, [Seq] for the body - no new construct,
+no change to the interpreter or its proofs.#</li>#
 #</ol>#
 
 The catch: this explicit store-threading is PAINFUL - every case has to
