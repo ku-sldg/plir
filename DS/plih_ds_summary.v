@@ -35,17 +35,16 @@ FOR INSTRUCTORS:
 (** * THE BIG IDEAS *)
 
 (**
-_Part I — Lists:_ Recursive data and structural recursion are two sides
-of the same coin.  An [IntList] has exactly two cases ([Nil]/[Cons])
-and every function on [IntList] has exactly two cases matching those
-constructors.  The _shape_ of the function is determined by the _shape_
-of the type.  Higher-order functions expose that shape explicitly;
-generalizing the element type from [nat] to any [A] then costs nothing.
-The isomorphism [IntList ≅ PList nat] formalizes this: integer lists
-and polymorphic-nat lists are definitionally the same structure.
+Recursive data and structural recursion are two sides of the same coin.
+An [IntList] has exactly two cases ([Nil]/[Cons]) and every function on
+[IntList] has exactly two cases matching those constructors.  The
+_shape_ of the function is determined by the _shape_ of the type.
+Higher-order functions expose that shape explicitly; generalizing the
+element type from [nat] to any [A] then costs nothing.  The isomorphism
+[IntList ≅ PList nat] formalizes this: integer lists and
+polymorphic-nat lists are definitionally the same structure.
 
-_Part II — Algebraic type formers:_ Two primitive operations build all
-inductive types:
+Two primitive operations build all inductive types:
   - [A * B] (product): "one of each" - pairs, tuples, records
   - [A + B] (sum): "one or the other" - tagged unions, variants
 
@@ -64,7 +63,7 @@ CARRIES OVER FROM EARLIER CHAPTERS:
     use the IH in the [Cons] case, close with [reflexivity] or [lia]);
   - implicit type arguments ([{A : Type}]).
 
-NEW HERE (Part I):
+NEW HERE:
   - _Inductive types for data_: [IntList] and [PList A] - no
     interpreter, no environment, no fuel;
   - _Structural operations_: [length], [append], [reverse] and their
@@ -72,9 +71,7 @@ NEW HERE (Part I):
     [reverse_length]);
   - _Higher-order functions_: [map], [foldr], [foldl], [filter];
   - _Polymorphism_: [PList A] parameterised over the element type;
-  - _Isomorphism_: [intToP]/[pToInt] and the four commutation lemmas.
-
-NEW HERE (Part II):
+  - _Isomorphism_: [intToP]/[pToInt] and the four commutation lemmas;
   - _Product types_: [A * B], [pair]/[(a,b)], [fst]/[snd], [prod_eta];
   - _Sum types_: [A + B], [inl]/[inr], case analysis; [option A = unit + A];
   - _Records_: [Record] keyword, [{| field := v |}] construction, [p.(f)]

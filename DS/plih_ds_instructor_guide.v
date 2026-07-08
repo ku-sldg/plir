@@ -22,7 +22,6 @@ and structural induction on data.
 (** * PART 2: THE ARC OF THE LECTURE *)
 
 (**
-_Part I — Lists (Sections 1-5):_
 #<ol>#
 #<li>#_Integer lists from first principles._ Define [IntList] with [Nil]
 and [Cons].  Stress that this is exactly LISP's cons cell.  Run
@@ -41,10 +40,6 @@ structure.#</li>#
 #<li>#_The isomorphism._ Define [intToP]/[pToInt], prove inverses, prove
 commutation lemmas.  Central lesson: structure-dependent, not
 content-dependent.#</li>#
-#</ol>#
-
-_Part II — Algebraic type formers (Sections 6-9):_
-#<ol>#
 #<li>#_Product types._ [A * B] already appeared in [PList (nat * nat)].
 Introduce [fst]/[snd], the [(a, b)] notation, and [prod_eta].  Stress
 the counting intuition: [m] values times [n] values = [m * n] pairs.#</li>#

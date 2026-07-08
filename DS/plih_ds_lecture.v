@@ -13,18 +13,7 @@ Everything interesting about recursive data - induction, structural
 recursion, higher-order operations, polymorphism - shows up cleanly
 with lists.
 
-We build in two parts.
-
-_Part I — Lists_ (Sections 1-5): the [IntList] type with LISP-style
-observers and structural operations; higher-order functions ([map],
-[foldr], [foldl], [filter]); polymorphic lists ([PList A]); and the
-isomorphism between [IntList] and [PList nat] that proves the functions
-are structure-dependent, not content-dependent.
-
-_Part II — Algebraic type formers_ (Sections 6-9): the two primitive
-type-forming operations, [A * B] (product) and [A + B] (sum); records
-as named products; and the algebraic reading of every inductive type as
-a sum of products.
+We cover seven topics across nine sections.
 
 #<ol>#
 #<li>#_Integer lists_ ([IntList]).  A concrete inductive type with the
@@ -42,9 +31,8 @@ of products; the [Shape] example formalises this as an isomorphism.#</li>#
 #</ol>#
 
 The central lesson: a function's recursive structure is determined by
-the _shape_ of the data, not the _content_ of the elements.  The
-algebraic type formers in Part II give us the vocabulary to say
-_what that shape is_ precisely.
+the _shape_ of the data, not the _content_ of the elements.  Products
+and sums give us the vocabulary to describe that shape precisely.
  *)
 
 Require Import plih_rocq_ds_shared.
