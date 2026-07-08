@@ -599,6 +599,66 @@ Example run_zeroIterations :
   = Some (NumV 0, [NumV 0]).
 Proof. reflexivity. Qed.
 
+(** * SECTION 10: POINTER VARIABLES *)
+
+(**
+Because [LocV] is a member of [RVal] and the store holds [RVal] values, a
+cell can contain a _location_.  That is a pointer: an indirect reference to
+another cell, reached by double-dereferencing.  No new language form is
+needed.
+
+_Single indirection._  Allocating a cell whose initial value is another
+location creates a pointer.  After [bind x = new 42], [x] holds [LocV 0];
+[bind p = new x] stores that location in a fresh cell, making [p] a pointer
+to [x]'s cell.  Double-dereference follows the chain:
+ *)
+
+Definition ptrDouble : FBAES :=
+  Bind "x" (New (Num 42))
+    (Bind "p" (New (Id "x"))
+      (Deref (Deref (Id "p")))).
+
+Example run_ptrDouble :
+  eval ptrDouble = Some (NumV 42, [NumV 42; LocV 0]).
+Proof. reflexivity. Qed.
+
+(**
+_Pointer redirection._  Assigning a location value to a pointer cell
+redirects it to a different target.  After [p := y], dereferencing [p]
+reaches [y]'s cell rather than [x]'s:
+ *)
+
+Definition ptrRedirect : FBAES :=
+  Bind "x" (New (Num 10))
+    (Bind "y" (New (Num 20))
+      (Bind "p" (New (Id "x"))
+        (Seq (Assign (Id "p") (Id "y"))
+             (Deref (Deref (Id "p")))))).
+
+Example run_ptrRedirect :
+  eval ptrRedirect = Some (NumV 20, [NumV 10; NumV 20; LocV 1]).
+Proof. reflexivity. Qed.
+
+(**
+_Limitations._  The pointer model is genuine but restricted compared to
+C-style pointers.
+
+#<ol>#
+#<li>#_No pointer arithmetic._  Locations are opaque natural numbers; the
+language provides no way to compute [p + 1] to step to an adjacent cell.
+Pointer arithmetic would require exposing [LocV]'s underlying [nat] to
+arithmetic, which the current value type does not support.#</li>#
+#<li>#_No null pointer._  There is no [NullV] sentinel.  Dereferencing an
+out-of-range location returns [None] via [nth_error], indistinguishable
+from a fuel-exhaustion failure.  A production design would add a [Null]
+value and an explicit null-check form.#</li>#
+#<li>#_No deallocation._  The store grows with every [New] and is never
+shrunk.  Dangling pointers are impossible as a result, but so is explicit
+memory management.  A garbage-collected or reference-counted store would
+need a separate sweep phase not present here.#</li>#
+#</ol>#
+ *)
+
 (** * SUMMARY *)
 
 (**
@@ -625,6 +685,10 @@ right-associative operator.#</li>#
 #<li>#Built a [While] loop as a DERIVED FORM (Section 9): [Z] for the
 recursion, [If] for the guard, [Seq] for the body - no new construct,
 no change to the interpreter or its proofs.#</li>#
+#<li>#Showed that POINTER VARIABLES (Section 10) are already expressible:
+[LocV] is an [RVal], so cells can hold locations, enabling single and
+double indirection and pointer redirection.  Noted the three limitations:
+no pointer arithmetic, no null, no deallocation.#</li>#
 #</ol>#
 
 The catch: this explicit store-threading is PAINFUL - every case has to
