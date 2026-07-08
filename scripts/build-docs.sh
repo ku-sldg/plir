@@ -34,6 +34,7 @@ State|state|Mutable state|Mutable State|Reference cells and an explicitly thread
 SMon|smon|Mutable state|State Monad|Hiding the store threading behind a State monad.
 RSMon|rsmon|Combining effects|Reader + State|One monad hiding both the environment and the store.
 RSEMon|rsemon|Combining effects|Reader + State + Either|The capstone: three effects in one monad.
+DS|ds|Data structures|Data Structures|Lists, higher-order functions, polymorphism, and the algebra of types.
 EOF
 
 # --- guard: coqdoc needs globalization info from a build ---
