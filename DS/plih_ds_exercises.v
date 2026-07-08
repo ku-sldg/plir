@@ -8,6 +8,8 @@ In these exercises you will:
 #<li>#Prove structural lemmas about [length], [map], and [filter]#</li>#
 #<li>#Prove a classic list identity ([reverse_involutive]) from scratch#</li>#
 #<li>#Bridge [IntList] and [PList nat] with commutation lemmas#</li>#
+#<li>#Work with product types, sum types, and records#</li>#
+#<li>#Prove the algebraic isomorphism for a new inductive type#</li>#
 #</ol>#
 
 HOW TO USE THIS FILE
@@ -19,8 +21,11 @@ From the lecture you have: [IntList] ([Nil]/[Cons]), [car]/[cdr]/[isEmpty],
 [length]/[append]/[reverse], [map]/[foldr]/[foldl]/[filter]; [PList A]
 ([PNil]/[PCons]) with [pcar]/[pcdr]/[pisEmpty], [plength]/[pappend]/
 [preverse], [pmap]/[pfoldr]/[pfoldl]/[pfilter]; the isomorphism
-[intToP]/[pToInt] and commutation lemmas.  Key lemmas available:
-[append_nil_r], [append_assoc], [length_append], [map_length],
+[intToP]/[pToInt] and commutation lemmas.  Also available: [swap],
+[prod_eta], [sumToNat], [optionToSum], [sumToOption]; [Point]/[mkPoint]/
+[px]/[py], [origin]/[point35], [translate], [point_eta], [pointToPair]/
+[pairToPoint]; [Shape]/[Circle]/[Rectangle], [shapeToAlg]/[algToShape].
+Key lemmas: [append_nil_r], [append_assoc], [length_append], [map_length],
 [filter_le_length], [reverse_length], [intToP_pToInt], [pToInt_intToP].
 
 Difficulty: ★ trivial, ★★ a short induction, ★★★ multi-step proof.
@@ -119,4 +124,92 @@ Proof. Admitted.
    general. *)
 Lemma ex16_foldl_commutes : forall {B} (f : B -> nat -> B) acc xs,
   foldl f acc xs = pfoldl f acc (intToP xs).
+Proof. Admitted.
+
+(** * PART 4: PRODUCT TYPES *)
+
+(* ★ [fst] returns the first component. *)
+Example ex17_fst : fst (42, true) = 42.
+Proof. Admitted.
+
+(* ★ [snd] returns the second component. *)
+Example ex18_snd : snd (42, true) = true.
+Proof. Admitted.
+
+(* ★ [swap] exchanges the components. *)
+Example ex19_swap : swap (true, 5) = (5, true).
+Proof. Admitted.
+
+(* ★★ The eta law: every pair equals the pair of its projections.
+   Destruct [p] to expose the two components, then [reflexivity]. *)
+Lemma ex20_prod_eta : forall {A B} (p : A * B), p = (fst p, snd p).
+Proof. Admitted.
+
+(** * PART 5: SUM TYPES AND RECORDS *)
+
+(* ★ Left injection into a sum. *)
+Example ex21_inl : sumToNat (inl 7) = 7.
+Proof. Admitted.
+
+(* ★ Right injection: [false] maps to 0. *)
+Example ex22_inr : sumToNat (inr false) = 0.
+Proof. Admitted.
+
+(* ★ [pcar] on a [PList] constructed with [PCons]. *)
+Example ex23_pcar_record : pcar (PCons 99 PNil) = Some 99.
+Proof. Admitted.
+
+(* ★ Field projection from the [point35] record. *)
+Example ex24_field : point35.(py) = 5.
+Proof. Admitted.
+
+(* ★ Translating [origin] by [point35] gives [point35]. *)
+Example ex25_translate : translate point35 origin = point35.
+Proof. Admitted.
+
+(* ★★ The eta law for [Point]: every record is its own field
+   reconstruction.  Destruct [p] to expose its fields. *)
+Lemma ex26_point_eta : forall p : Point,
+  p = {| px := p.(px); py := p.(py) |}.
+Proof. Admitted.
+
+(** * PART 6: ALGEBRA OF TYPES *)
+
+(* ★ [Circle 5] injects on the left. *)
+Example ex27_circle : shapeToAlg (Circle 5) = inl 5.
+Proof. Admitted.
+
+(* ★ [Rectangle 3 4] injects on the right as a pair. *)
+Example ex28_rect : shapeToAlg (Rectangle 3 4) = inr (3, 4).
+Proof. Admitted.
+
+(**
+The [Color] type has three nullary constructors.  As an algebraic
+expression it is [unit + (unit + unit)]: three injections, no data.
+ *)
+
+Inductive Color : Type := Red | Green | Blue.
+
+Definition colorToAlg (c : Color) : unit + (unit + unit) :=
+  match c with
+  | Red   => inl tt
+  | Green => inr (inl tt)
+  | Blue  => inr (inr tt)
+  end.
+
+Definition algToColor (x : unit + (unit + unit)) : Color :=
+  match x with
+  | inl _       => Red
+  | inr (inl _) => Green
+  | inr (inr _) => Blue
+  end.
+
+(* ★★★ Round-trip: converting to the algebra and back gives the original
+   color.  Use [destruct s] to split on [Red]/[Green]/[Blue]. *)
+Lemma ex29_algToColor_colorToAlg : forall s, algToColor (colorToAlg s) = s.
+Proof. Admitted.
+
+(* ★★★ Round-trip the other way: converting from the algebra and back.
+   Use [destruct x as [[] | [[] | []]]]; each branch is [reflexivity]. *)
+Lemma ex30_colorToAlg_algToColor : forall x, colorToAlg (algToColor x) = x.
 Proof. Admitted.

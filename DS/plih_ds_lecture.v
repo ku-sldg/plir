@@ -13,24 +13,38 @@ Everything interesting about recursive data - induction, structural
 recursion, higher-order operations, polymorphism - shows up cleanly
 with lists.
 
-We build in three stages.
+We build in two parts.
+
+_Part I — Lists_ (Sections 1-5): the [IntList] type with LISP-style
+observers and structural operations; higher-order functions ([map],
+[foldr], [foldl], [filter]); polymorphic lists ([PList A]); and the
+isomorphism between [IntList] and [PList nat] that proves the functions
+are structure-dependent, not content-dependent.
+
+_Part II — Algebraic type formers_ (Sections 6-9): the two primitive
+type-forming operations, [A * B] (product) and [A + B] (sum); records
+as named products; and the algebraic reading of every inductive type as
+a sum of products.
 
 #<ol>#
-#<li>#_Integer lists_ ([IntList]).  A concrete inductive type for lists
-of natural numbers, together with the classic LISP observers ([car],
-[cdr], [isEmpty]) and structural operations ([length], [append],
-[reverse]).#</li>#
+#<li>#_Integer lists_ ([IntList]).  A concrete inductive type with the
+classic LISP observers ([car], [cdr], [isEmpty]) and structural
+operations ([length], [append], [reverse]).#</li>#
 #<li>#_Higher-order functions_.  [map], [foldr], [foldl], and [filter]
-abstract over the per-element operation.  Proving [map_length] shows
-that the structure of the list is unchanged by [map].#</li>#
-#<li>#_Polymorphic lists_ ([PList A]).  Parameterize over the element
-type.  Every function from stages 1 and 2 re-appears with an identical
-recursive structure.  We prove this formally via an isomorphism between
-[IntList] and [PList nat].#</li>#
+abstract over the per-element operation.#</li>#
+#<li>#_Polymorphic lists_ ([PList A]).  Same functions, same proofs,
+element type is a parameter.  Formally: an isomorphism with [IntList].#</li>#
+#<li>#_Product types_ ([A * B]).  Pairs, projections, and the eta law.#</li>#
+#<li>#_Sum types_ ([A + B]).  Tagged unions; [option A = unit + A].#</li>#
+#<li>#_Records_.  Named products; the [Record] keyword; dot projection.#</li>#
+#<li>#_Records as sums of products_.  Every [Inductive] type is a sum
+of products; the [Shape] example formalises this as an isomorphism.#</li>#
 #</ol>#
 
 The central lesson: a function's recursive structure is determined by
-the _shape_ of the data, not the _content_ of the elements.
+the _shape_ of the data, not the _content_ of the elements.  The
+algebraic type formers in Part II give us the vocabulary to say
+_what that shape is_ precisely.
  *)
 
 Require Import plih_rocq_ds_shared.
@@ -605,4 +619,274 @@ This observation justifies writing polymorphic list functions once and
 using them everywhere.  The Rocq standard library does exactly this
 with [list A] and [List.map], [List.fold_right], [List.filter], etc.
 Our [PList A] is isomorphic to [list A] by the same argument.
+ *)
+
+(** * Section 6: Product Types *)
+
+(**
+A _product type_ [A * B] packages two values together: one of type [A]
+and one of type [B].  The name comes from counting: if [A] has [m]
+inhabitants and [B] has [n], then [A * B] has exactly [m * n] distinct
+values - every possible pairing.
+
+Rocq provides [prod A B] with notation [A * B] in [type_scope].  The
+constructor is [pair : A -> B -> A * B], written [(a, b)] with pair
+notation.  Two _projections_ retrieve the components:
+
+  - [fst : A * B -> A] returns the first component
+  - [snd : A * B -> B] returns the second component
+
+Product types already appeared in Section 4: [PList (nat * nat)] is a
+list whose elements are pairs, and [pmap fst] extracted the first
+component of each pair.
+ *)
+
+Definition swap {A B : Type} (p : A * B) : B * A := (snd p, fst p).
+
+Example swap_pair : swap (1, true) = (true, 1). Proof. reflexivity. Qed.
+Example fst_ex   : fst (42, true) = 42.         Proof. reflexivity. Qed.
+Example snd_ex   : snd (42, true) = true.        Proof. reflexivity. Qed.
+
+(**
+Nested pairs encode triples and tuples:
+[(a, (b, c)) : A * (B * C)] or [((a, b), c) : (A * B) * C].
+Both are isomorphic to the "flat" triple; which associativity to choose
+is a matter of convention.
+ *)
+
+Example nested_pair : fst (fst (1, 2), 3) = 1. Proof. reflexivity. Qed.
+
+(**
+The _eta law_ for products: every pair is equal to the pair of its
+own projections.  The proof destructs [p] into its components, after
+which both sides are syntactically equal.
+ *)
+
+Lemma prod_eta : forall {A B : Type} (p : A * B), p = (fst p, snd p).
+Proof.
+  intros A B p. destruct p as [a b]. reflexivity.
+Qed.
+
+(** * Section 7: Sum Types *)
+
+(**
+A _sum type_ [A + B] represents a _choice_: a value of type [A + B] is
+either a value of type [A] tagged with [inl], or a value of type [B]
+tagged with [inr].  The name again comes from counting: if [A] has [m]
+inhabitants and [B] has [n], then [A + B] has [m + n].
+
+Rocq provides [sum A B] with notation [A + B] in [type_scope].
+
+  - [inl : A -> A + B] injects from the left
+  - [inr : B -> A + B] injects from the right
+
+A function consuming [A + B] must handle both tags.
+ *)
+
+Definition sumToNat (x : nat + bool) : nat :=
+  match x with
+  | inl n => n
+  | inr b => if b then 1 else 0
+  end.
+
+Example sum_left  : sumToNat (inl 42)    = 42. Proof. reflexivity. Qed.
+Example sum_right : sumToNat (inr true)  = 1.  Proof. reflexivity. Qed.
+Example sum_right2: sumToNat (inr false) = 0.  Proof. reflexivity. Qed.
+
+(**
+_[option A] is a sum_.  Concretely, [option A = unit + A]:
+  - [None]   corresponds to [inl tt]  (the sole value of [unit])
+  - [Some a] corresponds to [inr a]
+
+The isomorphism makes this precise.
+ *)
+
+Definition optionToSum {A : Type} (x : option A) : unit + A :=
+  match x with
+  | None   => inl tt
+  | Some a => inr a
+  end.
+
+Definition sumToOption {A : Type} (x : unit + A) : option A :=
+  match x with
+  | inl _ => None
+  | inr a => Some a
+  end.
+
+(**
+Both directions are proved by case analysis; no induction is needed
+because neither type is recursive.
+ *)
+
+Lemma optionToSum_sumToOption : forall {A} (x : unit + A),
+  optionToSum (sumToOption x) = x.
+Proof.
+  intros A [[] | a]; reflexivity.
+Qed.
+
+Lemma sumToOption_optionToSum : forall {A} (x : option A),
+  sumToOption (optionToSum x) = x.
+Proof.
+  intros A [a |]; reflexivity.
+Qed.
+
+(** * Section 8: Records *)
+
+(**
+A _record_ is a product type with _named_ fields.  Instead of
+retrieving components by position ([fst], [snd]), each field has a
+dedicated projection function whose name documents its meaning.
+
+Rocq's [Record] keyword declares the type, its constructor, and all
+projection functions in one step.
+ *)
+
+Record Point : Type := mkPoint {
+  px : nat;
+  py : nat
+}.
+
+(**
+[mkPoint] is the constructor; [px] and [py] are the projections.
+
+Construction uses the [{| field := value |}] notation that fills fields
+by name.  Projection uses dot notation [p.(field)].
+ *)
+
+Definition origin  : Point := {| px := 0; py := 0 |}.
+Definition point35 : Point := {| px := 3; py := 5 |}.
+
+Example px_origin   : origin.(px)  = 0. Proof. reflexivity. Qed.
+Example py_origin   : origin.(py)  = 0. Proof. reflexivity. Qed.
+Example px_point35  : point35.(px) = 3. Proof. reflexivity. Qed.
+Example py_point35  : point35.(py) = 5. Proof. reflexivity. Qed.
+
+(**
+Functions on records use projections or pattern matching just as they
+would on an anonymous product.
+ *)
+
+Definition translate (delta p : Point) : Point :=
+  {| px := p.(px) + delta.(px);
+     py := p.(py) + delta.(py) |}.
+
+Example translate_ex :
+  translate {| px := 1; py := 2 |} point35 = {| px := 4; py := 7 |}.
+Proof. reflexivity. Qed.
+
+(**
+The _eta law_ for records: every record is equal to the record built
+from its own projections.  The proof destructs the record to expose
+its fields, after which both sides are syntactically identical.
+ *)
+
+Lemma point_eta : forall (p : Point), p = {| px := p.(px); py := p.(py) |}.
+Proof.
+  intros [n m]. reflexivity.
+Qed.
+
+(**
+A [Record] with two fields of types [T1] and [T2] is isomorphic to
+[T1 * T2].  [Point] is isomorphic to [nat * nat].
+ *)
+
+Definition pointToPair (p : Point)       : nat * nat := (p.(px), p.(py)).
+Definition pairToPoint (q : nat * nat)   : Point     := {| px := fst q; py := snd q |}.
+
+Lemma pointToPair_pairToPoint : forall q, pointToPair (pairToPoint q) = q.
+Proof. intros [n m]. reflexivity. Qed.
+
+Lemma pairToPoint_pointToPair : forall p, pairToPoint (pointToPair p) = p.
+Proof. intros [n m]. reflexivity. Qed.
+
+(** * Section 9: Records as Sums of Products *)
+
+(**
+Products and sums are the two primitive type-forming operations.
+_Every_ inductive type in Rocq - and in most typed functional languages
+- can be read as an expression built from [*] and [+] alone.
+
+The reading rule is straightforward:
+#<ol>#
+#<li>#Each constructor contributes a _product_ of its argument types.
+A nullary constructor (no arguments) contributes [unit].#</li>#
+#<li>#Multiple constructors are combined by _sum_.#</li>#
+#</ol>#
+
+Examples:
+<<
+  bool         = unit + unit               (true  | false)
+  option A     = unit + A                  (None  | Some a)
+  IntList      = unit + (nat * IntList)    (Nil   | Cons n tl)
+  PList A      = unit + (A   * PList A)    (PNil  | PCons a tl)
+>>
+
+The recursive cases ([IntList], [PList A]) need a fixed-point in the
+algebra - the type appears on both sides - but the [+]/[*] structure
+still describes each constructor exactly.
+
+_Records_ fit the same picture: a record with fields [T1], ..., [Tn]
+is a product [T1 * ... * Tn] with named projections instead of
+positional [fst]/[snd].  [Point ≅ nat * nat] was proved in Section 8.
+ *)
+
+(**
+A concrete non-recursive example is [Shape], which has two constructors
+with different argument counts.
+ *)
+
+Inductive Shape : Type :=
+| Circle    : nat -> Shape           (* radius *)
+| Rectangle : nat -> nat -> Shape.   (* width, height *)
+
+(**
+Reading [Shape] as an algebraic expression:
+
+<<
+  Shape = nat + (nat * nat)
+>>
+
+[Circle r] injects a single [nat] on the left; [Rectangle w h] injects
+a pair [nat * nat] on the right.  The isomorphism formalises this.
+ *)
+
+Definition shapeToAlg (s : Shape) : nat + (nat * nat) :=
+  match s with
+  | Circle r      => inl r
+  | Rectangle w h => inr (w, h)
+  end.
+
+Definition algToShape (x : nat + (nat * nat)) : Shape :=
+  match x with
+  | inl r        => Circle r
+  | inr (w, h)   => Rectangle w h
+  end.
+
+(**
+Both directions are one-liners: case analysis on the constructor, then
+[reflexivity].
+ *)
+
+Lemma shapeToAlg_algToShape : forall x, shapeToAlg (algToShape x) = x.
+Proof.
+  intros [r | [w h]]; reflexivity.
+Qed.
+
+Lemma algToShape_shapeToAlg : forall s, algToShape (shapeToAlg s) = s.
+Proof.
+  intros [r | w h]; reflexivity.
+Qed.
+
+(**
+The same technique extends to any inductive type.  A zero-constructor
+type ([False]) corresponds to an empty sum (no type at all - a type
+with no inhabitants).  A one-constructor type with no arguments
+([unit]) corresponds to [unit] itself.  A one-constructor type with
+one argument is isomorphic to that argument's type.
+
+The algebraic view - types as expressions in [+] and [*] - is the
+foundation of _generic programming_: a single piece of code written
+for the algebraic structure can be instantiated for any concrete type.
+Rocq's standard library exploits this throughout, and languages like
+Haskell expose it via the [Generic] and [Data.Data] mechanisms.
  *)

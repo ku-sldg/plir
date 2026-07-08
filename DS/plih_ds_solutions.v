@@ -97,3 +97,68 @@ Proof.
   - reflexivity.
   - intros acc. simpl. rewrite IH. reflexivity.
 Qed.
+
+(** * PART 4: PRODUCT TYPES *)
+
+Example ex17_fst : fst (42, true) = 42.
+Proof. reflexivity. Qed.
+
+Example ex18_snd : snd (42, true) = true.
+Proof. reflexivity. Qed.
+
+Example ex19_swap : swap (true, 5) = (5, true).
+Proof. reflexivity. Qed.
+
+Lemma ex20_prod_eta : forall {A B} (p : A * B), p = (fst p, snd p).
+Proof. intros A B [a b]. reflexivity. Qed.
+
+(** * PART 5: SUM TYPES AND RECORDS *)
+
+Example ex21_inl : sumToNat (inl 7) = 7.
+Proof. reflexivity. Qed.
+
+Example ex22_inr : sumToNat (inr false) = 0.
+Proof. reflexivity. Qed.
+
+Example ex23_pcar_record : pcar (PCons 99 PNil) = Some 99.
+Proof. reflexivity. Qed.
+
+Example ex24_field : point35.(py) = 5.
+Proof. reflexivity. Qed.
+
+Example ex25_translate : translate point35 origin = point35.
+Proof. reflexivity. Qed.
+
+Lemma ex26_point_eta : forall p : Point,
+  p = {| px := p.(px); py := p.(py) |}.
+Proof. intros [n m]. reflexivity. Qed.
+
+(** * PART 6: ALGEBRA OF TYPES *)
+
+Example ex27_circle : shapeToAlg (Circle 5) = inl 5.
+Proof. reflexivity. Qed.
+
+Example ex28_rect : shapeToAlg (Rectangle 3 4) = inr (3, 4).
+Proof. reflexivity. Qed.
+
+Inductive Color : Type := Red | Green | Blue.
+
+Definition colorToAlg (c : Color) : unit + (unit + unit) :=
+  match c with
+  | Red   => inl tt
+  | Green => inr (inl tt)
+  | Blue  => inr (inr tt)
+  end.
+
+Definition algToColor (x : unit + (unit + unit)) : Color :=
+  match x with
+  | inl _       => Red
+  | inr (inl _) => Green
+  | inr (inr _) => Blue
+  end.
+
+Lemma ex29_algToColor_colorToAlg : forall s, algToColor (colorToAlg s) = s.
+Proof. intros [| |]; reflexivity. Qed.
+
+Lemma ex30_colorToAlg_algToColor : forall x, colorToAlg (algToColor x) = x.
+Proof. intros [[] | [[] | []]]; reflexivity. Qed.
