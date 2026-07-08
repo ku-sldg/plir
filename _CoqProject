@@ -12,6 +12,7 @@
 -Q SMon ""
 -Q RSMon ""
 -Q RSEMon ""
+-Q DS ""
 
 AE/plih_rocq_ae_shared.v
 AE/plih_ae_lecture.v
@@ -97,3 +98,9 @@ RSEMon/plih_rsemon_exercises.v
 RSEMon/plih_rsemon_solutions.v
 RSEMon/plih_rsemon_summary.v
 RSEMon/plih_rsemon_instructor_guide.v
+DS/plih_rocq_ds_shared.v
+DS/plih_ds_lecture.v
+DS/plih_ds_exercises.v
+DS/plih_ds_solutions.v
+DS/plih_ds_summary.v
+DS/plih_ds_instructor_guide.v
