@@ -42,6 +42,10 @@ Example ex7_ty_inl :
   typecheck (InL (TSum TNum TBool) (Num 7)) = Some (TSum TNum TBool).
 Proof. reflexivity. Qed.
 
+Example ex7b_ty_unit :
+  typecheck Unit = Some TUnit.
+Proof. reflexivity. Qed.
+
 (** * PART 2: RUNNING THE EVALUATOR *)
 
 Example ex8_eval_pair :
@@ -66,7 +70,7 @@ Proof. reflexivity. Qed.
 
 Example ex13_eval_cdr :
   eval (Cdr (Cons (Num 1) (Cons (Num 2) (Nil TNum)))) =
-  Some (ConsV (NumV 2) NilV).
+  Some (InRV (PairV (NumV 2) (InLV UnitV))).
 Proof. reflexivity. Qed.
 
 Example ex14_eval_inl :
@@ -173,19 +177,44 @@ Proof. reflexivity. Qed.
 
 Example ex29_run_doubleList :
   eval (App doubleList list123) =
-  Some (ConsV (NumV 2) (ConsV (NumV 4) (ConsV (NumV 6) NilV))).
+  Some (InRV (PairV (NumV 2)
+       (InRV (PairV (NumV 4)
+       (InRV (PairV (NumV 6) (InLV UnitV))))))).
 Proof. reflexivity. Qed.
 
 Example ex30_run_sumList :
   eval (App sumList list123) = Some (NumV 6).
 Proof. reflexivity. Qed.
 
-(** * PART 7: INDUCTIONS *)
+(** * PART 7: LISTS AS SUMS OF PRODUCTS *)
 
-Lemma ex31_Ty_eqb_refl : forall t, Ty_eqb t t = true.
+Example ex31_nil_rep :
+  eval (Nil TNum) = Some (InLV UnitV).
+Proof. reflexivity. Qed.
+
+Example ex32_cons_rep :
+  eval (Cons (Num 7) (Nil TNum)) =
+  Some (InRV (PairV (NumV 7) (InLV UnitV))).
+Proof. reflexivity. Qed.
+
+Example ex33_scase_on_nil :
+  eval (SCase (Nil TNum) "u" (Num 0) "p" (Fst (Id "p"))) =
+  Some (NumV 0).
+Proof. reflexivity. Qed.
+
+Example ex34_scase_on_cons :
+  eval (SCase (Cons (Num 99) (Nil TNum))
+              "u" (Num 0)
+              "p" (Fst (Id "p"))) =
+  Some (NumV 99).
+Proof. reflexivity. Qed.
+
+(** * PART 8: INDUCTIONS *)
+
+Lemma ex35_Ty_eqb_refl : forall t, Ty_eqb t t = true.
 Proof.
   intros t.
-  induction t as [| | d IHd r IHr | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
+  induction t as [| | d IHd r IHr | | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
     simpl; try reflexivity.
   - rewrite IHd, IHr. reflexivity.
   - rewrite IH1, IH2. reflexivity.
@@ -193,7 +222,7 @@ Proof.
   - rewrite IH. reflexivity.
 Qed.
 
-Lemma ex32_mono_pair : forall k env e1 e2 v,
+Lemma ex36_mono_pair : forall k env e1 e2 v,
   evalM (S k) env (Pair e1 e2) = Some v ->
   evalM (S (S k)) env (Pair e1 e2) = Some v.
 Proof.

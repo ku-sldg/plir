@@ -19,6 +19,12 @@ Together these three are the _algebraic_ types: every structured data
 type in typed functional programming is built from products, sums, and
 recursive occurrences.  We call the resulting language TADS.
 
+The central insight of this chapter is that lists _are_ sums of products.
+The evaluator makes this concrete: list values are literally sum and
+product values in the representation.  [NilV] and [ConsV] do not
+exist as separate constructors; [Nil] evaluates to [InLV UnitV] and
+[Cons h t] evaluates to [InRV (PairV h t)].
+
 This mirrors the "Algebraic Data Types" discussion in PLIH:
   https://ku-sldg.github.io/plih//
  *)
@@ -37,25 +43,29 @@ Import ListNotations.
 
 (**
 TRec's types are [TNum], [TBool], and [TArr d r].  We keep those three
-and add one type former for each algebraic structure:
+and add:
+  - [TUnit]: the _unit_ type, a type with exactly one value ([UnitV]).
+    Unit serves as the element type of [Nil]: an empty list carries no
+    data, represented as a left-injected unit.
   - [TProd A B]: the _product_ type "A and B";
   - [TSum  A B]: the _sum_     type "A or B";
   - [TList A]:   the _list_    type "a sequence of A".
 
-These are the typed counterparts of Rocq's [prod], [sum], and [list].
+These are the typed counterparts of Rocq's [unit], [prod], [sum], and [list].
  *)
 
 Inductive Ty : Type :=
 | TNum  : Ty
 | TBool : Ty
 | TArr  : Ty -> Ty -> Ty
-| TProd : Ty -> Ty -> Ty   (* A * B  - product *)
-| TSum  : Ty -> Ty -> Ty   (* A + B  - sum     *)
-| TList : Ty -> Ty.        (* List A - list    *)
+| TUnit : Ty              (* unit type - the type of UnitV and of Nil's payload *)
+| TProd : Ty -> Ty -> Ty  (* A * B  - product *)
+| TSum  : Ty -> Ty -> Ty  (* A + B  - sum     *)
+| TList : Ty -> Ty.       (* List A - list    *)
 
 (**
 Decidable equality on [Ty] is essential for the type checker.  We extend
-TRec's three-case [Ty_eqb] with three new cases.
+TRec's three-case [Ty_eqb] with four new cases, one for each new former.
  *)
 
 Fixpoint Ty_eqb (a b : Ty) : bool :=
@@ -63,6 +73,7 @@ Fixpoint Ty_eqb (a b : Ty) : bool :=
   | TNum,  TNum  => true
   | TBool, TBool => true
   | TArr  d1 r1, TArr  d2 r2 => andb (Ty_eqb d1 d2) (Ty_eqb r1 r2)
+  | TUnit, TUnit => true
   | TProd a1 b1, TProd a2 b2 => andb (Ty_eqb a1 a2) (Ty_eqb b1 b2)
   | TSum  a1 b1, TSum  a2 b2 => andb (Ty_eqb a1 a2) (Ty_eqb b1 b2)
   | TList t1,    TList t2    => Ty_eqb t1 t2
@@ -75,7 +86,8 @@ Fixpoint Ty_eqb (a b : Ty) : bool :=
 
 Lemma Ty_eqb_refl : forall t, Ty_eqb t t = true.
 Proof.
-  intros t. induction t as [| | d IHd r IHr | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
+  intros t.
+  induction t as [| | d IHd r IHr | | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
     simpl; try reflexivity.
   - rewrite IHd, IHr. reflexivity.
   - rewrite IH1, IH2. reflexivity.
@@ -89,8 +101,8 @@ If [Ty_eqb a b = true] then [a = b].
 
 Lemma Ty_eqb_eq : forall a b, Ty_eqb a b = true -> a = b.
 Proof.
-  induction a as [| | d1 IHd r1 IHr | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
-    intros b H; destruct b as [| | d2 r2 | a2 b2 | a2 b2 | t2];
+  induction a as [| | d1 IHd r1 IHr | | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
+    intros b H; destruct b as [| | d2 r2 | | a2 b2 | a2 b2 | t2];
     simpl in H; try discriminate; try reflexivity.
   - apply andb_true_iff in H. destruct H as [Hd Hr].
     rewrite (IHd d2 Hd), (IHr r2 Hr). reflexivity.
@@ -113,7 +125,11 @@ Qed.
 (** * SECTION 2: THE TERM LANGUAGE *)
 
 (**
-[TADS] is TRec's [TFBAEC] extended with product, sum, and list terms.
+[TADS] is TRec's [TFBAEC] extended with a unit term and with product,
+sum, and list terms.
+
+_Unit_:
+  - [Unit]: the unique term of type [TUnit].
 
 _Product terms_:
   - [Pair e1 e2]: construct a pair;
@@ -152,6 +168,8 @@ Inductive TADS : Type :=
 | App     : TADS -> TADS -> TADS
 | Fix     : TADS -> TADS
 | Id      : string -> TADS
+(* unit *)
+| Unit    : TADS
 (* products *)
 | Pair    : TADS -> TADS -> TADS
 | Fst     : TADS -> TADS
@@ -171,8 +189,7 @@ Inductive TADS : Type :=
 Capture-naive substitution: [subst i v e] replaces free occurrences of
 identifier [i] with term [v] in [e].  Binders ([Bind] and [Lambda]) that
 rebind [i] shadow the substitution in their body; [SCase] binds [x] in
-[e1] and [y] in [e2].  The new term forms recurse structurally; [Nil],
-[InL], and [InR] leave the type annotation unchanged.
+[e1] and [y] in [e2].  [Unit] is a value; it substitutes to itself.
  *)
 
 Fixpoint subst (i : string) (v : TADS) (e : TADS) : TADS :=
@@ -193,6 +210,7 @@ Fixpoint subst (i : string) (v : TADS) (e : TADS) : TADS :=
   | App f a    => App (subst i v f) (subst i v a)
   | Fix f      => Fix (subst i v f)
   | Id i'      => if String.eqb i i' then v else Id i'
+  | Unit       => Unit
   | Pair e1 e2 => Pair (subst i v e1) (subst i v e2)
   | Fst e0     => Fst (subst i v e0)
   | Snd e0     => Snd (subst i v e0)
@@ -232,6 +250,8 @@ Definition tnumBinop (a b : option Ty) : option Ty :=
 (**
 [typeof ctx e] infers the type of [e] in context [ctx], returning
 [None] if [e] is ill-typed.  The TRec cases are unchanged.
+
+_Unit_: [Unit] always has type [TUnit].
 
 _Products_: [Pair e1 e2] infers [TProd A B] from its components.
 [Fst] and [Snd] require a [TProd] scrutinee and return the left or
@@ -292,6 +312,7 @@ Fixpoint typeof (ctx : Ctx) (e : TADS) : option Ty :=
       | _ => None
       end
   | Id x => lookup x ctx
+  | Unit => Some TUnit
   | Pair e1 e2 =>
       match typeof ctx e1, typeof ctx e2 with
       | Some t1, Some t2 => Some (TProd t1 t2)
@@ -366,12 +387,17 @@ Definition typecheck (e : TADS) : option Ty := typeof nil e.
 (** * SECTION 4: THE EVALUATOR *)
 
 (**
-Values extend TRec's [TVal] with four new forms:
-  - [PairV v1 v2]: a pair value;
-  - [InLV v]:      a left-injected value;
-  - [InRV v]:      a right-injected value;
-  - [NilV]:        the empty list value;
-  - [ConsV v1 v2]: a cons-cell value (head and tail).
+List values are not a separate constructor.  The empty list is
+[InLV UnitV] and a cons cell is [InRV (PairV head tail)].  This makes
+the algebraic structure explicit in the representation: a list _is_ a
+sum of unit and a product.
+
+Values extend TRec's [TVal] with:
+  - [UnitV]:       the unique unit value; also represents the empty list;
+  - [PairV v1 v2]: a pair value; also the payload of a cons cell;
+  - [InLV v]:      a left-injected value; the empty list is [InLV UnitV];
+  - [InRV v]:      a right-injected value; [Cons h t] yields
+                   [InRV (PairV h t)].
 
 Closures still carry the parameter's type (needed by [Fix]).
  *)
@@ -380,21 +406,26 @@ Inductive TVal : Type :=
 | NumV     : nat -> TVal
 | BoolV    : bool -> TVal
 | ClosureV : string -> Ty -> TADS -> list (string * TVal) -> TVal
+| UnitV    : TVal
 | PairV    : TVal -> TVal -> TVal
 | InLV     : TVal -> TVal
-| InRV     : TVal -> TVal
-| NilV     : TVal
-| ConsV    : TVal -> TVal -> TVal.
+| InRV     : TVal -> TVal.
 
 (**
 The strict (call-by-value) interpreter.  TRec's cases are unchanged
-except that the type changes from [TFBAEC] to [TADS] and the value type
-gains five new constructors.  The new cases evaluate their subterms and
-build or inspect the appropriate value.
+except that the type changes from [TFBAEC] to [TADS].  The new cases:
 
-_List safety_: [Car] and [Cdr] on [NilV] return [None] (the type
-checker prevents this in well-typed programs, but the evaluator is
-defined for all terms).
+  - [Unit] returns [UnitV].
+  - [Nil _] returns [InLV UnitV]: the empty list is left-injected unit.
+  - [Cons e1 e2] evaluates both subterms and returns [InRV (PairV v1 v2)]:
+    a non-empty list is a right-injected pair of head and tail.
+  - [Car e] matches [InRV (PairV v _)] and returns the head.
+  - [Cdr e] matches [InRV (PairV _ v)] and returns the tail.
+  - [IsNil e] matches [InLV _] (empty) or [InRV _] (non-empty).
+
+_List safety_: [Car] and [Cdr] on a nil list (which is [InLV UnitV],
+matching [InLV _]) return [None].  The type checker prevents this in
+well-typed programs, but the evaluator is defined for all terms.
  *)
 
 Fixpoint evalM (fuel : nat) (env : Env TVal) (e : TADS) : option TVal :=
@@ -452,6 +483,8 @@ Fixpoint evalM (fuel : nat) (env : Env TVal) (e : TADS) : option TVal :=
           | _ => None
           end
       | Id x => lookup x env
+      (* unit *)
+      | Unit => Some UnitV
       (* products *)
       | Pair e1 e2 =>
           match evalM k env e1, evalM k env e2 with
@@ -485,27 +518,27 @@ Fixpoint evalM (fuel : nat) (env : Env TVal) (e : TADS) : option TVal :=
           | Some (InRV v) => evalM k (extend y v env) e2
           | _ => None
           end
-      (* lists *)
-      | Nil _ => Some NilV
+      (* lists - implemented as sums of products *)
+      | Nil _ => Some (InLV UnitV)
       | Cons e1 e2 =>
           match evalM k env e1, evalM k env e2 with
-          | Some v1, Some v2 => Some (ConsV v1 v2)
+          | Some v1, Some v2 => Some (InRV (PairV v1 v2))
           | _, _ => None
           end
       | Car e0 =>
           match evalM k env e0 with
-          | Some (ConsV v _) => Some v
+          | Some (InRV (PairV v _)) => Some v
           | _ => None
           end
       | Cdr e0 =>
           match evalM k env e0 with
-          | Some (ConsV _ v) => Some v
+          | Some (InRV (PairV _ v)) => Some v
           | _ => None
           end
       | IsNil e0 =>
           match evalM k env e0 with
-          | Some NilV        => Some (BoolV true)
-          | Some (ConsV _ _) => Some (BoolV false)
+          | Some (InLV _) => Some (BoolV true)
+          | Some (InRV _) => Some (BoolV false)
           | _ => None
           end
       end
@@ -517,7 +550,21 @@ Top-level evaluation: a closed term with 1000 fuel units.
 
 Definition eval (e : TADS) : option TVal := evalM 1000 nil e.
 
-(** * SECTION 5: PRODUCTS IN ACTION *)
+(** * SECTION 5: UNIT IN ACTION *)
+
+(**
+[Unit] is the unique term of type [TUnit].  Its value is [UnitV].  Unit
+appears explicitly when you want "nothing" — it is most important as the
+payload of an empty list.
+ *)
+
+Example ty_unit : typecheck Unit = Some TUnit.
+Proof. reflexivity. Qed.
+
+Example eval_unit : eval Unit = Some UnitV.
+Proof. reflexivity. Qed.
+
+(** * SECTION 6: PRODUCTS IN ACTION *)
 
 (**
 The canonical example: a pair of numbers.  [typecheck] infers the type
@@ -560,12 +607,16 @@ Example run_swap :
   eval swapProg = Some (PairV (NumV 2) (NumV 1)).
 Proof. reflexivity. Qed.
 
-(** * SECTION 6: SUMS IN ACTION *)
+(** * SECTION 7: SUMS IN ACTION *)
 
 (**
 A safe division: if the divisor is zero, return an error flag
-([InR ... (Boolean true)]); otherwise return the product.  The result
+([InR ... (Boolean true)]); otherwise return the quotient.  The result
 type is [TSum TNum TBool], encoding "number or error".
+
+Unit could be used as the error payload — [InR (TSum TNum TUnit) Unit]
+— but we keep the existing example with [Boolean true] as the error
+flag to show that any type can appear in a sum.
  *)
 
 Definition safeDiv : TADS :=
@@ -613,10 +664,95 @@ Example ill_inl_not_sum :
   typecheck (InL TNum (Num 5)) = None.
 Proof. reflexivity. Qed.
 
-(** * SECTION 7: LISTS IN ACTION *)
+(** * SECTION 8: LISTS AS SUMS OF PRODUCTS *)
 
 (**
-A list of three numbers.  [typeof] infers element type [TNum].
+The algebraic equation for lists is:
+
+    List A = Unit + (A x List A)
+
+A list is _either_ empty (carrying only unit) _or_ a pair of a head
+element and a tail list.  This is a recursive equation; [TList A] names it.
+
+The evaluator makes this equation concrete at the _value_ level.  List
+values are literally sum and product values:
+
+  - [Nil T] evaluates to [InLV UnitV]   -- the left branch, carrying unit.
+  - [Cons e1 e2] evaluates to [InRV (PairV v1 v2)]  -- the right branch,
+    carrying the head and tail as a pair.
+
+There are no separate [NilV] or [ConsV] constructors in [TVal].
+ *)
+
+Example nil_is_inl :
+  eval (Nil TNum) = Some (InLV UnitV).
+Proof. reflexivity. Qed.
+
+Example cons_is_inr_pair :
+  eval (Cons (Num 1) (Nil TNum)) =
+  Some (InRV (PairV (NumV 1) (InLV UnitV))).
+Proof. reflexivity. Qed.
+
+Example list_structure :
+  eval (Cons (Num 1) (Cons (Num 2) (Cons (Num 3) (Nil TNum)))) =
+  Some (InRV (PairV (NumV 1)
+       (InRV (PairV (NumV 2)
+       (InRV (PairV (NumV 3) (InLV UnitV))))))).
+Proof. reflexivity. Qed.
+
+(**
+The list eliminators are just the sum/product patterns under new names:
+
+  - [IsNil] checks whether the sum tag is left ([InLV _]) or right ([InRV _]).
+  - [Car] extracts the first component of the right-branch pair.
+  - [Cdr] extracts the second component of the right-branch pair.
+ *)
+
+(* IsNil checks the sum tag. *)
+Example isnil_checks_tag :
+  eval (IsNil (Nil TNum)) = Some (BoolV true).
+Proof. reflexivity. Qed.
+
+(**
+Because list values _are_ sum values, [SCase] can eliminate them
+directly.  The type checker rejects this (the scrutinee has type
+[TList TNum], not [TSum _ _]), but the evaluator accepts it because the
+representation is identical.
+ *)
+
+Example scase_on_list :
+  eval (SCase (Cons (Num 42) (Nil TNum))
+              "u" (Num 0)
+              "p" (Fst (Id "p"))) =
+  Some (NumV 42).
+Proof. reflexivity. Qed.
+
+(* Car is fst of the right-branch pair. *)
+Example car_via_fst :
+  eval (Car (Cons (Num 5) (Nil TNum))) = Some (NumV 5).
+Proof. reflexivity. Qed.
+
+(* IsNil and SCase are equivalent for the nil case. *)
+Example isnil_eq_scase_nil :
+  eval (IsNil (Nil TNum)) =
+  eval (SCase (Nil TNum) "u" (Boolean true) "p" (Boolean false)).
+Proof. reflexivity. Qed.
+
+(**
+Why does the type checker keep [TList A] as a distinct type rather than
+unfolding it to [TSum TUnit (TProd A (TList A))]?  Because that unfolding
+is _recursive_: [TList A] appears in its own definition.  Supporting
+recursive type equations requires a separate language feature (a "mu
+type" or isorecursive type).  [TList A] names the pattern without making
+the recursion first-class.  At the _value_ level no such issue arises:
+[InRV (PairV h t)] is already a finite tree.
+ *)
+
+(** * SECTION 9: POLYMORPHIC LISTS *)
+
+(**
+Lists are _polymorphic_: the element type is carried in [Nil T] and
+inferred from the elements in [Cons].
  *)
 
 Definition list123 : TADS :=
@@ -630,7 +766,7 @@ Proof. reflexivity. Qed.
 
 Example run_cdr_list123 :
   eval (Cdr list123) =
-  Some (ConsV (NumV 2) (ConsV (NumV 3) NilV)).
+  Some (InRV (PairV (NumV 2) (InRV (PairV (NumV 3) (InLV UnitV))))).
 Proof. reflexivity. Qed.
 
 Example run_isnil_list123 : eval (IsNil list123) = Some (BoolV false).
@@ -645,13 +781,6 @@ The type checker catches [Car] applied to a non-list.
 
 Example ill_car_num : typecheck (Car (Num 5)) = None.
 Proof. reflexivity. Qed.
-
-(** * SECTION 8: POLYMORPHIC LISTS *)
-
-(**
-Lists are _polymorphic_: the element type is carried in [Nil T] and
-inferred from the elements in [Cons].
- *)
 
 Definition boolList : TADS :=
   Cons (Boolean true) (Cons (Boolean false) (Nil TBool)).
@@ -681,7 +810,7 @@ Example ill_cons_mismatch :
   typecheck (Cons (Num 1) (Nil TBool)) = None.
 Proof. reflexivity. Qed.
 
-(** * SECTION 9: RECURSIVE LIST OPERATIONS *)
+(** * SECTION 10: RECURSIVE LIST OPERATIONS *)
 
 (**
 [sumListGen] is the _generator_ for a recursive list summation.  Its
@@ -726,12 +855,27 @@ Example run_lengthList :
   eval (App lengthList list123) = Some (NumV 3).
 Proof. reflexivity. Qed.
 
-(** * SECTION 10: FUEL MONOTONICITY *)
+(** * SECTION 11: FUEL MONOTONICITY *)
 
 (**
 More fuel never changes an answer: if [evalM f1 env e = Some v] and
 [f1 <= f2] then [evalM f2 env e = Some v].  The proof follows TRec's
-pattern, with additional cases for the eight new constructors.
+pattern, with additional cases for the new constructors.
+
+The [TVal] inductive now has seven constructors:
+    [NumV | BoolV | ClosureV | UnitV | PairV | InLV | InRV]
+
+The full destructor pattern is:
+    [[n|b|s t bd ce| |p1 p2|iv|iv2]|]
+
+([UnitV] is nullary -- the empty slot between [ClosureV] and [PairV].)
+
+For [Car]/[Cdr], after destructing [evalM k env e] we need the result
+to be [InRV (PairV _ _)]: first [destruct val] leaves only [InRV iv],
+then [destruct iv] leaves only [PairV p1' p2'].
+
+For [IsNil], after destructing [evalM k env e], [InLV iv] and [InRV iv2]
+are the surviving cases ([try discriminate] kills the rest).
  *)
 
 Lemma evalM_mono : forall f1 f2 env e v,
@@ -743,26 +887,26 @@ Proof.
     destruct e; simpl in H |- *.
     + (* Num *) exact H.
     + (* Plus *)
-      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:El; try discriminate.
-      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | p12 p22 | iv3 | iv4 | | cv12 cv22] |] eqn:Er; try discriminate.
+      destruct (evalM k env e1) as [[a | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:El; try discriminate.
+      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | | p12 p22 | iv3 | iv4] |] eqn:Er; try discriminate.
       rewrite (IH k2 env e1 (NumV a) ltac:(lia) El).
       rewrite (IH k2 env e2 (NumV b0) ltac:(lia) Er). exact H.
     + (* Minus *)
-      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:El; try discriminate.
-      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | p12 p22 | iv3 | iv4 | | cv12 cv22] |] eqn:Er; try discriminate.
+      destruct (evalM k env e1) as [[a | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:El; try discriminate.
+      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | | p12 p22 | iv3 | iv4] |] eqn:Er; try discriminate.
       rewrite (IH k2 env e1 (NumV a) ltac:(lia) El).
       rewrite (IH k2 env e2 (NumV b0) ltac:(lia) Er). exact H.
     + (* Mult *)
-      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:El; try discriminate.
-      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | p12 p22 | iv3 | iv4 | | cv12 cv22] |] eqn:Er; try discriminate.
+      destruct (evalM k env e1) as [[a | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:El; try discriminate.
+      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | | p12 p22 | iv3 | iv4] |] eqn:Er; try discriminate.
       rewrite (IH k2 env e1 (NumV a) ltac:(lia) El).
       rewrite (IH k2 env e2 (NumV b0) ltac:(lia) Er). exact H.
     + (* Boolean *) exact H.
     + (* IsZero *)
-      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:E0; try discriminate.
+      destruct (evalM k env e) as [[n | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:E0; try discriminate.
       rewrite (IH k2 env e (NumV n) ltac:(lia) E0). exact H.
     + (* If *)
-      destruct (evalM k env e1) as [[a | bb | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ec; try discriminate.
+      destruct (evalM k env e1) as [[a | bb | s t bd ce | | p1 p2 | iv | iv2] |] eqn:Ec; try discriminate.
       destruct bb.
       * rewrite (IH k2 env e1 (BoolV true) ltac:(lia) Ec).
         apply (IH k2 env e2 v). lia. exact H.
@@ -774,26 +918,27 @@ Proof.
       apply (IH k2 (extend s v' env) e2 v). lia. exact H.
     + (* Lambda *) exact H.
     + (* App *)
-      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ef; try discriminate.
+      destruct (evalM k env e1) as [[a | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:Ef; try discriminate.
       destruct (evalM k env e2) as [a' |] eqn:Ea; try discriminate.
       rewrite (IH k2 env e1 (ClosureV s t bd ce) ltac:(lia) Ef).
       rewrite (IH k2 env e2 a' ltac:(lia) Ea).
       apply (IH k2 (extend s a' ce) bd v). lia. exact H.
     + (* Fix *)
-      destruct (evalM k env e) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ef; try discriminate.
+      destruct (evalM k env e) as [[a | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:Ef; try discriminate.
       rewrite (IH k2 env e (ClosureV s t bd ce) ltac:(lia) Ef).
       apply (IH k2 ce (subst s (Fix (Lambda s t bd)) bd) v). lia. exact H.
     + (* Id *) exact H.
+    + (* Unit *) exact H.
     + (* Pair *)
       destruct (evalM k env e1) as [v1 |] eqn:E1; try discriminate.
       destruct (evalM k env e2) as [v2 |] eqn:E2; try discriminate.
       rewrite (IH k2 env e1 v1 ltac:(lia) E1).
       rewrite (IH k2 env e2 v2 ltac:(lia) E2). exact H.
     + (* Fst *)
-      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      destruct (evalM k env e) as [[n | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:Ee; try discriminate.
       rewrite (IH k2 env e (PairV p1 p2) ltac:(lia) Ee). simpl. exact H.
     + (* Snd *)
-      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      destruct (evalM k env e) as [[n | b | s t bd ce | | p1 p2 | iv | iv2] |] eqn:Ee; try discriminate.
       rewrite (IH k2 env e (PairV p1 p2) ltac:(lia) Ee). simpl. exact H.
     + (* InL *)
       destruct (evalM k env e) as [v0 |] eqn:Ee; try discriminate.
@@ -802,16 +947,7 @@ Proof.
       destruct (evalM k env e) as [v0 |] eqn:Ee; try discriminate.
       rewrite (IH k2 env e v0 ltac:(lia) Ee). simpl. exact H.
     + (* SCase *)
-      (* After [destruct e; simpl in H |- *], H has the form:
-           match evalM k env <scrutinee> with
-           | Some (InLV v0) => evalM k (extend <lname> v0 env) <lbranch>
-           | Some (InRV v0) => evalM k (extend <rname> v0 env) <rbranch>
-           | _ => None
-           end = Some v
-         We case-split on [evalM k env <scrutinee>] directly using H. *)
-      (* Rocq names SCase's subfields: e1 (scrutinee), s (left-binder),
-         e2 (left-branch), s0 (right-binder), e3 (right-branch). *)
-      destruct (evalM k env e1) as [[n | b | s' ty' bd' ce' | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee;
+      destruct (evalM k env e1) as [[n | b | s' ty' bd' ce' | | p1 p2 | iv | iv2] |] eqn:Ee;
         try discriminate.
       * (* InLV iv *)
         rewrite (IH k2 env e1 (InLV iv) ltac:(lia) Ee). simpl.
@@ -819,27 +955,41 @@ Proof.
       * (* InRV iv2 *)
         rewrite (IH k2 env e1 (InRV iv2) ltac:(lia) Ee). simpl.
         apply (IH k2 (extend s0 iv2 env) e3 v). lia. exact H.
-    + (* Nil *) exact H.
+    + (* Nil - returns InLV UnitV directly, no fuel used for subterms *)
+      exact H.
     + (* Cons *)
       destruct (evalM k env e1) as [v1 |] eqn:E1; try discriminate.
       destruct (evalM k env e2) as [v2 |] eqn:E2; try discriminate.
       rewrite (IH k2 env e1 v1 ltac:(lia) E1).
       rewrite (IH k2 env e2 v2 ltac:(lia) E2). exact H.
-    + (* Car *)
-      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
-      rewrite (IH k2 env e (ConsV cv1 cv2) ltac:(lia) Ee). simpl. exact H.
-    + (* Cdr *)
-      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
-      rewrite (IH k2 env e (ConsV cv1 cv2) ltac:(lia) Ee). simpl. exact H.
-    + (* IsNil *)
-      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
-      * (* NilV *)
-        rewrite (IH k2 env e NilV ltac:(lia) Ee). simpl. exact H.
-      * (* ConsV cv1 cv2 *)
-        rewrite (IH k2 env e (ConsV cv1 cv2) ltac:(lia) Ee). simpl. exact H.
+    + (* Car - result is InRV (PairV _ _) *)
+      destruct (evalM k env e) as [val |] eqn:Ee; try discriminate.
+      (* only InRV iv2 survives after discriminate *)
+      destruct val as [n | b | s t bd ce | | p1 p2 | iv | iv2]; try discriminate.
+      (* rewrite the goal using IH before destructing iv2 *)
+      rewrite (IH k2 env e (InRV iv2) ltac:(lia) Ee).
+      (* only PairV survives inside InRV *)
+      destruct iv2 as [n' | b' | s' t' bd' ce' | | p1' p2' | iv' | iv2']; try discriminate.
+      simpl. exact H.
+    + (* Cdr - result is InRV (PairV _ _) *)
+      destruct (evalM k env e) as [val |] eqn:Ee; try discriminate.
+      (* only InRV iv2 survives after discriminate *)
+      destruct val as [n | b | s t bd ce | | p1 p2 | iv | iv2]; try discriminate.
+      (* rewrite the goal using IH before destructing iv2 *)
+      rewrite (IH k2 env e (InRV iv2) ltac:(lia) Ee).
+      (* only PairV survives inside InRV *)
+      destruct iv2 as [n' | b' | s' t' bd' ce' | | p1' p2' | iv' | iv2']; try discriminate.
+      simpl. exact H.
+    + (* IsNil - InLV _ gives true, InRV _ gives false *)
+      destruct (evalM k env e) as [val |] eqn:Ee; try discriminate.
+      destruct val as [n | b | s t bd ce | | p1 p2 | iv | iv2]; try discriminate.
+      * (* InLV iv *)
+        rewrite (IH k2 env e (InLV iv) ltac:(lia) Ee). simpl. exact H.
+      * (* InRV iv2 *)
+        rewrite (IH k2 env e (InRV iv2) ltac:(lia) Ee). simpl. exact H.
 Qed.
 
-(** * SECTION 11: CONCRETE SYNTAX *)
+(** * SECTION 12: CONCRETE SYNTAX *)
 
 (**
 We introduce a concrete syntax for TADS.  Types are written between
@@ -851,9 +1001,9 @@ Coercion Num : nat >-> TADS.
 Coercion Id  : string >-> TADS.
 
 (**
-_The type grammar._  [Nat] and [Bool] are base types; [->] is the
-right-associative function arrow; [*] binds tighter than [+] which
-binds tighter than [->].  [List T] introduces list types.
+_The type grammar._  [Nat], [Bool], and [unit] are base types;
+[->] is the right-associative function arrow; [*] binds tighter than
+[+] which binds tighter than [->].  [List T] introduces list types.
  *)
 
 Declare Custom Entry ty.
@@ -865,6 +1015,7 @@ Notation "<[ t ]>" := t (t custom ty at level 50) : tads_scope.
 Notation "( t )" := t (in custom ty, t at level 50) : tads_scope.
 Notation "'Nat'"    := TNum  (in custom ty at level 0) : tads_scope.
 Notation "'Bool'"   := TBool (in custom ty at level 0) : tads_scope.
+Notation "'unit'"   := TUnit (in custom ty at level 0) : tads_scope.
 Notation "d -> r"   := (TArr d r)  (in custom ty at level 50, right associativity) : tads_scope.
 Notation "A * B"    := (TProd A B) (in custom ty at level 40, left associativity) : tads_scope.
 Notation "A + B"    := (TSum A B)  (in custom ty at level 45, left associativity) : tads_scope.
@@ -872,8 +1023,8 @@ Notation "'List' T" := (TList T)   (in custom ty at level 5,  T custom ty at lev
 
 (**
 _The term grammar._  Function application is juxtaposition at level 1.
-New forms for products, sums, and lists are at level 75, below [if]/[bind]/[lambda]
-but above application.
+New forms for unit, products, sums, and lists are at level 75, below
+[if]/[bind]/[lambda] but above application.
  *)
 
 Notation "<{ e }>" := e (e custom tads at level 99) : tads_scope.
@@ -897,6 +1048,8 @@ Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
 Notation "'lambda' v ':' T 'in' e" := (Lambda v T e)
   (in custom tads at level 90, v constr at level 0,
    T custom ty at level 50, e custom tads at level 99) : tads_scope.
+(* unit form *)
+Notation "'()'" := Unit (in custom tads at level 0) : tads_scope.
 (* product forms *)
 Notation "'fst' e" := (Fst e)
   (in custom tads at level 75, e custom tads at level 74) : tads_scope.
@@ -930,8 +1083,11 @@ Notation "'isnil' e" := (IsNil e)
 Open Scope tads_scope.
 
 (**
-Type examples: the grammar parses product, sum, and function types.
+Type examples: the grammar parses unit, product, sum, and function types.
  *)
+
+Example parse_ty_unit : <[ unit ]> = TUnit.
+Proof. reflexivity. Qed.
 
 Example parse_ty_prod : <[ Nat * Bool ]> = TProd TNum TBool.
 Proof. reflexivity. Qed.
@@ -968,7 +1124,7 @@ Example run_fact5 : eval (App fact (Num 5)) = Some (NumV 120).
 Proof. reflexivity. Qed.
 
 (**
-The type grammar handles products, sums, and lists.
+The type grammar handles unit, products, sums, and lists.
  *)
 
 Example parse_ty_prod_sum :
@@ -999,6 +1155,18 @@ Proof. reflexivity. Qed.
 
 Example eval_isnil_concrete :
   eval <{ isnil (nil Nat) }> = Some (BoolV true).
+Proof. reflexivity. Qed.
+
+(**
+The unit term in concrete syntax: [()] has type [unit] and evaluates to [UnitV].
+ *)
+
+Example typecheck_unit_concrete :
+  typecheck <{ () }> = Some TUnit.
+Proof. reflexivity. Qed.
+
+Example eval_unit_concrete :
+  eval <{ () }> = Some UnitV.
 Proof. reflexivity. Qed.
 
 (**
@@ -1048,23 +1216,25 @@ Proof. reflexivity. Qed.
 
 (**
 In this chapter we extended TRec with three algebraic type formers and
-showed how they interact with typing and evaluation.
+showed how they interact with typing and evaluation.  The central result
+is that lists _are_ sums of products at the value level.
 
 #<ol>#
-#<li>#Extended the type language [Ty] with [TProd], [TSum], and [TList], along with decidable equality [Ty_eqb] and its correctness lemmas.#</li>#
-#<li>#Defined the TADS term language with product forms ([Pair]/[Fst]/[Snd]), sum forms ([InL]/[InR]/[SCase]), and list forms ([Nil]/[Cons]/[Car]/[Cdr]/[IsNil]).#</li>#
-#<li>#Wrote the type checker [typeof]: products infer [TProd A B]; sums require the annotation to determine the full type; lists enforce homogeneity at [Cons].#</li>#
-#<li>#Defined the strict evaluator [evalM] with value constructors [PairV], [InLV], [InRV], [NilV], and [ConsV].#</li>#
-#<li>#Demonstrated products ([swapProg]), sums ([safeDiv] / [safeDivResult]), and lists ([list123], [boolList]).#</li>#
+#<li>#Extended the type language [Ty] with [TUnit], [TProd], [TSum], and [TList], along with decidable equality [Ty_eqb] and its correctness lemmas.#</li>#
+#<li>#Added [Unit] to the TADS term language alongside product forms ([Pair]/[Fst]/[Snd]), sum forms ([InL]/[InR]/[SCase]), and list forms ([Nil]/[Cons]/[Car]/[Cdr]/[IsNil]).#</li>#
+#<li>#Wrote the type checker [typeof]: products infer [TProd A B]; sums require the annotation to determine the full type; lists enforce homogeneity at [Cons]; [Unit] has type [TUnit].#</li>#
+#<li>#Defined the strict evaluator [evalM] with value constructors [UnitV], [PairV], [InLV], and [InRV] -- no separate [NilV] or [ConsV].  [Nil] yields [InLV UnitV]; [Cons h t] yields [InRV (PairV h t)].#</li>#
+#<li>#Demonstrated the algebraic structure of lists: [nil_is_inl], [cons_is_inr_pair], [list_structure], [scase_on_list].#</li>#
+#<li>#Demonstrated products ([swapProg]), sums ([safeDiv] / [safeDivResult]), and polymorphic lists ([list123], [boolList]).#</li>#
 #<li>#Wrote recursive list operations ([sumList], [lengthList]) using [Fix] exactly as in TRec.#</li>#
-#<li>#Re-proved _fuel monotonicity_ ([evalM_mono]) with cases for all eight [TVal] constructors.#</li>#
-#<li>#Added concrete syntax in [tads_scope]: type grammar [<[ ... ]>] with [*], [+], [List]; term grammar [<{ ... }>] with [fst], [snd], [inl]/[inr], [case ... of], [nil], [car], [cdr], [isnil].#</li>#
+#<li>#Re-proved _fuel monotonicity_ ([evalM_mono]) with cases for all seven [TVal] constructors.#</li>#
+#<li>#Added concrete syntax in [tads_scope]: type grammar [<[ ... ]>] with [unit], [*], [+], [List]; term grammar [<{ ... }>] with [()], [fst], [snd], [inl]/[inr], [case ... of], [nil], [car], [cdr], [isnil].#</li>#
 #</ol>#
 
 The algebraic types here are the same [*] and [+] studied in Rocq's own
-type theory.  Every [Inductive] definition in Rocq is a sum of products;
-[TADS] makes them available as _first-class values_ in our little
-interpreted language.
+type theory.  Lists reveal this: [TList A] names the recursive equation
+[Unit + (A x List A)], and the evaluator makes that equation concrete at
+the value level.
  *)
 
 (** * NEW PROOF TACTICS IN THIS CHAPTER *)
@@ -1076,7 +1246,13 @@ proofs use the same fuel-induction pattern: [induction f1 as [| k IH]],
 [destruct ... eqn:...], [rewrite (IH ...)], [apply (IH ...)], and
 [exact H].
 
-The [evalM_mono] proof is longer than TRec's because [TVal] now has
-eight constructors, so the [destruct] patterns in the arithmetic and
-closure cases are correspondingly wider.  The structure is identical.
+The [evalM_mono] proof for [Car] and [Cdr] has a two-step destruct: first
+[destruct val] to isolate [InRV iv], then [destruct iv] to isolate
+[PairV p1' p2'].  This nested destruct reflects the nested structure of
+a cons cell value.
+
+The [evalM_mono] proof is shorter than it would be with eight constructors
+because removing [NilV] and [ConsV] from [TVal] eliminates those cases
+entirely; the list cases now delegate to the same sum/product infrastructure
+already proved for [SCase]/[Fst]/[Snd].
  *)
