@@ -231,52 +231,22 @@ Definition tnumBinop (a b : option Ty) : option Ty :=
 
 (**
 [typeof ctx e] infers the type of [e] in context [ctx], returning
-[None] if [e] is ill-typed.
+[None] if [e] is ill-typed.  The TRec cases are unchanged.
 
-The new typing rules are:
+_Products_: [Pair e1 e2] infers [TProd A B] from its components.
+[Fst] and [Snd] require a [TProd] scrutinee and return the left or
+right component type.
 
-    ctx |- e1 : A    ctx |- e2 : B
-  ----------------------------------      (Pair)
-    ctx |- Pair e1 e2 : TProd A B
+_Sums_: [InL T e] and [InR T e] carry the full sum type [T] as a
+mandatory annotation.  The checker verifies [e] matches the
+corresponding component of [T], then returns [T].  [SCase] requires
+the scrutinee to have a [TSum A B] type, extends the context with the
+binder in each branch, and insists both branches return the same type.
 
-    ctx |- e : TProd A B
-  ----------------------              (Fst)
-    ctx |- Fst e : A
-
-    ctx |- e : TProd A B
-  ----------------------              (Snd)
-    ctx |- Snd e : B
-
-    T = TSum A _    ctx |- e : A
-  --------------------------------      (InL)
-    ctx |- InL T e : T
-
-    T = TSum _ B    ctx |- e : B
-  --------------------------------      (InR)
-    ctx |- InR T e : T
-
-    ctx |- e : TSum A B
-    ctx, x:A |- e1 : R    ctx, y:B |- e2 : R
-  -------------------------------------------  (SCase)
-    ctx |- SCase e x e1 y e2 : R
-
-    ctx |- Nil T : TList T                   (Nil)
-
-    ctx |- e1 : A    ctx |- e2 : TList A
-  ----------------------------------------    (Cons)
-    ctx |- Cons e1 e2 : TList A
-
-    ctx |- e : TList A
-  --------------------                (Car)
-    ctx |- Car e : A
-
-    ctx |- e : TList A
-  ----------------------              (Cdr)
-    ctx |- Cdr e : TList A
-
-    ctx |- e : TList _
-  ----------------------              (IsNil)
-    ctx |- IsNil e : TBool
+_Lists_: [Nil T] always has type [TList T].  [Cons e1 e2] requires
+[e1 : A] and [e2 : TList A] (enforced with [Ty_eqb]).  [Car] and
+[Cdr] require a [TList A] scrutinee; [IsNil] requires any [TList]
+scrutinee and returns [TBool].
  *)
 
 Fixpoint typeof (ctx : Ctx) (e : TADS) : option Ty :=
