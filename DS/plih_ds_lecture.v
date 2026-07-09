@@ -1,880 +1,1112 @@
+(** * Programming Languages in Rocq - TADS: Typed Algebraic Data Structures *)
+
 (**
-Programming Languages in Rocq - Data Structures Lecture
-Recursive types, higher-order functions, and polymorphism
+The typed-recursion chapter (TRec) gave us a safe, expressive language:
+numbers, Booleans, first-class functions, and well-typed [Fix] for
+general recursion.  But values are flat: the only compound value is a
+closure.
 
-Every chapter so far has been about language _interpreters_: define a
-syntax, define a value type, write an evaluation function, prove things
-about it.  This chapter steps back and looks at how _data structures_
-are built in Rocq itself.
-
-The subject is _lists_.  Lists are the simplest non-trivial recursive
-structure: they have a base case ([Nil]) and a recursive case ([Cons]).
-Everything interesting about recursive data - induction, structural
-recursion, higher-order operations, polymorphism - shows up cleanly
-with lists.
-
-We cover seven topics across nine sections.
+This chapter adds _structure_ to values.  We extend TRec with three
+new type formers and the terms that introduce and eliminate them:
 
 #<ol>#
-#<li>#_Integer lists_ ([IntList]).  A concrete inductive type with the
-classic LISP observers ([car], [cdr], [isEmpty]) and structural
-operations ([length], [append], [reverse]).#</li>#
-#<li>#_Higher-order functions_.  [map], [foldr], [foldl], and [filter]
-abstract over the per-element operation.#</li>#
-#<li>#_Polymorphic lists_ ([PList A]).  Same functions, same proofs,
-element type is a parameter.  Formally: an isomorphism with [IntList].#</li>#
-#<li>#_Product types_ ([A * B]).  Pairs, projections, and the eta law.#</li>#
-#<li>#_Sum types_ ([A + B]).  Tagged unions; [option A = unit + A].#</li>#
-#<li>#_Records_.  Named products; the [Record] keyword; dot projection.#</li>#
-#<li>#_Records as sums of products_.  Every [Inductive] type is a sum
-of products; the [Shape] example formalises this as an isomorphism.#</li>#
+#<li>#_Products_ [(TProd A B)]: pair two values together; eliminate with [Fst] and [Snd].#</li>#
+#<li>#_Sums_ [(TSum A B)]: inject a value on the left or right; eliminate with [SCase].#</li>#
+#<li>#_Lists_ [(TList A)]: a typed homogeneous list; introduced by [Nil] and [Cons], eliminated by [Car], [Cdr], and [IsNil].#</li>#
 #</ol>#
 
-The central lesson: a function's recursive structure is determined by
-the _shape_ of the data, not the _content_ of the elements.  Products
-and sums give us the vocabulary to describe that shape precisely.
+Together these three are the _algebraic_ types: every structured data
+type in typed functional programming is built from products, sums, and
+recursive occurrences.  We call the resulting language TADS.
+
+This mirrors the "Algebraic Data Types" discussion in PLIH:
+  https://ku-sldg.github.io/plih//
  *)
 
+From Stdlib Require Import String.
+From Stdlib Require Import List.
+From Stdlib Require Import Arith.
+From Stdlib Require Import Lia.
+From Stdlib Require Import Bool.
 Require Import plih_rocq_ds_shared.
 
-(** * Section 1: Integer Lists *)
+Local Open Scope string_scope.
+Import ListNotations.
+
+(** * SECTION 1: EXTENDING THE TYPE LANGUAGE *)
 
 (**
-LISP introduced the idea of building all data from a single recursive
-pair type.  The key constructors and observers were:
+TRec's types are [TNum], [TBool], and [TArr d r].  We keep those three
+and add one type former for each algebraic structure:
+  - [TProd A B]: the _product_ type "A and B";
+  - [TSum  A B]: the _sum_     type "A or B";
+  - [TList A]:   the _list_    type "a sequence of A".
 
-  - [nil]  -- the empty list
-  - [cons] -- prepend an element to a list
-  - [car]  -- return the first element (head)
-  - [cdr]  -- return the rest of the list (tail)
-
-We build the same idea directly as a Rocq inductive type.  Rocq
-convention capitalises constructor names, so we write [Nil] and [Cons]
-rather than [nil] and [cons].
+These are the typed counterparts of Rocq's [prod], [sum], and [list].
  *)
 
-Inductive IntList : Type :=
-| Nil  : IntList
-| Cons : nat -> IntList -> IntList.
+Inductive Ty : Type :=
+| TNum  : Ty
+| TBool : Ty
+| TArr  : Ty -> Ty -> Ty
+| TProd : Ty -> Ty -> Ty   (* A * B  - product *)
+| TSum  : Ty -> Ty -> Ty   (* A + B  - sum     *)
+| TList : Ty -> Ty.        (* List A - list    *)
 
 (**
-[Nil] is the empty list.  [Cons n xs] prepends the natural number [n]
-to the list [xs].  The two constructors are _exhaustive_: every
-[IntList] is either empty or a head-and-tail pair.
+Decidable equality on [Ty] is essential for the type checker.  We extend
+TRec's three-case [Ty_eqb] with three new cases.
  *)
 
-(** ** Observers *)
-
-(**
-An _observer_ inspects a value without changing it.  The three
-canonical list observers correspond directly to LISP's [car], [cdr],
-and the [null?] predicate.  All three return [option] or [bool] so they
-can handle the empty list gracefully.
- *)
-
-Definition car (xs : IntList) : option nat :=
-  match xs with
-  | Nil => None
-  | Cons n _ => Some n
+Fixpoint Ty_eqb (a b : Ty) : bool :=
+  match a, b with
+  | TNum,  TNum  => true
+  | TBool, TBool => true
+  | TArr  d1 r1, TArr  d2 r2 => andb (Ty_eqb d1 d2) (Ty_eqb r1 r2)
+  | TProd a1 b1, TProd a2 b2 => andb (Ty_eqb a1 a2) (Ty_eqb b1 b2)
+  | TSum  a1 b1, TSum  a2 b2 => andb (Ty_eqb a1 a2) (Ty_eqb b1 b2)
+  | TList t1,    TList t2    => Ty_eqb t1 t2
+  | _, _ => false
   end.
 
-Definition cdr (xs : IntList) : option IntList :=
-  match xs with
-  | Nil => None
-  | Cons _ tl => Some tl
-  end.
-
-Definition isEmpty (xs : IntList) : bool :=
-  match xs with
-  | Nil => true
-  | Cons _ _ => false
-  end.
-
-(** ** Examples *)
-
 (**
-Here are three concrete [IntList] values.  We give each a Rocq name so
-it can be reused in examples and exercises.
+[Ty_eqb] is _reflexive_: every type equals itself.
  *)
 
-Definition nil_ex  : IntList := Nil.
-Definition list1   : IntList := Cons 1 Nil.
-Definition list123 : IntList := Cons 1 (Cons 2 (Cons 3 Nil)).
-
-(**
-The observers run on concrete lists by [reflexivity]: Rocq evaluates
-the match and compares the normal forms.
- *)
-
-Example car_nil  : car Nil = None.          Proof. reflexivity. Qed.
-Example car_list : car list123 = Some 1.    Proof. reflexivity. Qed.
-Example cdr_list : cdr list123 = Some (Cons 2 (Cons 3 Nil)). Proof. reflexivity. Qed.
-Example isEmpty_nil  : isEmpty Nil = true.  Proof. reflexivity. Qed.
-Example isEmpty_cons : isEmpty list123 = false. Proof. reflexivity. Qed.
-
-(** * Section 2: Structural Operations *)
-
-(**
-Structural operations recurse on the _shape_ of the list.  At [Nil]
-they return a base value; at [Cons] they combine the head with the
-recursive result on the tail.  Rocq's [Fixpoint] keyword marks a
-recursively-defined function; the [match] must terminate, which it does
-here because the tail is structurally smaller than the whole list.
- *)
-
-(** ** Length *)
-
-Fixpoint length (xs : IntList) : nat :=
-  match xs with
-  | Nil => 0
-  | Cons _ tl => 1 + length tl
-  end.
-
-Example length_list123 : length list123 = 3. Proof. reflexivity. Qed.
-Example length_nil_ex  : length Nil = 0.    Proof. reflexivity. Qed.
-
-(**
-Two lemmas follow immediately from the definition by [reflexivity] -
-they just unfold the match.
- *)
-
-Lemma length_nil_eq : length Nil = 0.
-Proof. reflexivity. Qed.
-
-Lemma length_cons_eq : forall n xs, length (Cons n xs) = 1 + length xs.
-Proof. reflexivity. Qed.
-
-(** ** Append *)
-
-(**
-[append xs ys] concatenates [xs] and [ys] by recursing on [xs].
- *)
-
-Fixpoint append (xs ys : IntList) : IntList :=
-  match xs with
-  | Nil => ys
-  | Cons n tl => Cons n (append tl ys)
-  end.
-
-Example append_ex :
-  append (Cons 1 (Cons 2 Nil)) (Cons 3 Nil) = Cons 1 (Cons 2 (Cons 3 Nil)).
-Proof. reflexivity. Qed.
-
-(**
-[append Nil ys = ys] holds by the [Nil] branch of the match - no
-induction needed.
- *)
-
-Lemma append_nil_l : forall ys, append Nil ys = ys.
-Proof. reflexivity. Qed.
-
-(**
-[append xs Nil = xs] requires induction because [xs] appears on the
-left; there is no matching branch that immediately returns [xs].
- *)
-
-Lemma append_nil_r : forall xs, append xs Nil = xs.
+Lemma Ty_eqb_refl : forall t, Ty_eqb t t = true.
 Proof.
-  intros xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
+  intros t. induction t as [| | d IHd r IHr | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
+    simpl; try reflexivity.
+  - rewrite IHd, IHr. reflexivity.
+  - rewrite IH1, IH2. reflexivity.
+  - rewrite IH1, IH2. reflexivity.
+  - rewrite IH. reflexivity.
 Qed.
 
 (**
-Associativity of [append] is also proved by induction on the first
-argument.
+If [Ty_eqb a b = true] then [a = b].
  *)
 
-Lemma append_assoc : forall xs ys zs,
-  append xs (append ys zs) = append (append xs ys) zs.
+Lemma Ty_eqb_eq : forall a b, Ty_eqb a b = true -> a = b.
 Proof.
-  intros xs ys zs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
+  induction a as [| | d1 IHd r1 IHr | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
+    intros b H; destruct b as [| | d2 r2 | a2 b2 | a2 b2 | t2];
+    simpl in H; try discriminate; try reflexivity.
+  - apply andb_true_iff in H. destruct H as [Hd Hr].
+    rewrite (IHd d2 Hd), (IHr r2 Hr). reflexivity.
+  - apply andb_true_iff in H. destruct H as [H1 H2].
+    rewrite (IH1 a2 H1), (IH2 b2 H2). reflexivity.
+  - apply andb_true_iff in H. destruct H as [H1 H2].
+    rewrite (IH1 a2 H1), (IH2 b2 H2). reflexivity.
+  - rewrite (IH t2 H). reflexivity.
 Qed.
 
 (**
-The length of a concatenation is the sum of the lengths.
+The biconditional: [Ty_eqb a b = true] iff [a = b].
  *)
 
-Lemma length_append : forall xs ys,
-  length (append xs ys) = length xs + length ys.
+Lemma Ty_eqb_true_iff : forall a b, Ty_eqb a b = true <-> a = b.
 Proof.
-  intros xs ys. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
+  intros a b. split; [apply Ty_eqb_eq | intros H; subst; apply Ty_eqb_refl].
 Qed.
 
-(** ** Reverse *)
+(** * SECTION 2: THE TERM LANGUAGE *)
 
 (**
-[reverse] builds the mirror of a list by appending the head to the
-reversed tail.  This is the simple, obviously-correct specification;
-a faster accumulator-based version appears in the exercises.
+[TADS] is TRec's [TFBAEC] extended with product, sum, and list terms.
+
+_Product terms_:
+  - [Pair e1 e2]: construct a pair;
+  - [Fst e]:      eliminate a pair (first projection);
+  - [Snd e]:      eliminate a pair (second projection).
+
+_Sum terms_:
+  - [InL T e]:          inject [e] on the left at type [T];
+  - [InR T e]:          inject [e] on the right at type [T];
+  - [SCase e x e1 y e2]: eliminate a sum: if left, bind [x] and run [e1];
+                          if right, bind [y] and run [e2].
+
+_List terms_:
+  - [Nil T]:     the empty list of element type [T];
+  - [Cons e1 e2]: prepend an element to a list;
+  - [Car e]:     head of a list;
+  - [Cdr e]:     tail of a list;
+  - [IsNil e]:   test whether a list is empty.
+
+The type annotations on [InL], [InR], and [Nil] are mandatory: without
+them the type checker cannot determine the full sum or list type from the
+term alone.
  *)
 
-Fixpoint reverse (xs : IntList) : IntList :=
-  match xs with
-  | Nil => Nil
-  | Cons n tl => append (reverse tl) (Cons n Nil)
+Inductive TADS : Type :=
+(* from TRec *)
+| Num     : nat -> TADS
+| Plus    : TADS -> TADS -> TADS
+| Minus   : TADS -> TADS -> TADS
+| Mult    : TADS -> TADS -> TADS
+| Boolean : bool -> TADS
+| IsZero  : TADS -> TADS
+| If      : TADS -> TADS -> TADS -> TADS
+| Bind    : string -> TADS -> TADS -> TADS
+| Lambda  : string -> Ty -> TADS -> TADS
+| App     : TADS -> TADS -> TADS
+| Fix     : TADS -> TADS
+| Id      : string -> TADS
+(* products *)
+| Pair    : TADS -> TADS -> TADS
+| Fst     : TADS -> TADS
+| Snd     : TADS -> TADS
+(* sums *)
+| InL     : Ty -> TADS -> TADS
+| InR     : Ty -> TADS -> TADS
+| SCase   : TADS -> string -> TADS -> string -> TADS -> TADS
+(* lists *)
+| Nil     : Ty -> TADS
+| Cons    : TADS -> TADS -> TADS
+| Car     : TADS -> TADS
+| Cdr     : TADS -> TADS
+| IsNil   : TADS -> TADS.
+
+(**
+Capture-naive substitution: [subst i v e] replaces free occurrences of
+identifier [i] with term [v] in [e].  Binders ([Bind] and [Lambda]) that
+rebind [i] shadow the substitution in their body; [SCase] binds [x] in
+[e1] and [y] in [e2].  The new term forms recurse structurally; [Nil],
+[InL], and [InR] leave the type annotation unchanged.
+ *)
+
+Fixpoint subst (i : string) (v : TADS) (e : TADS) : TADS :=
+  match e with
+  | Num n      => Num n
+  | Plus  l r  => Plus  (subst i v l) (subst i v r)
+  | Minus l r  => Minus (subst i v l) (subst i v r)
+  | Mult  l r  => Mult  (subst i v l) (subst i v r)
+  | Boolean b  => Boolean b
+  | IsZero e0  => IsZero (subst i v e0)
+  | If c t f   => If (subst i v c) (subst i v t) (subst i v f)
+  | Bind i' val b =>
+      if String.eqb i i'
+      then Bind i' (subst i v val) b
+      else Bind i' (subst i v val) (subst i v b)
+  | Lambda i' t b =>
+      if String.eqb i i' then Lambda i' t b else Lambda i' t (subst i v b)
+  | App f a    => App (subst i v f) (subst i v a)
+  | Fix f      => Fix (subst i v f)
+  | Id i'      => if String.eqb i i' then v else Id i'
+  | Pair e1 e2 => Pair (subst i v e1) (subst i v e2)
+  | Fst e0     => Fst (subst i v e0)
+  | Snd e0     => Snd (subst i v e0)
+  | InL T e0   => InL T (subst i v e0)
+  | InR T e0   => InR T (subst i v e0)
+  | SCase e0 x e1 y e2 =>
+      let e0' := subst i v e0 in
+      let e1' := if String.eqb i x then e1 else subst i v e1 in
+      let e2' := if String.eqb i y then e2 else subst i v e2 in
+      SCase e0' x e1' y e2'
+  | Nil T      => Nil T
+  | Cons e1 e2 => Cons (subst i v e1) (subst i v e2)
+  | Car e0     => Car (subst i v e0)
+  | Cdr e0     => Cdr (subst i v e0)
+  | IsNil e0   => IsNil (subst i v e0)
   end.
 
-Example reverse_ex :
-  reverse (Cons 1 (Cons 2 (Cons 3 Nil))) = Cons 3 (Cons 2 (Cons 1 Nil)).
+(** * SECTION 3: THE TYPE CHECKER *)
+
+(**
+The type context maps identifiers to types.
+ *)
+
+Definition Ctx := Env Ty.
+
+(**
+Helper for numeric binary operations: both operands must be [TNum],
+yielding [TNum].
+ *)
+
+Definition tnumBinop (a b : option Ty) : option Ty :=
+  match a, b with
+  | Some TNum, Some TNum => Some TNum
+  | _, _ => None
+  end.
+
+(**
+[typeof ctx e] infers the type of [e] in context [ctx], returning
+[None] if [e] is ill-typed.
+
+The new typing rules are:
+
+    ctx |- e1 : A    ctx |- e2 : B
+  ----------------------------------      (Pair)
+    ctx |- Pair e1 e2 : TProd A B
+
+    ctx |- e : TProd A B
+  ----------------------              (Fst)
+    ctx |- Fst e : A
+
+    ctx |- e : TProd A B
+  ----------------------              (Snd)
+    ctx |- Snd e : B
+
+    T = TSum A _    ctx |- e : A
+  --------------------------------      (InL)
+    ctx |- InL T e : T
+
+    T = TSum _ B    ctx |- e : B
+  --------------------------------      (InR)
+    ctx |- InR T e : T
+
+    ctx |- e : TSum A B
+    ctx, x:A |- e1 : R    ctx, y:B |- e2 : R
+  -------------------------------------------  (SCase)
+    ctx |- SCase e x e1 y e2 : R
+
+    ctx |- Nil T : TList T                   (Nil)
+
+    ctx |- e1 : A    ctx |- e2 : TList A
+  ----------------------------------------    (Cons)
+    ctx |- Cons e1 e2 : TList A
+
+    ctx |- e : TList A
+  --------------------                (Car)
+    ctx |- Car e : A
+
+    ctx |- e : TList A
+  ----------------------              (Cdr)
+    ctx |- Cdr e : TList A
+
+    ctx |- e : TList _
+  ----------------------              (IsNil)
+    ctx |- IsNil e : TBool
+ *)
+
+Fixpoint typeof (ctx : Ctx) (e : TADS) : option Ty :=
+  match e with
+  | Num _ => Some TNum
+  | Plus  l r => tnumBinop (typeof ctx l) (typeof ctx r)
+  | Minus l r => tnumBinop (typeof ctx l) (typeof ctx r)
+  | Mult  l r => tnumBinop (typeof ctx l) (typeof ctx r)
+  | Boolean _ => Some TBool
+  | IsZero e0 =>
+      match typeof ctx e0 with
+      | Some TNum => Some TBool
+      | _ => None
+      end
+  | If c t f =>
+      match typeof ctx c with
+      | Some TBool =>
+          match typeof ctx t, typeof ctx f with
+          | Some tThen, Some tElse =>
+              if Ty_eqb tThen tElse then Some tThen else None
+          | _, _ => None
+          end
+      | _ => None
+      end
+  | Bind i v b =>
+      match typeof ctx v with
+      | Some tv => typeof (extend i tv ctx) b
+      | None => None
+      end
+  | Lambda i t b =>
+      match typeof (extend i t ctx) b with
+      | Some tb => Some (TArr t tb)
+      | None => None
+      end
+  | App f a =>
+      match typeof ctx f, typeof ctx a with
+      | Some (TArr d r), Some ta => if Ty_eqb d ta then Some r else None
+      | _, _ => None
+      end
+  | Fix f =>
+      match typeof ctx f with
+      | Some (TArr d r) => if Ty_eqb d r then Some r else None
+      | _ => None
+      end
+  | Id x => lookup x ctx
+  | Pair e1 e2 =>
+      match typeof ctx e1, typeof ctx e2 with
+      | Some t1, Some t2 => Some (TProd t1 t2)
+      | _, _ => None
+      end
+  | Fst e0 =>
+      match typeof ctx e0 with
+      | Some (TProd t1 _) => Some t1
+      | _ => None
+      end
+  | Snd e0 =>
+      match typeof ctx e0 with
+      | Some (TProd _ t2) => Some t2
+      | _ => None
+      end
+  | InL T e0 =>
+      match T with
+      | TSum t1 _ =>
+          match typeof ctx e0 with
+          | Some te => if Ty_eqb te t1 then Some T else None
+          | _ => None
+          end
+      | _ => None
+      end
+  | InR T e0 =>
+      match T with
+      | TSum _ t2 =>
+          match typeof ctx e0 with
+          | Some te => if Ty_eqb te t2 then Some T else None
+          | _ => None
+          end
+      | _ => None
+      end
+  | SCase e0 x e1 y e2 =>
+      match typeof ctx e0 with
+      | Some (TSum t1 t2) =>
+          match typeof (extend x t1 ctx) e1, typeof (extend y t2 ctx) e2 with
+          | Some r1, Some r2 => if Ty_eqb r1 r2 then Some r1 else None
+          | _, _ => None
+          end
+      | _ => None
+      end
+  | Nil T => Some (TList T)
+  | Cons e1 e2 =>
+      match typeof ctx e1, typeof ctx e2 with
+      | Some t, Some (TList t2) => if Ty_eqb t t2 then Some (TList t) else None
+      | _, _ => None
+      end
+  | Car e0 =>
+      match typeof ctx e0 with
+      | Some (TList t) => Some t
+      | _ => None
+      end
+  | Cdr e0 =>
+      match typeof ctx e0 with
+      | Some (TList t) => Some (TList t)
+      | _ => None
+      end
+  | IsNil e0 =>
+      match typeof ctx e0 with
+      | Some (TList _) => Some TBool
+      | _ => None
+      end
+  end.
+
+(**
+Top-level type checking: a closed term (no free identifiers).
+ *)
+
+Definition typecheck (e : TADS) : option Ty := typeof nil e.
+
+(** * SECTION 4: THE EVALUATOR *)
+
+(**
+Values extend TRec's [TVal] with four new forms:
+  - [PairV v1 v2]: a pair value;
+  - [InLV v]:      a left-injected value;
+  - [InRV v]:      a right-injected value;
+  - [NilV]:        the empty list value;
+  - [ConsV v1 v2]: a cons-cell value (head and tail).
+
+Closures still carry the parameter's type (needed by [Fix]).
+ *)
+
+Inductive TVal : Type :=
+| NumV     : nat -> TVal
+| BoolV    : bool -> TVal
+| ClosureV : string -> Ty -> TADS -> list (string * TVal) -> TVal
+| PairV    : TVal -> TVal -> TVal
+| InLV     : TVal -> TVal
+| InRV     : TVal -> TVal
+| NilV     : TVal
+| ConsV    : TVal -> TVal -> TVal.
+
+(**
+The strict (call-by-value) interpreter.  TRec's cases are unchanged
+except that the type changes from [TFBAEC] to [TADS] and the value type
+gains five new constructors.  The new cases evaluate their subterms and
+build or inspect the appropriate value.
+
+_List safety_: [Car] and [Cdr] on [NilV] return [None] (the type
+checker prevents this in well-typed programs, but the evaluator is
+defined for all terms).
+ *)
+
+Fixpoint evalM (fuel : nat) (env : Env TVal) (e : TADS) : option TVal :=
+  match fuel with
+  | 0 => None
+  | S k =>
+      match e with
+      | Num n => Some (NumV n)
+      | Plus l r =>
+          match evalM k env l, evalM k env r with
+          | Some (NumV a), Some (NumV b) => Some (NumV (a + b))
+          | _, _ => None
+          end
+      | Minus l r =>
+          match evalM k env l, evalM k env r with
+          | Some (NumV a), Some (NumV b) => Some (NumV (a - b))
+          | _, _ => None
+          end
+      | Mult l r =>
+          match evalM k env l, evalM k env r with
+          | Some (NumV a), Some (NumV b) => Some (NumV (a * b))
+          | _, _ => None
+          end
+      | Boolean b => Some (BoolV b)
+      | IsZero e0 =>
+          match evalM k env e0 with
+          | Some (NumV n) => Some (BoolV (Nat.eqb n 0))
+          | _ => None
+          end
+      | If c t f =>
+          match evalM k env c with
+          | Some (BoolV true)  => evalM k env t
+          | Some (BoolV false) => evalM k env f
+          | _ => None
+          end
+      | Bind i v b =>
+          match evalM k env v with
+          | Some v' => evalM k (extend i v' env) b
+          | None => None
+          end
+      | Lambda i t b => Some (ClosureV i t b env)
+      | App f a =>
+          match evalM k env f with
+          | Some (ClosureV i _ b cenv) =>
+              match evalM k env a with
+              | Some a' => evalM k (extend i a' cenv) b
+              | None => None
+              end
+          | _ => None
+          end
+      | Fix f =>
+          match evalM k env f with
+          | Some (ClosureV i t b cenv) =>
+              evalM k cenv (subst i (Fix (Lambda i t b)) b)
+          | _ => None
+          end
+      | Id x => lookup x env
+      (* products *)
+      | Pair e1 e2 =>
+          match evalM k env e1, evalM k env e2 with
+          | Some v1, Some v2 => Some (PairV v1 v2)
+          | _, _ => None
+          end
+      | Fst e0 =>
+          match evalM k env e0 with
+          | Some (PairV v1 _) => Some v1
+          | _ => None
+          end
+      | Snd e0 =>
+          match evalM k env e0 with
+          | Some (PairV _ v2) => Some v2
+          | _ => None
+          end
+      (* sums *)
+      | InL _ e0 =>
+          match evalM k env e0 with
+          | Some v => Some (InLV v)
+          | None => None
+          end
+      | InR _ e0 =>
+          match evalM k env e0 with
+          | Some v => Some (InRV v)
+          | None => None
+          end
+      | SCase e0 x e1 y e2 =>
+          match evalM k env e0 with
+          | Some (InLV v) => evalM k (extend x v env) e1
+          | Some (InRV v) => evalM k (extend y v env) e2
+          | _ => None
+          end
+      (* lists *)
+      | Nil _ => Some NilV
+      | Cons e1 e2 =>
+          match evalM k env e1, evalM k env e2 with
+          | Some v1, Some v2 => Some (ConsV v1 v2)
+          | _, _ => None
+          end
+      | Car e0 =>
+          match evalM k env e0 with
+          | Some (ConsV v _) => Some v
+          | _ => None
+          end
+      | Cdr e0 =>
+          match evalM k env e0 with
+          | Some (ConsV _ v) => Some v
+          | _ => None
+          end
+      | IsNil e0 =>
+          match evalM k env e0 with
+          | Some NilV        => Some (BoolV true)
+          | Some (ConsV _ _) => Some (BoolV false)
+          | _ => None
+          end
+      end
+  end.
+
+(**
+Top-level evaluation: a closed term with 1000 fuel units.
+ *)
+
+Definition eval (e : TADS) : option TVal := evalM 1000 nil e.
+
+(** * SECTION 5: PRODUCTS IN ACTION *)
+
+(**
+The canonical example: a pair of numbers.  [typecheck] infers the type
+and [eval] computes the value.
+ *)
+
+Example ty_pair :
+  typecheck (Pair (Num 1) (Num 2)) = Some (TProd TNum TNum).
+Proof. reflexivity. Qed.
+
+Example ty_fst :
+  typecheck (Fst (Pair (Num 1) (Boolean true))) = Some TNum.
+Proof. reflexivity. Qed.
+
+Example run_pair :
+  eval (Pair (Num 3) (Num 4)) = Some (PairV (NumV 3) (NumV 4)).
+Proof. reflexivity. Qed.
+
+Example run_fst :
+  eval (Fst (Pair (Num 3) (Num 4))) = Some (NumV 3).
+Proof. reflexivity. Qed.
+
+Example run_snd :
+  eval (Snd (Pair (Num 3) (Num 4))) = Some (NumV 4).
 Proof. reflexivity. Qed.
 
 (**
-Reversing a list preserves its length.  The proof uses
-[length_append] and [lia].
+[swapProg] binds a pair to [p] and returns its components in reverse
+order.
  *)
 
-Lemma reverse_length : forall xs, length (reverse xs) = length xs.
-Proof.
-  intros xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite length_append. simpl. rewrite IH. lia.
-Qed.
+Definition swapProg : TADS :=
+  Bind "p" (Pair (Num 1) (Num 2))
+    (Pair (Snd (Id "p")) (Fst (Id "p"))).
 
-(** * Section 3: Higher-Order Functions *)
+Example ty_swap : typecheck swapProg = Some (TProd TNum TNum).
+Proof. reflexivity. Qed.
+
+Example run_swap :
+  eval swapProg = Some (PairV (NumV 2) (NumV 1)).
+Proof. reflexivity. Qed.
+
+(** * SECTION 6: SUMS IN ACTION *)
 
 (**
-Every structural operation we defined so far does the same thing:
-recurse on the list shape and combine a per-element value with the
-recursive result.  _Higher-order functions_ make that combination
-argument explicit, so one function can serve many purposes.
+A safe division: if the divisor is zero, return an error flag
+([InR ... (Boolean true)]); otherwise return the product.  The result
+type is [TSum TNum TBool], encoding "number or error".
+ *)
 
-The four classical higher-order list operations are:
+Definition safeDiv : TADS :=
+  Bind "n" (Num 10)
+    (Bind "d" (Num 0)
+      (If (IsZero (Id "d"))
+          (InR (TSum TNum TBool) (Boolean true))
+          (InL (TSum TNum TBool) (Mult (Id "n") (Id "d"))))).
+
+Example ty_safeDiv : typecheck safeDiv = Some (TSum TNum TBool).
+Proof. reflexivity. Qed.
+
+Example run_safeDiv : eval safeDiv = Some (InRV (BoolV true)).
+Proof. reflexivity. Qed.
+
+(**
+[SCase] eliminates the sum: if the left branch was taken (a number),
+return it; if the right branch was taken (an error), return 0 as a
+default.
+ *)
+
+Definition safeDivResult : TADS :=
+  SCase safeDiv "n" (Id "n") "e" (Num 0).
+
+Example ty_safeDivResult : typecheck safeDivResult = Some TNum.
+Proof. reflexivity. Qed.
+
+Example run_safeDivResult : eval safeDivResult = Some (NumV 0).
+Proof. reflexivity. Qed.
+
+(**
+The type checker rejects a [SCase] whose branches have _different_ types:
+both branches must return the same type [R].
+ *)
+
+Example ill_scase_mismatch :
+  typecheck (SCase safeDiv "n" (Id "n") "e" (Boolean false)) = None.
+Proof. reflexivity. Qed.
+
+(**
+The type checker also rejects [InL] applied to a non-sum type annotation.
+ *)
+
+Example ill_inl_not_sum :
+  typecheck (InL TNum (Num 5)) = None.
+Proof. reflexivity. Qed.
+
+(** * SECTION 7: LISTS IN ACTION *)
+
+(**
+A list of three numbers.  [typeof] infers element type [TNum].
+ *)
+
+Definition list123 : TADS :=
+  Cons (Num 1) (Cons (Num 2) (Cons (Num 3) (Nil TNum))).
+
+Example ty_list123 : typecheck list123 = Some (TList TNum).
+Proof. reflexivity. Qed.
+
+Example run_car_list123 : eval (Car list123) = Some (NumV 1).
+Proof. reflexivity. Qed.
+
+Example run_cdr_list123 :
+  eval (Cdr list123) =
+  Some (ConsV (NumV 2) (ConsV (NumV 3) NilV)).
+Proof. reflexivity. Qed.
+
+Example run_isnil_list123 : eval (IsNil list123) = Some (BoolV false).
+Proof. reflexivity. Qed.
+
+Example run_isnil_nil : eval (IsNil (Nil TNum)) = Some (BoolV true).
+Proof. reflexivity. Qed.
+
+(**
+The type checker catches [Car] applied to a non-list.
+ *)
+
+Example ill_car_num : typecheck (Car (Num 5)) = None.
+Proof. reflexivity. Qed.
+
+(** * SECTION 8: POLYMORPHIC LISTS *)
+
+(**
+Lists are _polymorphic_: the element type is carried in [Nil T] and
+inferred from the elements in [Cons].
+ *)
+
+Definition boolList : TADS :=
+  Cons (Boolean true) (Cons (Boolean false) (Nil TBool)).
+
+Example ty_boolList : typecheck boolList = Some (TList TBool).
+Proof. reflexivity. Qed.
+
+(**
+Every element type yields a well-typed [Nil].
+ *)
+
+Example ty_nil_num  : typecheck (Nil TNum)  = Some (TList TNum).
+Proof. reflexivity. Qed.
+
+Example ty_nil_bool : typecheck (Nil TBool) = Some (TList TBool).
+Proof. reflexivity. Qed.
+
+Example ty_nil_fun :
+  typecheck (Nil (TArr TNum TNum)) = Some (TList (TArr TNum TNum)).
+Proof. reflexivity. Qed.
+
+(**
+The type checker rejects [Cons] with a mismatched element type.
+ *)
+
+Example ill_cons_mismatch :
+  typecheck (Cons (Num 1) (Nil TBool)) = None.
+Proof. reflexivity. Qed.
+
+(** * SECTION 9: RECURSIVE LIST OPERATIONS *)
+
+(**
+[sumListGen] is the _generator_ for a recursive list summation.  Its
+parameter [g] is "the recursive call"; [Fix] ties the knot.
+ *)
+
+Definition sumListGen : TADS :=
+  Lambda "g" (TArr (TList TNum) TNum)
+    (Lambda "xs" (TList TNum)
+      (If (IsNil (Id "xs"))
+          (Num 0)
+          (Plus (Car (Id "xs")) (App (Id "g") (Cdr (Id "xs")))))).
+
+Definition sumList : TADS := Fix sumListGen.
+
+Example ty_sumList :
+  typecheck sumList = Some (TArr (TList TNum) TNum).
+Proof. reflexivity. Qed.
+
+Example run_sumList :
+  eval (App sumList list123) = Some (NumV 6).
+Proof. reflexivity. Qed.
+
+(**
+[lengthGen] counts the elements of a list of numbers.
+ *)
+
+Definition lengthGen : TADS :=
+  Lambda "g" (TArr (TList TNum) TNum)
+    (Lambda "xs" (TList TNum)
+      (If (IsNil (Id "xs"))
+          (Num 0)
+          (Plus (Num 1) (App (Id "g") (Cdr (Id "xs")))))).
+
+Definition lengthList : TADS := Fix lengthGen.
+
+Example ty_lengthList :
+  typecheck lengthList = Some (TArr (TList TNum) TNum).
+Proof. reflexivity. Qed.
+
+Example run_lengthList :
+  eval (App lengthList list123) = Some (NumV 3).
+Proof. reflexivity. Qed.
+
+(** * SECTION 10: FUEL MONOTONICITY *)
+
+(**
+More fuel never changes an answer: if [evalM f1 env e = Some v] and
+[f1 <= f2] then [evalM f2 env e = Some v].  The proof follows TRec's
+pattern, with additional cases for the eight new constructors.
+ *)
+
+Lemma evalM_mono : forall f1 f2 env e v,
+  f1 <= f2 -> evalM f1 env e = Some v -> evalM f2 env e = Some v.
+Proof.
+  induction f1 as [| k IH]; intros f2 env e v Hle H.
+  - simpl in H. discriminate.
+  - destruct f2 as [| k2]; [lia |].
+    destruct e; simpl in H |- *.
+    + (* Num *) exact H.
+    + (* Plus *)
+      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:El; try discriminate.
+      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | p12 p22 | iv3 | iv4 | | cv12 cv22] |] eqn:Er; try discriminate.
+      rewrite (IH k2 env e1 (NumV a) ltac:(lia) El).
+      rewrite (IH k2 env e2 (NumV b0) ltac:(lia) Er). exact H.
+    + (* Minus *)
+      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:El; try discriminate.
+      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | p12 p22 | iv3 | iv4 | | cv12 cv22] |] eqn:Er; try discriminate.
+      rewrite (IH k2 env e1 (NumV a) ltac:(lia) El).
+      rewrite (IH k2 env e2 (NumV b0) ltac:(lia) Er). exact H.
+    + (* Mult *)
+      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:El; try discriminate.
+      destruct (evalM k env e2) as [[b0 | b2 | s2 t2 bd2 ce2 | p12 p22 | iv3 | iv4 | | cv12 cv22] |] eqn:Er; try discriminate.
+      rewrite (IH k2 env e1 (NumV a) ltac:(lia) El).
+      rewrite (IH k2 env e2 (NumV b0) ltac:(lia) Er). exact H.
+    + (* Boolean *) exact H.
+    + (* IsZero *)
+      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:E0; try discriminate.
+      rewrite (IH k2 env e (NumV n) ltac:(lia) E0). exact H.
+    + (* If *)
+      destruct (evalM k env e1) as [[a | bb | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ec; try discriminate.
+      destruct bb.
+      * rewrite (IH k2 env e1 (BoolV true) ltac:(lia) Ec).
+        apply (IH k2 env e2 v). lia. exact H.
+      * rewrite (IH k2 env e1 (BoolV false) ltac:(lia) Ec).
+        apply (IH k2 env e3 v). lia. exact H.
+    + (* Bind *)
+      destruct (evalM k env e1) as [v' |] eqn:Ev; try discriminate.
+      rewrite (IH k2 env e1 v' ltac:(lia) Ev).
+      apply (IH k2 (extend s v' env) e2 v). lia. exact H.
+    + (* Lambda *) exact H.
+    + (* App *)
+      destruct (evalM k env e1) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ef; try discriminate.
+      destruct (evalM k env e2) as [a' |] eqn:Ea; try discriminate.
+      rewrite (IH k2 env e1 (ClosureV s t bd ce) ltac:(lia) Ef).
+      rewrite (IH k2 env e2 a' ltac:(lia) Ea).
+      apply (IH k2 (extend s a' ce) bd v). lia. exact H.
+    + (* Fix *)
+      destruct (evalM k env e) as [[a | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ef; try discriminate.
+      rewrite (IH k2 env e (ClosureV s t bd ce) ltac:(lia) Ef).
+      apply (IH k2 ce (subst s (Fix (Lambda s t bd)) bd) v). lia. exact H.
+    + (* Id *) exact H.
+    + (* Pair *)
+      destruct (evalM k env e1) as [v1 |] eqn:E1; try discriminate.
+      destruct (evalM k env e2) as [v2 |] eqn:E2; try discriminate.
+      rewrite (IH k2 env e1 v1 ltac:(lia) E1).
+      rewrite (IH k2 env e2 v2 ltac:(lia) E2). exact H.
+    + (* Fst *)
+      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      rewrite (IH k2 env e (PairV p1 p2) ltac:(lia) Ee). simpl. exact H.
+    + (* Snd *)
+      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      rewrite (IH k2 env e (PairV p1 p2) ltac:(lia) Ee). simpl. exact H.
+    + (* InL *)
+      destruct (evalM k env e) as [v0 |] eqn:Ee; try discriminate.
+      rewrite (IH k2 env e v0 ltac:(lia) Ee). simpl. exact H.
+    + (* InR *)
+      destruct (evalM k env e) as [v0 |] eqn:Ee; try discriminate.
+      rewrite (IH k2 env e v0 ltac:(lia) Ee). simpl. exact H.
+    + (* SCase *)
+      (* After [destruct e; simpl in H |- *], H has the form:
+           match evalM k env <scrutinee> with
+           | Some (InLV v0) => evalM k (extend <lname> v0 env) <lbranch>
+           | Some (InRV v0) => evalM k (extend <rname> v0 env) <rbranch>
+           | _ => None
+           end = Some v
+         We case-split on [evalM k env <scrutinee>] directly using H. *)
+      (* Rocq names SCase's subfields: e1 (scrutinee), s (left-binder),
+         e2 (left-branch), s0 (right-binder), e3 (right-branch). *)
+      destruct (evalM k env e1) as [[n | b | s' ty' bd' ce' | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee;
+        try discriminate.
+      * (* InLV iv *)
+        rewrite (IH k2 env e1 (InLV iv) ltac:(lia) Ee). simpl.
+        apply (IH k2 (extend s iv env) e2 v). lia. exact H.
+      * (* InRV iv2 *)
+        rewrite (IH k2 env e1 (InRV iv2) ltac:(lia) Ee). simpl.
+        apply (IH k2 (extend s0 iv2 env) e3 v). lia. exact H.
+    + (* Nil *) exact H.
+    + (* Cons *)
+      destruct (evalM k env e1) as [v1 |] eqn:E1; try discriminate.
+      destruct (evalM k env e2) as [v2 |] eqn:E2; try discriminate.
+      rewrite (IH k2 env e1 v1 ltac:(lia) E1).
+      rewrite (IH k2 env e2 v2 ltac:(lia) E2). exact H.
+    + (* Car *)
+      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      rewrite (IH k2 env e (ConsV cv1 cv2) ltac:(lia) Ee). simpl. exact H.
+    + (* Cdr *)
+      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      rewrite (IH k2 env e (ConsV cv1 cv2) ltac:(lia) Ee). simpl. exact H.
+    + (* IsNil *)
+      destruct (evalM k env e) as [[n | b | s t bd ce | p1 p2 | iv | iv2 | | cv1 cv2] |] eqn:Ee; try discriminate.
+      * (* NilV *)
+        rewrite (IH k2 env e NilV ltac:(lia) Ee). simpl. exact H.
+      * (* ConsV cv1 cv2 *)
+        rewrite (IH k2 env e (ConsV cv1 cv2) ltac:(lia) Ee). simpl. exact H.
+Qed.
+
+(** * SECTION 11: CONCRETE SYNTAX *)
+
+(**
+We introduce a concrete syntax for TADS.  Types are written between
+[<[ ... ]>] and terms between [<{ ... }>].  Both inherit the grammar
+from TRec and extend it with the new forms.
+ *)
+
+Coercion Num : nat >-> TADS.
+Coercion Id  : string >-> TADS.
+
+(**
+_The type grammar._  [Nat] and [Bool] are base types; [->] is the
+right-associative function arrow; [*] binds tighter than [+] which
+binds tighter than [->].  [List T] introduces list types.
+ *)
+
+Declare Custom Entry ty.
+Declare Custom Entry tads.
+Declare Scope tads_scope.
+Delimit Scope tads_scope with tads.
+
+Notation "<[ t ]>" := t (t custom ty at level 50) : tads_scope.
+Notation "( t )" := t (in custom ty, t at level 50) : tads_scope.
+Notation "'Nat'"    := TNum  (in custom ty at level 0) : tads_scope.
+Notation "'Bool'"   := TBool (in custom ty at level 0) : tads_scope.
+Notation "d -> r"   := (TArr d r)  (in custom ty at level 50, right associativity) : tads_scope.
+Notation "A * B"    := (TProd A B) (in custom ty at level 40, left associativity) : tads_scope.
+Notation "A + B"    := (TSum A B)  (in custom ty at level 45, left associativity) : tads_scope.
+Notation "'List' T" := (TList T)   (in custom ty at level 5,  T custom ty at level 0) : tads_scope.
+
+(**
+_The term grammar._  Function application is juxtaposition at level 1.
+New forms for products, sums, and lists are at level 75, below [if]/[bind]/[lambda]
+but above application.
+ *)
+
+Notation "<{ e }>" := e (e custom tads at level 99) : tads_scope.
+Notation "( x )"   := x (in custom tads, x at level 99) : tads_scope.
+Notation "x"       := x (in custom tads at level 0, x constr at level 0) : tads_scope.
+
+Notation "f x"  := (App f x)  (in custom tads at level 1, left associativity) : tads_scope.
+Notation "'fix' f" := (Fix f) (in custom tads at level 75, right associativity) : tads_scope.
+Notation "'iszero' x" := (IsZero x) (in custom tads at level 75, right associativity) : tads_scope.
+Notation "x * y" := (Mult x y)  (in custom tads at level 40, left associativity) : tads_scope.
+Notation "x + y" := (Plus x y)  (in custom tads at level 50, left associativity) : tads_scope.
+Notation "x - y" := (Minus x y) (in custom tads at level 50, left associativity) : tads_scope.
+Notation "'true'"  := (Boolean true)  (in custom tads at level 0) : tads_scope.
+Notation "'false'" := (Boolean false) (in custom tads at level 0) : tads_scope.
+Notation "'if' c 'then' t 'else' f" := (If c t f)
+  (in custom tads at level 89, c custom tads at level 99,
+   t custom tads at level 99, f custom tads at level 99) : tads_scope.
+Notation "'bind' v '=' e1 'in' e2" := (Bind v e1 e2)
+  (in custom tads at level 89, v constr at level 0,
+   e1 custom tads at level 99, e2 custom tads at level 99) : tads_scope.
+Notation "'lambda' v ':' T 'in' e" := (Lambda v T e)
+  (in custom tads at level 90, v constr at level 0,
+   T custom ty at level 50, e custom tads at level 99) : tads_scope.
+(* product forms *)
+Notation "'fst' e" := (Fst e)
+  (in custom tads at level 75, e custom tads at level 74) : tads_scope.
+Notation "'snd' e" := (Snd e)
+  (in custom tads at level 75, e custom tads at level 74) : tads_scope.
+(* sum forms *)
+Notation "'inl' e 'as' T" := (InL T e)
+  (in custom tads at level 75,
+   e custom tads at level 74, T custom ty at level 50) : tads_scope.
+Notation "'inr' e 'as' T" := (InR T e)
+  (in custom tads at level 75,
+   e custom tads at level 74, T custom ty at level 50) : tads_scope.
+Notation "'case' e 'of' 'inl' x '=>' e1 'else' 'inr' y '=>' e2" :=
+  (SCase e x e1 y e2)
+  (in custom tads at level 89,
+   e  custom tads at level 99,
+   x  constr  at level 0,
+   e1 custom tads at level 99,
+   y  constr  at level 0,
+   e2 custom tads at level 99) : tads_scope.
+(* list forms - [nil T] takes a type argument in the ty grammar *)
+Notation "'nil' T" := (Nil T)
+  (in custom tads at level 75, T custom ty at level 0) : tads_scope.
+Notation "'car' e" := (Car e)
+  (in custom tads at level 75, e custom tads at level 74) : tads_scope.
+Notation "'cdr' e" := (Cdr e)
+  (in custom tads at level 75, e custom tads at level 74) : tads_scope.
+Notation "'isnil' e" := (IsNil e)
+  (in custom tads at level 75, e custom tads at level 74) : tads_scope.
+
+Open Scope tads_scope.
+
+(**
+Type examples: the grammar parses product, sum, and function types.
+ *)
+
+Example parse_ty_prod : <[ Nat * Bool ]> = TProd TNum TBool.
+Proof. reflexivity. Qed.
+
+Example parse_ty_sum : <[ Nat + Bool ]> = TSum TNum TBool.
+Proof. reflexivity. Qed.
+
+Example parse_ty_list : <[ List Nat ]> = TList TNum.
+Proof. reflexivity. Qed.
+
+Example parse_ty_arrow : <[ Nat -> Bool ]> = TArr TNum TBool.
+Proof. reflexivity. Qed.
+
+(**
+Factorial from TRec still works verbatim in the new scope.
+ *)
+
+Definition factGen : TADS :=
+  Lambda "g" (TArr TNum TNum)
+    (Lambda "n" TNum
+      (If (IsZero (Id "n"))
+          (Num 1)
+          (Mult (Id "n") (App (Id "g") (Minus (Id "n") (Num 1)))))).
+
+Definition fact : TADS := Fix factGen.
+
+Example fact_concrete :
+  <{ fix (lambda "g" : Nat -> Nat in
+            lambda "n" : Nat in
+              if iszero "n" then 1 else "n" * ("g" ("n" - 1))) }> = fact.
+Proof. reflexivity. Qed.
+
+Example run_fact5 : eval (App fact (Num 5)) = Some (NumV 120).
+Proof. reflexivity. Qed.
+
+(**
+The type grammar handles products, sums, and lists.
+ *)
+
+Example parse_ty_prod_sum :
+  <[ (Nat * Bool) + (List Nat) ]> = TSum (TProd TNum TBool) (TList TNum).
+Proof. reflexivity. Qed.
+
+Example parse_ty_arrow_prod :
+  <[ Nat * Bool -> Nat ]> = TArr (TProd TNum TBool) TNum.
+Proof. reflexivity. Qed.
+
+(**
+Term-level concrete syntax: arithmetic, boolean operations, and the new
+elimination forms ([isnil], [fst], [snd], [car], [cdr]) all work for
+simple arguments.
+ *)
+
+Example typecheck_arith_concrete :
+  typecheck <{ 3 + 4 }> = Some TNum.
+Proof. reflexivity. Qed.
+
+Example eval_arith_concrete :
+  eval <{ 3 + 4 }> = Some (NumV 7).
+Proof. reflexivity. Qed.
+
+Example typecheck_isnil_concrete :
+  typecheck <{ isnil (nil Nat) }> = Some TBool.
+Proof. reflexivity. Qed.
+
+Example eval_isnil_concrete :
+  eval <{ isnil (nil Nat) }> = Some (BoolV true).
+Proof. reflexivity. Qed.
+
+(**
+Injection forms with type annotation: [inl e as T] and [inr e as T].
+ *)
+
+Example typecheck_inl_concrete :
+  typecheck <{ inl 5 as Nat + Bool }> = Some (TSum TNum TBool).
+Proof. reflexivity. Qed.
+
+Example eval_inl_concrete :
+  eval <{ inl 5 as Nat + Bool }> = Some (InLV (NumV 5)).
+Proof. reflexivity. Qed.
+
+(**
+The [case] elimination form uses keyword separators throughout, so it
+parses unambiguously even with complex branch bodies.
+ *)
+
+Example typecheck_case_concrete :
+  typecheck
+    <{ case (inl 5 as Nat + Bool) of inl "n" => "n" else inr "b" => 0 }>
+  = Some TNum.
+Proof. reflexivity. Qed.
+
+Example eval_case_concrete :
+  eval
+    <{ case (inl 5 as Nat + Bool) of inl "n" => "n" else inr "b" => 0 }>
+  = Some (NumV 5).
+Proof. reflexivity. Qed.
+
+(**
+Recursive list operations still use [fix] and [lambda] from TRec.
+The [isnil] form on a bound variable:
+ *)
+
+Example typecheck_sumList_concrete :
+  typecheck
+    <{ fix (lambda "g" : List Nat -> Nat in
+              lambda "xs" : List Nat in
+                if isnil "xs" then 0 else
+                  (car "xs") + ("g" (cdr "xs"))) }>
+  = Some <[ List Nat -> Nat ]>.
+Proof. reflexivity. Qed.
+
+(** * SUMMARY *)
+
+(**
+In this chapter we extended TRec with three algebraic type formers and
+showed how they interact with typing and evaluation.
 
 #<ol>#
-#<li>#[map] - apply a function to every element#</li>#
-#<li>#[foldr] - combine elements right-to-left with a binary operation#</li>#
-#<li>#[foldl] - combine elements left-to-right with a binary operation (tail-recursive)#</li>#
-#<li>#[filter] - keep only the elements that satisfy a predicate#</li>#
-#</ol>#
- *)
-
-(** ** Map *)
-
-(**
-[map f xs] applies [f] to every element of [xs], producing a new list
-of the same length.
- *)
-
-Fixpoint map (f : nat -> nat) (xs : IntList) : IntList :=
-  match xs with
-  | Nil => Nil
-  | Cons n tl => Cons (f n) (map f tl)
-  end.
-
-Example map_succ :
-  map S (Cons 0 (Cons 1 (Cons 2 Nil))) = Cons 1 (Cons 2 (Cons 3 Nil)).
-Proof. reflexivity. Qed.
-
-Example map_double :
-  map (fun n => n * 2) (Cons 1 (Cons 2 (Cons 3 Nil))) = Cons 2 (Cons 4 (Cons 6 Nil)).
-Proof. reflexivity. Qed.
-
-(**
-[map] preserves list length: the shape of the list is untouched, only
-the elements change.
- *)
-
-Lemma map_length : forall f xs, length (map f xs) = length xs.
-Proof.
-  intros f xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
-Qed.
-
-(** ** Foldr *)
-
-(**
-[foldr f acc xs] reduces a list to a single value by applying [f]
-between each element and the result of folding the tail.  The
-_right fold_ reads the list from right to left: the rightmost element
-combines with [acc] first.
-
-The type parameter [{B}] is _implicit_: Rocq infers [B] from the types
-of [f] and [acc].  Making [B] implicit lets [foldr] be used without
-spelling out the accumulator type at every call site.
- *)
-
-Fixpoint foldr {B : Type} (f : nat -> B -> B) (acc : B) (xs : IntList) : B :=
-  match xs with
-  | Nil => acc
-  | Cons n tl => f n (foldr f acc tl)
-  end.
-
-(**
-Summing a list: [foldr Nat.add 0] accumulates by addition.
- *)
-
-Example sum_list : foldr Nat.add 0 list123 = 6. Proof. reflexivity. Qed.
-
-(**
-Rebuilding the list: [foldr Cons Nil xs = xs] (the identity fold).
- *)
-
-Example foldr_id : foldr Cons Nil list123 = list123. Proof. reflexivity. Qed.
-
-(** ** Foldl *)
-
-(**
-[foldl f acc xs] accumulates left-to-right: the _accumulator_ carries
-the result so far, and each element updates it.  Unlike [foldr], [foldl]
-is _tail-recursive_ - the recursive call is the last action in each
-branch.
- *)
-
-Fixpoint foldl {B : Type} (f : B -> nat -> B) (acc : B) (xs : IntList) : B :=
-  match xs with
-  | Nil => acc
-  | Cons n tl => foldl f (f acc n) tl
-  end.
-
-(**
-For commutative and associative [f], [foldl] and [foldr] agree.
-Addition is both, so summing works either way.
- *)
-
-Example sum_foldl : foldl Nat.add 0 list123 = 6. Proof. reflexivity. Qed.
-
-(** ** Filter *)
-
-(**
-[filter p xs] keeps only the elements [n] for which [p n = true].
- *)
-
-Fixpoint filter (p : nat -> bool) (xs : IntList) : IntList :=
-  match xs with
-  | Nil => Nil
-  | Cons n tl => if p n then Cons n (filter p tl) else filter p tl
-  end.
-
-Example filter_even :
-  filter Nat.even (Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))) = Cons 2 (Cons 4 Nil).
-Proof. reflexivity. Qed.
-
-(**
-[filter] never makes a list longer.
- *)
-
-Lemma filter_le_length : forall p xs, length (filter p xs) <= length xs.
-Proof.
-  intros p xs. induction xs as [| n tl IH].
-  - simpl. lia.
-  - simpl. destruct (p n); simpl; lia.
-Qed.
-
-(** * Section 4: Polymorphic Lists *)
-
-(**
-Every function in Sections 1-3 hardcodes [nat] as the element type.
-But [length], [append], [reverse], [map], [foldr], [foldl], and
-[filter] never look _inside_ the elements - they care only about where
-elements sit in the list.
-
-The fix is to parameterise the list type by the element type [A].  A
-single _polymorphic_ list handles integers, booleans, strings, or any
-other type.
- *)
-
-Inductive PList (A : Type) : Type :=
-| PNil  : PList A
-| PCons : A -> PList A -> PList A.
-
-(**
-The [Arguments] declarations make [A] implicit: Rocq infers it from the
-surrounding expression, so we can write [PNil] and [PCons n xs] without
-mentioning [A] explicitly.
- *)
-
-Arguments PNil  {A}.
-Arguments PCons {A} _ _.
-
-(** ** Polymorphic observers *)
-
-Definition pcar {A : Type} (xs : PList A) : option A :=
-  match xs with
-  | PNil => None
-  | PCons a _ => Some a
-  end.
-
-Definition pcdr {A : Type} (xs : PList A) : option (PList A) :=
-  match xs with
-  | PNil => None
-  | PCons _ tl => Some tl
-  end.
-
-Definition pisEmpty {A : Type} (xs : PList A) : bool :=
-  match xs with
-  | PNil => true
-  | PCons _ _ => false
-  end.
-
-(** ** Polymorphic structural operations *)
-
-Fixpoint plength {A : Type} (xs : PList A) : nat :=
-  match xs with
-  | PNil => 0
-  | PCons _ tl => 1 + plength tl
-  end.
-
-Fixpoint pappend {A : Type} (xs ys : PList A) : PList A :=
-  match xs with
-  | PNil => ys
-  | PCons a tl => PCons a (pappend tl ys)
-  end.
-
-Fixpoint preverse {A : Type} (xs : PList A) : PList A :=
-  match xs with
-  | PNil => PNil
-  | PCons a tl => pappend (preverse tl) (PCons a PNil)
-  end.
-
-(** ** Polymorphic higher-order functions *)
-
-(**
-[pmap] now maps [f : A -> B], producing a [PList B] from a [PList A].
-The element type of the _output_ can differ from the element type of
-the _input_.  This was impossible with [map : (nat -> nat) -> IntList
--> IntList].
- *)
-
-Fixpoint pmap {A B : Type} (f : A -> B) (xs : PList A) : PList B :=
-  match xs with
-  | PNil => PNil
-  | PCons a tl => PCons (f a) (pmap f tl)
-  end.
-
-Fixpoint pfoldr {A B : Type} (f : A -> B -> B) (acc : B) (xs : PList A) : B :=
-  match xs with
-  | PNil => acc
-  | PCons a tl => f a (pfoldr f acc tl)
-  end.
-
-Fixpoint pfoldl {A B : Type} (f : B -> A -> B) (acc : B) (xs : PList A) : B :=
-  match xs with
-  | PNil => acc
-  | PCons a tl => pfoldl f (f acc a) tl
-  end.
-
-Fixpoint pfilter {A : Type} (p : A -> bool) (xs : PList A) : PList A :=
-  match xs with
-  | PNil => PNil
-  | PCons a tl => if p a then PCons a (pfilter p tl) else pfilter p tl
-  end.
-
-(** ** Examples with non-integer element types *)
-
-(**
-A list of booleans: [PList bool].
- *)
-
-Definition blist : PList bool := PCons true (PCons false (PCons true PNil)).
-
-Example pcar_blist : pcar blist = Some true.  Proof. reflexivity. Qed.
-Example plength_blist : plength blist = 3.    Proof. reflexivity. Qed.
-
-(**
-A list of pairs - element type is [nat * nat].
- *)
-
-Definition pairlist : PList (nat * nat) :=
-  PCons (1, 2) (PCons (3, 4) PNil).
-
-Example pcar_pairlist : pcar pairlist = Some (1, 2). Proof. reflexivity. Qed.
-
-(**
-[pmap] can change the element type: extract the first component of
-each pair.
- *)
-
-Example pmap_fst :
-  pmap fst pairlist = PCons 1 (PCons 3 PNil).
-Proof. reflexivity. Qed.
-
-(**
-[pmap S] on a [PList nat] works exactly like [map S] on [IntList].
- *)
-
-Example pmap_succ :
-  pmap S (PCons 0 (PCons 1 (PCons 2 PNil))) = PCons 1 (PCons 2 (PCons 3 PNil)).
-Proof. reflexivity. Qed.
-
-(** * Section 5: Structure Without Content *)
-
-(**
-We have now defined the same operations twice: once for [IntList] and
-once for [PList A].  The definitions are word-for-word identical except
-that [nat] is replaced by [A].  This section makes that identity
-_formal_.
-
-The key tool is an _isomorphism_: a pair of functions that convert
-between [IntList] and [PList nat] and are each other's inverses.
- *)
-
-(** ** The isomorphism *)
-
-Fixpoint intToP (xs : IntList) : PList nat :=
-  match xs with
-  | Nil => PNil
-  | Cons n tl => PCons n (intToP tl)
-  end.
-
-Fixpoint pToInt (xs : PList nat) : IntList :=
-  match xs with
-  | PNil => Nil
-  | PCons n tl => Cons n (pToInt tl)
-  end.
-
-(**
-The two functions are inverses: applying both in either order returns
-the original list.
- *)
-
-Lemma intToP_pToInt : forall xs, pToInt (intToP xs) = xs.
-Proof.
-  intros xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma pToInt_intToP : forall xs, intToP (pToInt xs) = xs.
-Proof.
-  intros xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
-Qed.
-
-(** ** The functions commute with the isomorphism *)
-
-(**
-If [IntList] and [PList nat] are truly the same thing, then running an
-[IntList] function and converting the result should give the same
-answer as converting first and then running the corresponding [PList]
-function.  We call this _commutativity_ with the isomorphism.
-
-The proof in each case is a straightforward structural induction whose
-inductive step rewrites with the induction hypothesis and closes with
-[reflexivity].
- *)
-
-Lemma map_commutes : forall (f : nat -> nat) (xs : IntList),
-  intToP (map f xs) = pmap f (intToP xs).
-Proof.
-  intros f xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma foldr_commutes : forall {B : Type} (f : nat -> B -> B) (acc : B) (xs : IntList),
-  foldr f acc xs = pfoldr f acc (intToP xs).
-Proof.
-  intros B f acc xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma foldl_commutes : forall {B : Type} (f : B -> nat -> B) (acc : B) (xs : IntList),
-  foldl f acc xs = pfoldl f acc (intToP xs).
-Proof.
-  intros B f acc xs. revert acc.
-  induction xs as [| n tl IH].
-  - reflexivity.
-  - intros acc. simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma filter_commutes : forall (p : nat -> bool) (xs : IntList),
-  intToP (filter p xs) = pfilter p (intToP xs).
-Proof.
-  intros p xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. destruct (p n); simpl; rewrite IH; reflexivity.
-Qed.
-
-(**
-What the commutation lemmas say, collectively:
-
-  _Every [IntList] function is its [PList nat] counterpart in disguise._
-
-[IntList] is not a different data structure from [PList nat]; it is the
-same structure viewed through a trivial renaming.  And the functions
-are the same because _they care only about structure, not content_: the
-element type never enters the recursive pattern.
-
-This observation justifies writing polymorphic list functions once and
-using them everywhere.  The Rocq standard library does exactly this
-with [list A] and [List.map], [List.fold_right], [List.filter], etc.
-Our [PList A] is isomorphic to [list A] by the same argument.
- *)
-
-(** * Section 6: Product Types *)
-
-(**
-A _product type_ [A * B] packages two values together: one of type [A]
-and one of type [B].  The name comes from counting: if [A] has [m]
-inhabitants and [B] has [n], then [A * B] has exactly [m * n] distinct
-values - every possible pairing.
-
-Rocq provides [prod A B] with notation [A * B] in [type_scope].  The
-constructor is [pair : A -> B -> A * B], written [(a, b)] with pair
-notation.  Two _projections_ retrieve the components:
-
-  - [fst : A * B -> A] returns the first component
-  - [snd : A * B -> B] returns the second component
-
-Product types already appeared in Section 4: [PList (nat * nat)] is a
-list whose elements are pairs, and [pmap fst] extracted the first
-component of each pair.
- *)
-
-Definition swap {A B : Type} (p : A * B) : B * A := (snd p, fst p).
-
-Example swap_pair : swap (1, true) = (true, 1). Proof. reflexivity. Qed.
-Example fst_ex   : fst (42, true) = 42.         Proof. reflexivity. Qed.
-Example snd_ex   : snd (42, true) = true.        Proof. reflexivity. Qed.
-
-(**
-Nested pairs encode triples and tuples:
-[(a, (b, c)) : A * (B * C)] or [((a, b), c) : (A * B) * C].
-Both are isomorphic to the "flat" triple; which associativity to choose
-is a matter of convention.
- *)
-
-Example nested_pair : fst (fst (1, 2), 3) = 1. Proof. reflexivity. Qed.
-
-(**
-The _eta law_ for products: every pair is equal to the pair of its
-own projections.  The proof destructs [p] into its components, after
-which both sides are syntactically equal.
- *)
-
-Lemma prod_eta : forall {A B : Type} (p : A * B), p = (fst p, snd p).
-Proof.
-  intros A B p. destruct p as [a b]. reflexivity.
-Qed.
-
-(** * Section 7: Sum Types *)
-
-(**
-A _sum type_ [A + B] represents a _choice_: a value of type [A + B] is
-either a value of type [A] tagged with [inl], or a value of type [B]
-tagged with [inr].  The name again comes from counting: if [A] has [m]
-inhabitants and [B] has [n], then [A + B] has [m + n].
-
-Rocq provides [sum A B] with notation [A + B] in [type_scope].
-
-  - [inl : A -> A + B] injects from the left
-  - [inr : B -> A + B] injects from the right
-
-A function consuming [A + B] must handle both tags.
- *)
-
-Definition sumToNat (x : nat + bool) : nat :=
-  match x with
-  | inl n => n
-  | inr b => if b then 1 else 0
-  end.
-
-Example sum_left  : sumToNat (inl 42)    = 42. Proof. reflexivity. Qed.
-Example sum_right : sumToNat (inr true)  = 1.  Proof. reflexivity. Qed.
-Example sum_right2: sumToNat (inr false) = 0.  Proof. reflexivity. Qed.
-
-(**
-_[option A] is a sum_.  Concretely, [option A = unit + A]:
-  - [None]   corresponds to [inl tt]  (the sole value of [unit])
-  - [Some a] corresponds to [inr a]
-
-The isomorphism makes this precise.
- *)
-
-Definition optionToSum {A : Type} (x : option A) : unit + A :=
-  match x with
-  | None   => inl tt
-  | Some a => inr a
-  end.
-
-Definition sumToOption {A : Type} (x : unit + A) : option A :=
-  match x with
-  | inl _ => None
-  | inr a => Some a
-  end.
-
-(**
-Both directions are proved by case analysis; no induction is needed
-because neither type is recursive.
- *)
-
-Lemma optionToSum_sumToOption : forall {A} (x : unit + A),
-  optionToSum (sumToOption x) = x.
-Proof.
-  intros A [[] | a]; reflexivity.
-Qed.
-
-Lemma sumToOption_optionToSum : forall {A} (x : option A),
-  sumToOption (optionToSum x) = x.
-Proof.
-  intros A [a |]; reflexivity.
-Qed.
-
-(** * Section 8: Records *)
-
-(**
-A _record_ is a product type with _named_ fields.  Instead of
-retrieving components by position ([fst], [snd]), each field has a
-dedicated projection function whose name documents its meaning.
-
-Rocq's [Record] keyword declares the type, its constructor, and all
-projection functions in one step.
- *)
-
-Record Point : Type := mkPoint {
-  px : nat;
-  py : nat
-}.
-
-(**
-[mkPoint] is the constructor; [px] and [py] are the projections.
-
-Construction uses the [{| field := value |}] notation that fills fields
-by name.  Projection uses dot notation [p.(field)].
- *)
-
-Definition origin  : Point := {| px := 0; py := 0 |}.
-Definition point35 : Point := {| px := 3; py := 5 |}.
-
-Example px_origin   : origin.(px)  = 0. Proof. reflexivity. Qed.
-Example py_origin   : origin.(py)  = 0. Proof. reflexivity. Qed.
-Example px_point35  : point35.(px) = 3. Proof. reflexivity. Qed.
-Example py_point35  : point35.(py) = 5. Proof. reflexivity. Qed.
-
-(**
-Functions on records use projections or pattern matching just as they
-would on an anonymous product.
- *)
-
-Definition translate (delta p : Point) : Point :=
-  {| px := p.(px) + delta.(px);
-     py := p.(py) + delta.(py) |}.
-
-Example translate_ex :
-  translate {| px := 1; py := 2 |} point35 = {| px := 4; py := 7 |}.
-Proof. reflexivity. Qed.
-
-(**
-The _eta law_ for records: every record is equal to the record built
-from its own projections.  The proof destructs the record to expose
-its fields, after which both sides are syntactically identical.
- *)
-
-Lemma point_eta : forall (p : Point), p = {| px := p.(px); py := p.(py) |}.
-Proof.
-  intros [n m]. reflexivity.
-Qed.
-
-(**
-A [Record] with two fields of types [T1] and [T2] is isomorphic to
-[T1 * T2].  [Point] is isomorphic to [nat * nat].
- *)
-
-Definition pointToPair (p : Point)       : nat * nat := (p.(px), p.(py)).
-Definition pairToPoint (q : nat * nat)   : Point     := {| px := fst q; py := snd q |}.
-
-Lemma pointToPair_pairToPoint : forall q, pointToPair (pairToPoint q) = q.
-Proof. intros [n m]. reflexivity. Qed.
-
-Lemma pairToPoint_pointToPair : forall p, pairToPoint (pointToPair p) = p.
-Proof. intros [n m]. reflexivity. Qed.
-
-(** * Section 9: Records as Sums of Products *)
-
-(**
-Products and sums are the two primitive type-forming operations.
-_Every_ inductive type in Rocq - and in most typed functional languages
-- can be read as an expression built from [*] and [+] alone.
-
-The reading rule is straightforward:
-#<ol>#
-#<li>#Each constructor contributes a _product_ of its argument types.
-A nullary constructor (no arguments) contributes [unit].#</li>#
-#<li>#Multiple constructors are combined by _sum_.#</li>#
+#<li>#Extended the type language [Ty] with [TProd], [TSum], and [TList], along with decidable equality [Ty_eqb] and its correctness lemmas.#</li>#
+#<li>#Defined the TADS term language with product forms ([Pair]/[Fst]/[Snd]), sum forms ([InL]/[InR]/[SCase]), and list forms ([Nil]/[Cons]/[Car]/[Cdr]/[IsNil]).#</li>#
+#<li>#Wrote the type checker [typeof]: products infer [TProd A B]; sums require the annotation to determine the full type; lists enforce homogeneity at [Cons].#</li>#
+#<li>#Defined the strict evaluator [evalM] with value constructors [PairV], [InLV], [InRV], [NilV], and [ConsV].#</li>#
+#<li>#Demonstrated products ([swapProg]), sums ([safeDiv] / [safeDivResult]), and lists ([list123], [boolList]).#</li>#
+#<li>#Wrote recursive list operations ([sumList], [lengthList]) using [Fix] exactly as in TRec.#</li>#
+#<li>#Re-proved _fuel monotonicity_ ([evalM_mono]) with cases for all eight [TVal] constructors.#</li>#
+#<li>#Added concrete syntax in [tads_scope]: type grammar [<[ ... ]>] with [*], [+], [List]; term grammar [<{ ... }>] with [fst], [snd], [inl]/[inr], [case ... of], [nil], [car], [cdr], [isnil].#</li>#
 #</ol>#
 
-Examples:
-<<
-  bool         = unit + unit               (true  | false)
-  option A     = unit + A                  (None  | Some a)
-  IntList      = unit + (nat * IntList)    (Nil   | Cons n tl)
-  PList A      = unit + (A   * PList A)    (PNil  | PCons a tl)
->>
-
-The recursive cases ([IntList], [PList A]) need a fixed-point in the
-algebra - the type appears on both sides - but the [+]/[*] structure
-still describes each constructor exactly.
-
-_Records_ fit the same picture: a record with fields [T1], ..., [Tn]
-is a product [T1 * ... * Tn] with named projections instead of
-positional [fst]/[snd].  [Point ≅ nat * nat] was proved in Section 8.
+The algebraic types here are the same [*] and [+] studied in Rocq's own
+type theory.  Every [Inductive] definition in Rocq is a sum of products;
+[TADS] makes them available as _first-class values_ in our little
+interpreted language.
  *)
 
-(**
-A concrete non-recursive example is [Shape], which has two constructors
-with different argument counts.
- *)
-
-Inductive Shape : Type :=
-| Circle    : nat -> Shape           (* radius *)
-| Rectangle : nat -> nat -> Shape.   (* width, height *)
+(** * NEW PROOF TACTICS IN THIS CHAPTER *)
 
 (**
-Reading [Shape] as an algebraic expression:
+This chapter introduces no new proof tactics beyond those in TRec.  All
+proofs use the same fuel-induction pattern: [induction f1 as [| k IH]],
+[destruct f2 as [| k2]], then per-constructor case analysis with
+[destruct ... eqn:...], [rewrite (IH ...)], [apply (IH ...)], and
+[exact H].
 
-<<
-  Shape = nat + (nat * nat)
->>
-
-[Circle r] injects a single [nat] on the left; [Rectangle w h] injects
-a pair [nat * nat] on the right.  The isomorphism formalises this.
- *)
-
-Definition shapeToAlg (s : Shape) : nat + (nat * nat) :=
-  match s with
-  | Circle r      => inl r
-  | Rectangle w h => inr (w, h)
-  end.
-
-Definition algToShape (x : nat + (nat * nat)) : Shape :=
-  match x with
-  | inl r        => Circle r
-  | inr (w, h)   => Rectangle w h
-  end.
-
-(**
-Both directions are one-liners: case analysis on the constructor, then
-[reflexivity].
- *)
-
-Lemma shapeToAlg_algToShape : forall x, shapeToAlg (algToShape x) = x.
-Proof.
-  intros [r | [w h]]; reflexivity.
-Qed.
-
-Lemma algToShape_shapeToAlg : forall s, algToShape (shapeToAlg s) = s.
-Proof.
-  intros [r | w h]; reflexivity.
-Qed.
-
-(**
-The same technique extends to any inductive type.  A zero-constructor
-type ([False]) corresponds to an empty sum (no type at all - a type
-with no inhabitants).  A one-constructor type with no arguments
-([unit]) corresponds to [unit] itself.  A one-constructor type with
-one argument is isomorphic to that argument's type.
-
-The algebraic view - types as expressions in [+] and [*] - is the
-foundation of _generic programming_: a single piece of code written
-for the algebraic structure can be instantiated for any concrete type.
-Rocq's standard library exploits this throughout, and languages like
-Haskell expose it via the [Generic] and [Data.Data] mechanisms.
+The [evalM_mono] proof is longer than TRec's because [TVal] now has
+eight constructors, so the [destruct] patterns in the arithmetic and
+closure cases are correspondingly wider.  The structure is identical.
  *)

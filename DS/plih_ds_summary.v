@@ -1,14 +1,14 @@
 (**
-PLIH in Rocq: DS (Data Structures) Module
-Complete Summary and Organization
+PLIH in Rocq: DS (TADS) Module
+Typed Algebraic Data Structures - Summary and Organization
 
 Documentation only - no Rocq code, so this file compiles trivially.
 
 FILES (in DS/):
 #<ol>#
-#<li>#plih_rocq_ds_shared.v      -- shared infra (Arith, Bool, Lia)#</li>#
-#<li>#plih_ds_lecture.v          -- lecture: IntList, HOFs, PList, isomorphism, A*B, A+B, records, sums-of-products#</li>#
-#<li>#plih_ds_exercises.v        -- student problem set (Admitted stubs, 30 exercises)#</li>#
+#<li>#plih_rocq_ds_shared.v      -- shared infra (re-exports plih_rocq_trec_shared)#</li>#
+#<li>#plih_ds_lecture.v          -- lecture: TADS language, type checker, evaluator, examples, mono proof, concrete syntax#</li>#
+#<li>#plih_ds_exercises.v        -- student problem set (Admitted stubs, 32 exercises)#</li>#
 #<li>#plih_ds_solutions.v        -- complete solutions#</li>#
 #<li>#plih_ds_instructor_guide.v -- teaching guide#</li>#
 #<li>#plih_ds_summary.v          -- this file#</li>#
@@ -35,95 +35,102 @@ FOR INSTRUCTORS:
 (** * THE BIG IDEAS *)
 
 (**
-Recursive data and structural recursion are two sides of the same coin.
-An [IntList] has exactly two cases ([Nil]/[Cons]) and every function on
-[IntList] has exactly two cases matching those constructors.  The
-_shape_ of the function is determined by the _shape_ of the type.
-Higher-order functions expose that shape explicitly; generalizing the
-element type from [nat] to any [A] then costs nothing.  The isomorphism
-[IntList ≅ PList nat] formalizes this: integer lists and
-polymorphic-nat lists are definitionally the same structure.
+_Algebraic types_ are the foundational vocabulary of typed functional
+programming.  Products capture "A _and_ B"; sums capture "A _or_ B".
+Lists are the canonical recursive type: a homogeneous sequence built
+from a base case ([Nil]) and a step case ([Cons]).
 
-Two primitive operations build all inductive types:
-  - [A * B] (product): "one of each" - pairs, tuples, records
-  - [A + B] (sum): "one or the other" - tagged unions, variants
+TADS adds all three to TRec's typed-recursion language:
+  - [TProd A B]: introduced by [Pair e1 e2], eliminated by [Fst] and [Snd];
+  - [TSum A B]:  introduced by [InL T e] or [InR T e], eliminated by [SCase];
+  - [TList A]:   introduced by [Nil T] or [Cons e1 e2], eliminated by
+                 [Car], [Cdr], and [IsNil].
 
-Every Rocq [Inductive] type is a sum of products: each constructor is
-a product of its argument types, and the constructors are combined by
-sum.  Records are products with named projections.  The [Shape] and
-[Color] isomorphisms show this concretely.
+All three interact cleanly with [Fix]: recursive list operations ([sumList],
+[lengthList], [doubleList]) are just [Fix] applied to a generator lambda,
+exactly as factorial was in TRec.
  *)
 
 (** * WHAT CARRIES OVER, WHAT IS NEW *)
 
 (**
-CARRIES OVER FROM EARLIER CHAPTERS:
-  - [option] for partial observers ([car], [cdr]);
-  - induction on inductive types (pattern: [Nil]/[Cons] split,
-    use the IH in the [Cons] case, close with [reflexivity] or [lia]);
-  - implicit type arguments ([{A : Type}]).
+CARRIES OVER FROM TRec:
+  - [TNum], [TBool], [TArr] and all their term forms;
+  - [Fix] and the [subst] unfolding mechanism;
+  - [typeof]/[typecheck] structure and [tnumBinop];
+  - [NumV], [BoolV], [ClosureV] value constructors;
+  - [evalM] with fuel, [evalM_mono] proof pattern;
+  - Concrete syntax style ([<[ ... ]>] for types, [<{ ... }>] for terms).
 
 NEW HERE:
-  - _Inductive types for data_: [IntList] and [PList A] - no
-    interpreter, no environment, no fuel;
-  - _Structural operations_: [length], [append], [reverse] and their
-    key lemmas ([append_nil_r], [append_assoc], [length_append],
-    [reverse_length]);
-  - _Higher-order functions_: [map], [foldr], [foldl], [filter];
-  - _Polymorphism_: [PList A] parameterised over the element type;
-  - _Isomorphism_: [intToP]/[pToInt] and the four commutation lemmas;
-  - _Product types_: [A * B], [pair]/[(a,b)], [fst]/[snd], [prod_eta];
-  - _Sum types_: [A + B], [inl]/[inr], case analysis; [option A = unit + A];
-  - _Records_: [Record] keyword, [{| field := v |}] construction, [p.(f)]
-    projection; [point_eta]; [Point ≅ nat * nat];
-  - _Sums of products_: [Shape = nat + (nat * nat)]; [Color = unit + (unit + unit)];
-    the algebraic reading of every [Inductive].
+  - Three new type formers: [TProd], [TSum], [TList];
+  - Extended [Ty_eqb] with cases for the new formers;
+  - Nine new term constructors: [Pair], [Fst], [Snd], [InL], [InR],
+    [SCase], [Nil], [Cons], [Car], [Cdr], [IsNil];
+  - Extended [subst] with cases for the new constructors ([SCase] binds
+    two names);
+  - New typing rules in [typeof] for all nine new constructors;
+  - Five new [TVal] constructors: [PairV], [InLV], [InRV], [NilV], [ConsV];
+  - Extended [evalM] for all nine new term constructors;
+  - [evalM_mono] re-proved with the eight-constructor [TVal] destruct
+    pattern;
+  - New concrete syntax notations in [tads_scope]: [*], [+], [List T]
+    in the type grammar; [pair], [fst], [snd], [inl]/[inr], [case ... of],
+    [nil], [cons], [car], [cdr], [isnil] in the term grammar.
  *)
 
 (** * KEY DEFINITIONS AND RESULTS *)
 
 (**
-  [IntList]             -- integer list type (Section 1)
-  [car]/[cdr]/[isEmpty] -- LISP-style observers (Section 1)
-  [length]/[append]/[reverse]      -- structural operations (Section 2)
-  [append_nil_r], [append_assoc]   -- key lemmas (Section 2)
-  [length_append], [reverse_length]-- key lemmas (Section 2)
-  [map]/[foldr]/[foldl]/[filter]   -- higher-order functions (Section 3)
-  [map_length], [filter_le_length] -- key lemmas (Section 3)
-  [PList A]             -- polymorphic list type (Section 4)
-  [pcar]/[pcdr]/[pisEmpty]         -- polymorphic observers (Section 4)
-  [plength]/[pappend]/[preverse]   -- polymorphic structural ops (Section 4)
-  [pmap]/[pfoldr]/[pfoldl]/[pfilter] -- polymorphic HOFs (Section 4)
-  [intToP]/[pToInt]     -- the isomorphism (Section 5)
-  [intToP_pToInt], [pToInt_intToP] -- inverse proofs (Section 5)
-  [map_commutes], [foldr_commutes], [foldl_commutes], [filter_commutes]
-                        -- HOFs respect the isomorphism (Section 5)
-  [swap], [prod_eta]    -- products A*B (Section 6)
-  [sumToNat], [optionToSum], [sumToOption] -- sums A+B (Section 7)
-  [optionToSum_sumToOption], [sumToOption_optionToSum] -- option ≅ unit+A (Section 7)
-  [Point]/[mkPoint]/[px]/[py]      -- record example (Section 8)
-  [origin]/[point35], [translate]  -- record values and functions (Section 8)
-  [point_eta], [pointToPair]/[pairToPoint] -- Point ≅ nat*nat (Section 8)
-  [Shape]/[Circle]/[Rectangle]     -- sum-of-products example (Section 9)
-  [shapeToAlg]/[algToShape]        -- Shape ≅ nat+(nat*nat) (Section 9)
-  [shapeToAlg_algToShape], [algToShape_shapeToAlg] -- isomorphism proofs (Section 9)
+  Types:
+    [Ty]       -- [TNum | TBool | TArr | TProd | TSum | TList]
+    [Ty_eqb]   -- Boolean equality on [Ty]
+    [Ty_eqb_refl], [Ty_eqb_eq], [Ty_eqb_true_iff]  -- correctness lemmas
+
+  Terms:
+    [TADS]     -- full term language (TRec + products + sums + lists)
+    [subst]    -- capture-naive substitution over [TADS]
+
+  Type checker:
+    [Ctx]      -- [Env Ty]
+    [typeof]   -- [Ctx -> TADS -> option Ty]
+    [typecheck] -- [TADS -> option Ty] (closed terms)
+
+  Values:
+    [TVal]     -- [NumV | BoolV | ClosureV | PairV | InLV | InRV | NilV | ConsV]
+    [evalM]    -- [nat -> Env TVal -> TADS -> option TVal]
+    [eval]     -- [TADS -> option TVal] (1000 fuel, closed)
+    [evalM_mono] -- fuel monotonicity
+
+  Examples:
+    [swapProg]        -- pair swap using [Bind]/[Fst]/[Snd]
+    [safeDiv]         -- safe division returning [TSum TNum TBool]
+    [safeDivResult]   -- [SCase] eliminating [safeDiv]'s sum
+    [list123]         -- the list [1; 2; 3]
+    [boolList]        -- a list of Booleans
+    [sumList]         -- [Fix] of [sumListGen]: sum a list of numbers
+    [lengthList]      -- [Fix] of [lengthGen]: count list elements
+    [factGen]/[fact]  -- factorial from TRec, unchanged
  *)
 
 (** * WHERE THIS GOES NEXT *)
 
 (**
-Lists are the foundation for more complex recursive structures: trees,
-rose trees, association lists (already used in every interpreter chapter
-as [Env]), queues, and graphs.  The same pattern - inductive type,
-structural recursion, higher-order abstraction, polymorphism - scales
-to all of them.  The algebraic reading extends too: a binary tree is
-[unit + (A * Tree A * Tree A)] (leaf or node with two subtrees).
+TADS provides the typed vocabulary to discuss _structured_ values.  The
+natural sequel is to connect this chapter to the broader PL theory:
 
-The deeper lesson connects back to the interpreter chapters.  [Env A =
-list (string * A)] (introduced in the IDs chapter) IS a [PList (string
-* A)] with identical structure.  The language types themselves - [FBAE],
-[FBAEC], [FBAES] - are sums of products: each constructor is a product
-of its subterm types, and the [Inductive] groups them all with [+].
-Every proof by [induction e] in those chapters is exactly the sum-of-
-products case analysis practiced here.
+  - _Type safety_: well-typed TADS programs never get stuck.  Products
+    and sums preserve the progress and preservation properties because
+    each typing rule exactly anticipates the evaluator's behavior.
+
+  - _Normalization_: inherited from TRec's non-result - [Fix] can still
+    diverge, so TADS is Turing-complete.
+
+  - _Recursive types_: adding a [TRec A] type former (a "mu type") would
+    let TADS express its own list type internally, rather than building
+    [TList] into the language.  That is the next natural extension.
+
+  - _Monadic interpreters_: the monad arc (RMon, EMon, State, SMon, RSMon,
+    RSEMon) applies equally well to TADS - the algebraic types add no new
+    monad structure.
  *)

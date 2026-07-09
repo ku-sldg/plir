@@ -28,13 +28,13 @@ Func|func|Functions & recursion|Adding Functions|Closures, scoping, strict vs la
 Rec|rec|Functions & recursion|Untyped Recursion|Recursion with no new construct: the Y and Z combinators.
 TFun|tfun|Types|Typed Functions|A typed language with its type checker.
 TRec|trec|Types|Typed Recursion|A typed fix: type safety with recursion restored.
+DS|ds|Types|Data Structures|Products, sums, and lists as first-class types with a type checker and evaluator.
 RMon|rmon|Monadic type checkers|Reader Monad|Refactoring the checker with a Reader monad (agreement theorem).
 EMon|emon|Monadic type checkers|Reader + Either|Descriptive error messages and a refinement theorem.
 State|state|Mutable state|Mutable State|Reference cells and an explicitly threaded store.
 SMon|smon|Mutable state|State Monad|Hiding the store threading behind a State monad.
 RSMon|rsmon|Combining effects|Reader + State|One monad hiding both the environment and the store.
 RSEMon|rsemon|Combining effects|Reader + State + Either|The capstone: three effects in one monad.
-DS|ds|Data structures|Data Structures|Lists, higher-order functions, polymorphism, and the algebra of types.
 EOF
 
 # --- guard: coqdoc needs globalization info from a build ---

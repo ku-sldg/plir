@@ -1,5 +1,5 @@
 (**
-INSTRUCTOR GUIDE: Teaching the DS (Data Structures) Chapter
+INSTRUCTOR GUIDE: Teaching the TADS (Typed Algebraic Data Structures) Chapter
 
 Documentation only - no Rocq code.  Compiles trivially.
  *)
@@ -7,137 +7,133 @@ Documentation only - no Rocq code.  Compiles trivially.
 (** * PART 1: PREREQUISITES *)
 
 (**
-This chapter has no interpreter-chain prerequisites.  It stands alone
-as a self-contained introduction to recursive Rocq types, and can be
-taught at any point after students are comfortable with:
-  - [Fixpoint] definitions and [match] expressions;
-  - structural induction (the [induction] tactic);
-  - [reflexivity], [simpl], and [rewrite].
+Students should arrive with:
+#<ol>#
+#<li>#TRec: [Fix], [typeof], [evalM], [TVal]/[ClosureV], [evalM_mono].  TADS is a direct extension of that language.#</li>#
+#<li>#Comfort with [induction], [destruct], [rewrite], [lia], [discriminate].#</li>#
+#<li>#The [Env]/[extend]/[lookup] machinery - carried in via [plih_rocq_ds_shared].#</li>#
+#</ol>#
 
-Placing it before the typed-language chapters (TFun, TRec) works well:
-students arrive at type-checking already fluent with recursive types
-and structural induction on data.
+The chapter is self-contained given TRec: every definition either copies
+TRec verbatim (changing the type from [TFBAEC] to [TADS]) or adds one
+new case.  Students who have worked through TRec will recognize the pattern
+immediately.
  *)
 
 (** * PART 2: THE ARC OF THE LECTURE *)
 
 (**
 #<ol>#
-#<li>#_Integer lists from first principles._ Define [IntList] with [Nil]
-and [Cons].  Stress that this is exactly LISP's cons cell.  Run
-[car]/[cdr]/[isEmpty] on concrete lists with [reflexivity] to build
-intuition.#</li>#
-#<li>#_Structural operations._ [length] and [append] show the two-case
-pattern.  Prove [append_nil_r] by induction (contrast with [append_nil_l]
-which is [reflexivity]).  This is often students' first non-trivial
-induction proof.#</li>#
-#<li>#_Higher-order functions._ Show that [addOne_list] and [double_list]
-are the same function except for the per-element operation, then abstract
-it as [map].  Repeat for [foldr], [foldl], and [filter].#</li>#
-#<li>#_Polymorphic lists._ Ask: why is [map] restricted to [nat -> nat]?
-Generalize to [PList A].  Every function carries over with identical
-structure.#</li>#
-#<li>#_The isomorphism._ Define [intToP]/[pToInt], prove inverses, prove
-commutation lemmas.  Central lesson: structure-dependent, not
-content-dependent.#</li>#
-#<li>#_Product types._ [A * B] already appeared in [PList (nat * nat)].
-Introduce [fst]/[snd], the [(a, b)] notation, and [prod_eta].  Stress
-the counting intuition: [m] values times [n] values = [m * n] pairs.#</li>#
-#<li>#_Sum types._ [A + B] is a _choice_.  Introduce [inl]/[inr] and
-pattern matching.  The key example is [option A = unit + A]: [None] is
-[inl tt] and [Some a] is [inr a].  Prove the isomorphism with case
-analysis only (no induction) - good contrast with the list proofs.#</li>#
-#<li>#_Records._ Motivate with "products have no documentation."  Show
-the [Record] keyword, [{| ... |}] construction, and [.(field)] projection.
-Prove [point_eta] (destructs to expose fields) and [Point ≅ nat * nat]
-(isomorphism).#</li>#
-#<li>#_Sums of products._ The payoff: every [Inductive] is a sum of
-products.  Walk through [Shape = nat + (nat * nat)] on the board.
-Prove the isomorphism by case analysis.  Connect back to all prior
-language types ([FBAE], [FBAEC], etc.): every constructor is a product,
-the inductive groups them with [+].#</li>#
+#<li>#_Motivate the gap._  TRec values are flat: numbers, Booleans, and
+closures.  There is no way to return two values from a function, or to
+say "this computation might fail with an error message".  Algebraic types
+fill both gaps.#</li>#
+
+#<li>#_Section 1: Extend [Ty]._  Add [TProd], [TSum], [TList] to TRec's
+[Ty].  Extend [Ty_eqb] structurally; prove [Ty_eqb_refl] by induction.
+Stress: the proof structure mirrors the type's structure exactly.#</li>#
+
+#<li>#_Section 2: Extend [TADS]._  Nine new constructors in three groups.
+Show the substitution cases: [SCase] is the only binder-containing new
+constructor.#</li>#
+
+#<li>#_Section 3: Type checker._  Walk through the [Pair]/[Fst]/[Snd]
+rules (straightforward), then the [InL]/[InR] rules (the annotation
+carries the full sum type), then [SCase] (both branches must return the
+same type [R]).  The list rules are analogous to the pair rules.#</li>#
+
+#<li>#_Section 4: Evaluator._  The five new [TVal] constructors.  [NilV]
+has no arguments - stress this when discussing the [evalM_mono] destruct
+pattern.  [Car] and [Cdr] return [None] on [NilV] (safe failure).#</li>#
+
+#<li>#_Sections 5-8: Examples._  Demonstrate [swapProg], [safeDiv] with
+[SCase], [list123], and [boolList].  Show the type checker catching errors
+(mismatched [Cons], mismatched [SCase] branches, [Car] on non-list).#</li>#
+
+#<li>#_Section 9: Recursive list operations._  [sumList] and [lengthList]
+are [Fix] of a generator, word-for-word the same pattern as [fact] in TRec.
+Students may find it satisfying that nothing new is needed.#</li>#
+
+#<li>#_Section 10: evalM_mono._  This is the hardest proof.  The pattern
+is identical to TRec, but the destruct arms are wider (eight [TVal]
+constructors, including [NilV] with no fields).  Consider walking through
+the [Plus] case on the board to show the eight-constructor pattern, then
+assigning the rest.#</li>#
+
+#<li>#_Section 11: Concrete syntax._  The type grammar gains [*], [+],
+and [List T]; the term grammar gains ten new notations.  Show that [fact]
+still parses, and demonstrate [pair]/[car]/[inl]/[case ... of] on concrete
+programs.#</li>#
 #</ol>#
  *)
 
 (** * PART 3: COMMON PITFALLS *)
 
 (**
-  - _[append_nil_l] vs [append_nil_r]._ Students often expect both to be
-    [reflexivity].  The asymmetry is because [append] recurses on its
-    _first_ argument.  Walk through the [Cons] case by hand.
+  - _[NilV] has no arguments._  In the [evalM_mono] destruct pattern, the
+    branch for [NilV] is written as [| |] (two pipes with nothing between
+    them) inside the bracket-list notation.  Students often write [| n |]
+    by analogy with other constructors.  Check this carefully.
 
-  - _Implicit vs explicit type arguments._ When [A] is implicit in
-    [pmap {A B}], "Cannot infer the implicit argument A" appears when
-    Rocq cannot determine the type from context.  Supply explicitly
-    ([pmap (A := nat) S xs]) or ensure the context determines the type.
+  - _[InL]/[InR] require a [TSum] annotation._  [InL TNum (Num 5)] is
+    ill-typed because [TNum] is not a sum type.  Students often forget
+    the annotation is the _whole_ sum type, not just the relevant component.
 
-  - _[foldl] vs [foldr] for non-commutative operations._ Subtraction is
-    a good example: [foldl Nat.sub 10 (Cons 1 (Cons 2 Nil)) = 7] but
-    [foldr Nat.sub 10 (Cons 1 (Cons 2 Nil)) = 9].
+  - _[SCase] names must be fresh._  If the scrutinee is [InL (TSum A B) e]
+    and the case binder is [x], then inside [e1] the name [x] refers to
+    the injected value.  Make sure students do not accidentally shadow an
+    outer binding.
 
-  - _[reverse_involutive] without [reverse_append]._ Students get stuck
-    because they cannot simplify [reverse (append ...)].  Guide them to
-    establish [reverse_append] as a helper first.
+  - _[Cons] homogeneity._  [Cons (Num 1) (Nil TBool)] is rejected because
+    the element types disagree.  [Ty_eqb] in the [Cons] branch catches
+    this.
 
-  - _[A + B] ambiguity._ The [+] notation is overloaded: [Nat.add] in
-    [nat_scope], [sum] in [type_scope].  In a _type position_ Rocq
-    automatically uses [type_scope], so [nat + bool] is [sum nat bool].
-    In a _term position_, [1 + 2] is [Nat.add 1 2].  If Rocq complains
-    about [+] in a type, add [(A + B : Type)] as a hint or open
-    [type_scope] locally.
+  - _[+] notation overload._  The tads_scope's [+] in the [ty] custom
+    entry means [TSum], not [Nat.add].  In a term context [<{ ... }>], [+]
+    means [Plus].  Since these are separate custom entries there is no
+    conflict, but students may be confused when writing types that contain
+    [+] inside term brackets.
 
-  - _Record field name conflicts._ [Record] field names are global
-    definitions (e.g., [px : Point -> nat]).  If two records share a
-    field name, the second definition shadows the first.  Use qualified
-    names ([Point.px]) or choose distinct field names.
-
-  - _Destructuring [unit] in sum patterns._ In [ex30], the pattern
-    [inr (inl _)] works because the wildcard [_] matches [tt].  Students
-    can also write [inr (inl tt)] explicitly.  The fully expanded pattern
-    [[ [] | [ [] | [] ] ]] in intro style destructs [unit] to its sole
-    constructor at each position.
+  - _Destruct patterns in [evalM_mono]._  The order of the eight [TVal]
+    constructors must match the [Inductive TVal] declaration exactly:
+    [NumV | BoolV | ClosureV | PairV | InLV | InRV | NilV | ConsV].
+    An off-by-one or a missing constructor causes a Rocq error.
  *)
 
 (** * PART 4: THE EXERCISES *)
 
 (**
-Part 1 (ex1-ex8) - running the functions: all [reflexivity] on concrete
-  values.  Fast confidence-building; every student should complete these.
+Part 1 (ex1-ex7) - type checker: all [reflexivity].  Covers [TNum],
+  [TProd], [Fst], [TList], [Cons], [IsNil], [InL].
 
-Part 2 (ex9-ex12) - structural lemmas:
-  - ex9 ([map_length]): standard one-step induction.
-  - ex10 ([filter_le_length]): induction + [destruct (p n)] + [lia].
-  - ex11 ([reverse_append]): ★★★.  Induction on [xs]; [Cons] case uses
-    IH then [append_assoc].  Work this on the board.
-  - ex12 ([reverse_involutive]): ★★★.  Cite ex11, then [simpl], then IH.
+Part 2 (ex8-ex15) - evaluator: all [reflexivity].  Covers [PairV],
+  projections, [IsNil], [Car], [Cdr], [InLV], [InRV].
 
-Part 3 (ex13-ex16) - polymorphic:
-  - ex13-ex14: [reflexivity].
-  - ex15 ([pmap_length]): parallel of ex9, reinforces structural identity.
-  - ex16 ([foldl_commutes]): [revert acc] before induction is the key
-    step.  Emphasise: quantifiers over recursively-updated values must
-    be generalised before inducting.
+Part 3 (ex16-ex21) - typing judgements:
+  - ex16-ex17: [reflexivity].
+  - ex18-ex19: ill-typed examples return [None]; [reflexivity].
+  - ex20: [SCase] with matching types; [reflexivity].
+  - ex21: [SCase] with mismatched types; [reflexivity].
 
-Part 4 (ex17-ex20) - products:
-  - ex17-ex18: [reflexivity] - [fst]/[snd] on a concrete pair.
-  - ex19: [reflexivity] - [swap] on a concrete pair.
-  - ex20 ([prod_eta]): [destruct p as [a b]; reflexivity].
+Part 4 (ex22-ex24) - products:
+  - ex22-ex23: define and run [tripleFirst] (nested [Fst]).
+  - ex24: swap function type; [reflexivity].
 
-Part 5 (ex21-ex26) - sums and records:
-  - ex21-ex22: [reflexivity] - [sumToNat] on [inl]/[inr].
-  - ex23-ex25: [reflexivity] - [pcar], field projection, [translate].
-  - ex26 ([point_eta]): [intros [n m]; reflexivity].  Good parallel
-    to [prod_eta]: same proof structure, named vs positional fields.
+Part 5 (ex25-ex27) - sums:
+  - ex25-ex27: [safeHead] using [If]/[IsNil]/[InL]/[InR].  Students must
+    trace through how [typeof] handles [InL] and [InR] with annotations.
 
-Part 6 (ex27-ex30) - algebra of types:
-  - ex27-ex28: [reflexivity] - [shapeToAlg] on concrete constructors.
-  - ex29-ex30 ([Color] isomorphism): ★★★.  Students define [Color] and
-    [colorToAlg]/[algToColor] themselves (the definitions are given as
-    scaffolding).  ex29: [destruct s] gives three cases, all
-    [reflexivity].  ex30: [destruct x as [[] | [[] | []]]] gives three
-    [unit + (unit + unit)] cases, all [reflexivity].  The key insight:
-    case analysis suffices because [Color] and [unit + (unit + unit)]
-    are non-recursive - no induction needed.
+Part 6 (ex28-ex30) - lists:
+  - ex28-ex29: [doubleList] uses [Car]/[Cdr]/[Mult] inside [Fix].
+    The generator pattern is identical to [sumListGen] and [lengthGen].
+  - ex30: run [sumList] on [list123]; [reflexivity].
+
+Part 7 (ex31-ex32) - inductions:
+  - ex31 ([Ty_eqb_refl]): ★★.  Students write their own version of the
+    lecture's proof.  The six-case induction on [Ty] is good practice.
+  - ex32 ([mono_pair]): ★★★.  Apply [evalM_mono] with explicit arguments.
+    Students must supply the [f1 <= f2] witness; [lia] closes the goal.
+    This exercises understanding of how [evalM_mono] works.
 
 Grade by building plih_ds_exercises.v with the [Admitted]s replaced.
  *)
@@ -145,24 +141,23 @@ Grade by building plih_ds_exercises.v with the [Admitted]s replaced.
 (** * PART 5: CONNECTIONS TO OTHER CHAPTERS *)
 
 (**
-  - [Env A = list (string * A)] used in every interpreter chapter from
-    IDs onward is a [PList (string * A)].  The [lookup]/[extend] proofs
-    are the two-case structural induction pattern from this chapter.
+  - _TRec_: TADS is TRec plus three type formers.  Every TRec program
+    compiles unchanged in TADS; the shared infrastructure propagates the
+    chain [plih_rocq_trec_shared -> plih_rocq_ds_shared].
 
-  - Every language [Inductive] ([FBAE], [FBAEC], [FBAES], ...) is a
-    sum of products.  [FBAE] is:
-<<
-  Num : nat -> FBAE            (* nat *)
-  Plus : FBAE -> FBAE -> FBAE  (* FBAE * FBAE *)
-  ...
->>
-    so [FBAE = nat + (FBAE * FBAE) + ...].  Every proof by [induction e]
-    in those chapters is this chapter's sum-of-products case analysis.
+  - _Data Structures_: the previous DS chapter studied [IntList] and
+    [PList A] as _Rocq_ types.  TADS builds analogous structure as
+    _object-language_ types.  The [Nil]/[Cons]/[Car]/[Cdr] names are the
+    same; now they live inside the interpreted language rather than Rocq
+    itself.
 
-  - [RVal] (closure interpreter) is a sum: [NumV nat | ClosureV ...].
+  - _Monadic chapters_: the monad arc (RMon through RSEMon) applies
+    directly to TADS.  Replacing [TFBAEC] with [TADS] in the monadic
+    type-checker would yield a monadic TADS type-checker; the new
+    constructors each add one monadic bind.
 
-  - Typed recursion (TRec) introduces [fix] to give languages recursion
-    primitively.  The Rocq analogue is [Fixpoint], used throughout this
-    chapter.  Drawing the parallel helps students understand why typed
-    [fix] needs a special typing rule.
+  - _Type safety_: TADS preserves TRec's type safety.  The new
+    constructors each satisfy canonical forms and inversion lemmas by
+    straightforward case analysis.  A formal progress-preservation proof
+    is natural advanced material after this chapter.
  *)

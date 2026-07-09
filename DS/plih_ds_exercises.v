@@ -1,15 +1,16 @@
 (**
-Programming Languages in Rocq - Data Structures Exercises
-Recursive types, higher-order functions, and polymorphism - Student Problem Set
+Programming Languages in Rocq - TADS Exercises
+Typed Algebraic Data Structures - Student Problem Set
 
 In these exercises you will:
 #<ol>#
-#<li>#Run the [IntList] and [PList] functions on concrete values#</li>#
-#<li>#Prove structural lemmas about [length], [map], and [filter]#</li>#
-#<li>#Prove a classic list identity ([reverse_involutive]) from scratch#</li>#
-#<li>#Bridge [IntList] and [PList nat] with commutation lemmas#</li>#
-#<li>#Work with product types, sum types, and records#</li>#
-#<li>#Prove the algebraic isomorphism for a new inductive type#</li>#
+#<li>#Run the type checker on closed TADS terms.#</li>#
+#<li>#Run the evaluator on closed TADS terms.#</li>#
+#<li>#Prove typing judgements and identify ill-typed terms.#</li>#
+#<li>#Work with product types ([Pair]/[Fst]/[Snd]).#</li>#
+#<li>#Work with sum types ([InL]/[InR]/[SCase]).#</li>#
+#<li>#Work with list types ([Nil]/[Cons]/[Car]/[Cdr]/[IsNil]).#</li>#
+#<li>#Prove properties by induction ([Ty_eqb_refl], [evalM_mono] special case).#</li>#
 #</ol>#
 
 HOW TO USE THIS FILE
@@ -17,199 +18,261 @@ HOW TO USE THIS FILE
 Each exercise ends in [Admitted].  Replace it with a real proof ending
 in [Qed].  The file compiles as given.
 
-From the lecture you have: [IntList] ([Nil]/[Cons]), [car]/[cdr]/[isEmpty],
-[length]/[append]/[reverse], [map]/[foldr]/[foldl]/[filter]; [PList A]
-([PNil]/[PCons]) with [pcar]/[pcdr]/[pisEmpty], [plength]/[pappend]/
-[preverse], [pmap]/[pfoldr]/[pfoldl]/[pfilter]; the isomorphism
-[intToP]/[pToInt] and commutation lemmas.  Also available: [swap],
-[prod_eta], [sumToNat], [optionToSum], [sumToOption]; [Point]/[mkPoint]/
-[px]/[py], [origin]/[point35], [translate], [point_eta], [pointToPair]/
-[pairToPoint]; [Shape]/[Circle]/[Rectangle], [shapeToAlg]/[algToShape].
-Key lemmas: [append_nil_r], [append_assoc], [length_append], [map_length],
-[filter_le_length], [reverse_length], [intToP_pToInt], [pToInt_intToP].
+From the lecture you have: [Ty] ([TNum]/[TBool]/[TArr]/[TProd]/[TSum]/[TList]),
+[Ty_eqb], [Ty_eqb_refl], [Ty_eqb_eq], [Ty_eqb_true_iff]; [TADS] with all
+constructors; [subst]; [typeof]/[typecheck]; [TVal] with all constructors;
+[evalM]/[eval]/[evalM_mono]; all definitions from Sections 5-9.
 
-Difficulty: ★ trivial, ★★ a short induction, ★★★ multi-step proof.
+Difficulty: ★ trivial (reflexivity or one tactic), ★★ a few steps,
+★★★ multi-step proof.
 Solutions are in plih_ds_solutions.v.
  *)
 
+From Stdlib Require Import String.
 Require Import plih_rocq_ds_shared.
 Require Import plih_ds_lecture.
 
-(** * PART 1: RUNNING THE FUNCTIONS *)
+Local Open Scope string_scope.
 
-(* ★ [car] returns the first element of a non-empty list. *)
-Example ex1_car : car (Cons 7 (Cons 3 Nil)) = Some 7.
+(** * PART 1: RUNNING THE TYPE CHECKER *)
+
+(* ★ A number has type [TNum]. *)
+Example ex1_ty_num : typecheck (Num 42) = Some TNum.
 Proof. Admitted.
 
-(* ★ [car] on [Nil] returns [None]. *)
-Example ex2_car_nil : car Nil = None.
+(* ★ A pair of a number and a Boolean. *)
+Example ex2_ty_pair :
+  typecheck (Pair (Num 5) (Boolean true)) = Some (TProd TNum TBool).
 Proof. Admitted.
 
-(* ★ Length of a three-element list. *)
-Example ex3_length : length (Cons 1 (Cons 2 (Cons 3 Nil))) = 3.
+(* ★ [Fst] extracts the first component's type. *)
+Example ex3_ty_fst :
+  typecheck (Fst (Pair (Num 1) (Boolean false))) = Some TNum.
 Proof. Admitted.
 
-(* ★ Appending two lists. *)
-Example ex4_append :
-  append (Cons 1 (Cons 2 Nil)) (Cons 3 (Cons 4 Nil)) =
-  Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil))).
+(* ★ [Nil TBool] has type [TList TBool]. *)
+Example ex4_ty_nil_bool :
+  typecheck (Nil TBool) = Some (TList TBool).
 Proof. Admitted.
 
-(* ★ Reversing a list. *)
-Example ex5_reverse :
-  reverse (Cons 1 (Cons 2 (Cons 3 Nil))) = Cons 3 (Cons 2 (Cons 1 Nil)).
+(* ★ A two-element list of numbers. *)
+Example ex5_ty_cons :
+  typecheck (Cons (Num 3) (Cons (Num 4) (Nil TNum))) = Some (TList TNum).
 Proof. Admitted.
 
-(* ★ [map S] increments every element. *)
-Example ex6_map_succ :
-  map S (Cons 0 (Cons 1 (Cons 2 Nil))) = Cons 1 (Cons 2 (Cons 3 Nil)).
+(* ★ [IsNil] on a list produces a Boolean. *)
+Example ex6_ty_isnil :
+  typecheck (IsNil (Nil TNum)) = Some TBool.
 Proof. Admitted.
 
-(* ★ [foldr Nat.add 0] sums a list. *)
-Example ex7_sum :
-  foldr Nat.add 0 (Cons 1 (Cons 2 (Cons 3 Nil))) = 6.
+(* ★ [InL] with a [TSum TNum TBool] annotation and a number body. *)
+Example ex7_ty_inl :
+  typecheck (InL (TSum TNum TBool) (Num 7)) = Some (TSum TNum TBool).
 Proof. Admitted.
 
-(* ★ [filter Nat.even] keeps only even elements. *)
-Example ex8_filter_even :
-  filter Nat.even (Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))) = Cons 2 (Cons 4 Nil).
+(** * PART 2: RUNNING THE EVALUATOR *)
+
+(* ★ Evaluate a literal pair. *)
+Example ex8_eval_pair :
+  eval (Pair (Num 10) (Num 20)) = Some (PairV (NumV 10) (NumV 20)).
 Proof. Admitted.
 
-(** * PART 2: INTLIST LEMMAS *)
-
-(* ★★ [map] does not change list length.
-   Proceed by induction on the list. *)
-Lemma ex9_map_length : forall f xs, length (map f xs) = length xs.
+(* ★ Evaluate [Fst] of a pair. *)
+Example ex9_eval_fst :
+  eval (Fst (Pair (Num 3) (Boolean true))) = Some (NumV 3).
 Proof. Admitted.
 
-(* ★★ [filter] does not make a list longer.
-   Proceed by induction; [destruct (p n)] splits the conditional.
-   Close each branch with [lia].  Hint: [IH] will be in the context. *)
-Lemma ex10_filter_le : forall p xs, length (filter p xs) <= length xs.
+(* ★ Evaluate [Snd] of a pair. *)
+Example ex10_eval_snd :
+  eval (Snd (Pair (Boolean false) (Num 99))) = Some (NumV 99).
 Proof. Admitted.
 
-(* ★★★ Reverse distributes over append (contravariant).
-   Induct on [xs].  In the [Cons] case, use the induction hypothesis
-   and [append_assoc]. *)
-Lemma ex11_reverse_append : forall xs ys,
-  reverse (append xs ys) = append (reverse ys) (reverse xs).
+(* ★ [IsNil] on a non-empty list is [false]. *)
+Example ex11_eval_isnil_cons :
+  eval (IsNil (Cons (Num 1) (Nil TNum))) = Some (BoolV false).
 Proof. Admitted.
 
-(* ★★★ Reversing twice gives back the original list.
-   Use [ex11_reverse_append] to unfold [reverse (reverse (Cons n tl))].
-   Close with [simpl] and [IH]. *)
-Lemma ex12_reverse_involutive : forall xs, reverse (reverse xs) = xs.
+(* ★ [Car] of a two-element list. *)
+Example ex12_eval_car :
+  eval (Car (Cons (Num 5) (Cons (Num 6) (Nil TNum)))) = Some (NumV 5).
 Proof. Admitted.
 
-(** * PART 3: POLYMORPHIC LISTS *)
-
-(* ★ [pcar] on a polymorphic list. *)
-Example ex13_pcar : pcar (PCons 42 PNil) = Some 42.
+(* ★ [Cdr] returns the tail as a list value. *)
+Example ex13_eval_cdr :
+  eval (Cdr (Cons (Num 1) (Cons (Num 2) (Nil TNum)))) =
+  Some (ConsV (NumV 2) NilV).
 Proof. Admitted.
 
-(* ★ [plength] works on any element type. *)
-Example ex14_plength_bool :
-  plength (PCons true (PCons false PNil)) = 2.
+(* ★ [InL] evaluates to [InLV]. *)
+Example ex14_eval_inl :
+  eval (InL (TSum TNum TBool) (Num 42)) = Some (InLV (NumV 42)).
 Proof. Admitted.
 
-(* ★★ [pmap] preserves list length, just as [map] does.
-   Induct on [xs]. *)
-Lemma ex15_pmap_length : forall {A B} (f : A -> B) xs,
-  plength (pmap f xs) = plength xs.
+(* ★ [InR] evaluates to [InRV]. *)
+Example ex15_eval_inr :
+  eval (InR (TSum TNum TBool) (Boolean true)) = Some (InRV (BoolV true)).
 Proof. Admitted.
 
-(* ★★ [foldl] and [pfoldl] agree under the isomorphism.
-   Induct on [xs].  The [foldl] case updates the accumulator at each
-   step, so [revert acc] before the induction to keep the quantifier
-   general. *)
-Lemma ex16_foldl_commutes : forall {B} (f : B -> nat -> B) acc xs,
-  foldl f acc xs = pfoldl f acc (intToP xs).
+(** * PART 3: TYPING JUDGEMENTS *)
+
+(* ★ [Snd] extracts the second component's type. *)
+Example ex16_ty_snd :
+  typecheck (Snd (Pair (Boolean true) (Num 8))) = Some TNum.
 Proof. Admitted.
 
-(** * PART 4: PRODUCT TYPES *)
-
-(* ★ [fst] returns the first component. *)
-Example ex17_fst : fst (42, true) = 42.
+(* ★ [Car] on a list of Booleans gives [TBool]. *)
+Example ex17_ty_car_bool :
+  typecheck (Car (Cons (Boolean true) (Nil TBool))) = Some TBool.
 Proof. Admitted.
 
-(* ★ [snd] returns the second component. *)
-Example ex18_snd : snd (42, true) = true.
+(* ★ The type checker rejects [Car] on a non-list. *)
+Example ex18_ill_car_num :
+  typecheck (Car (Num 5)) = None.
 Proof. Admitted.
 
-(* ★ [swap] exchanges the components. *)
-Example ex19_swap : swap (true, 5) = (5, true).
+(* ★ The type checker rejects [Cons] with mismatched element types. *)
+Example ex19_ill_cons_mismatch :
+  typecheck (Cons (Boolean true) (Nil TNum)) = None.
 Proof. Admitted.
 
-(* ★★ The eta law: every pair equals the pair of its projections.
-   Destruct [p] to expose the two components, then [reflexivity]. *)
-Lemma ex20_prod_eta : forall {A B} (p : A * B), p = (fst p, snd p).
+(* ★★ [SCase] with matching branch types. *)
+Example ex20_ty_scase :
+  typecheck
+    (SCase (InL (TSum TNum TBool) (Num 5))
+           "n" (Id "n")
+           "b" (Num 0))
+  = Some TNum.
 Proof. Admitted.
 
-(** * PART 5: SUM TYPES AND RECORDS *)
-
-(* ★ Left injection into a sum. *)
-Example ex21_inl : sumToNat (inl 7) = 7.
+(* ★★ The type checker rejects [SCase] with mismatched branch types. *)
+Example ex21_ill_scase_mismatch :
+  typecheck
+    (SCase (InL (TSum TNum TBool) (Num 5))
+           "n" (Id "n")
+           "b" (Boolean false))
+  = None.
 Proof. Admitted.
 
-(* ★ Right injection: [false] maps to 0. *)
-Example ex22_inr : sumToNat (inr false) = 0.
+(** * PART 4: PRODUCTS *)
+
+(**
+Define [tripleFirst] that takes a pair of pairs and returns the leftmost
+number: [Fst (Fst p)] where [p : TProd (TProd TNum TNum) TNum].
+ *)
+
+(* ★★ Fill in the body. *)
+Definition tripleFirst : TADS :=
+  Lambda "p" (TProd (TProd TNum TNum) TNum)
+    (Fst (Fst (Id "p"))).
+
+(* ★ Type-check [tripleFirst]. *)
+Example ex22_ty_tripleFirst :
+  typecheck tripleFirst = Some (TArr (TProd (TProd TNum TNum) TNum) TNum).
 Proof. Admitted.
 
-(* ★ [pcar] on a [PList] constructed with [PCons]. *)
-Example ex23_pcar_record : pcar (PCons 99 PNil) = Some 99.
-Proof. Admitted.
-
-(* ★ Field projection from the [point35] record. *)
-Example ex24_field : point35.(py) = 5.
-Proof. Admitted.
-
-(* ★ Translating [origin] by [point35] gives [point35]. *)
-Example ex25_translate : translate point35 origin = point35.
-Proof. Admitted.
-
-(* ★★ The eta law for [Point]: every record is its own field
-   reconstruction.  Destruct [p] to expose its fields. *)
-Lemma ex26_point_eta : forall p : Point,
-  p = {| px := p.(px); py := p.(py) |}.
-Proof. Admitted.
-
-(** * PART 6: ALGEBRA OF TYPES *)
-
-(* ★ [Circle 5] injects on the left. *)
-Example ex27_circle : shapeToAlg (Circle 5) = inl 5.
-Proof. Admitted.
-
-(* ★ [Rectangle 3 4] injects on the right as a pair. *)
-Example ex28_rect : shapeToAlg (Rectangle 3 4) = inr (3, 4).
+(* ★ Evaluate [tripleFirst] applied to a nested pair. *)
+Example ex23_run_tripleFirst :
+  eval (App tripleFirst (Pair (Pair (Num 7) (Num 8)) (Num 9)))
+  = Some (NumV 7).
 Proof. Admitted.
 
 (**
-The [Color] type has three nullary constructors.  As an algebraic
-expression it is [unit + (unit + unit)]: three injections, no data.
+[swapTy] is the type of a swap function: [(A * B) -> (B * A)] for
+[A = TNum], [B = TBool].
  *)
 
-Inductive Color : Type := Red | Green | Blue.
-
-Definition colorToAlg (c : Color) : unit + (unit + unit) :=
-  match c with
-  | Red   => inl tt
-  | Green => inr (inl tt)
-  | Blue  => inr (inr tt)
-  end.
-
-Definition algToColor (x : unit + (unit + unit)) : Color :=
-  match x with
-  | inl _       => Red
-  | inr (inl _) => Green
-  | inr (inr _) => Blue
-  end.
-
-(* ★★★ Round-trip: converting to the algebra and back gives the original
-   color.  Use [destruct s] to split on [Red]/[Green]/[Blue]. *)
-Lemma ex29_algToColor_colorToAlg : forall s, algToColor (colorToAlg s) = s.
+(* ★ Confirm the swap program type-checks with the right type. *)
+Example ex24_ty_swap :
+  typecheck
+    (Lambda "p" (TProd TNum TBool)
+       (Pair (Snd (Id "p")) (Fst (Id "p"))))
+  = Some (TArr (TProd TNum TBool) (TProd TBool TNum)).
 Proof. Admitted.
 
-(* ★★★ Round-trip the other way: converting from the algebra and back.
-   Use [destruct x as [[] | [[] | []]]]; each branch is [reflexivity]. *)
-Lemma ex30_colorToAlg_algToColor : forall x, colorToAlg (algToColor x) = x.
+(** * PART 5: SUMS *)
+
+(**
+[safeHead] takes a list of numbers and returns [TSum TNum TBool]:
+[InL] wrapping the head if the list is non-empty, or [InR (Boolean true)]
+as an error flag if the list is empty.
+ *)
+
+Definition safeHead : TADS :=
+  Lambda "xs" (TList TNum)
+    (If (IsNil (Id "xs"))
+        (InR (TSum TNum TBool) (Boolean true))
+        (InL (TSum TNum TBool) (Car (Id "xs")))).
+
+(* ★★ Type-check [safeHead]. *)
+Example ex25_ty_safeHead :
+  typecheck safeHead = Some (TArr (TList TNum) (TSum TNum TBool)).
+Proof. Admitted.
+
+(* ★★ Evaluate [safeHead] on a non-empty list. *)
+Example ex26_run_safeHead_cons :
+  eval (App safeHead (Cons (Num 42) (Nil TNum)))
+  = Some (InLV (NumV 42)).
+Proof. Admitted.
+
+(* ★★ Evaluate [safeHead] on the empty list. *)
+Example ex27_run_safeHead_nil :
+  eval (App safeHead (Nil TNum))
+  = Some (InRV (BoolV true)).
+Proof. Admitted.
+
+(** * PART 6: LISTS *)
+
+(**
+[doubleList] maps [n -> n * 2] over a list of numbers using [Fix].
+Its generator takes [g] (the recursive call) and [xs] (the list).
+ *)
+
+Definition doubleGen : TADS :=
+  Lambda "g" (TArr (TList TNum) (TList TNum))
+    (Lambda "xs" (TList TNum)
+      (If (IsNil (Id "xs"))
+          (Nil TNum)
+          (Cons (Mult (Car (Id "xs")) (Num 2))
+                (App (Id "g") (Cdr (Id "xs")))))).
+
+Definition doubleList : TADS := Fix doubleGen.
+
+(* ★★ Type-check [doubleList]. *)
+Example ex28_ty_doubleList :
+  typecheck doubleList = Some (TArr (TList TNum) (TList TNum)).
+Proof. Admitted.
+
+(* ★★ Apply [doubleList] to [1; 2; 3] and get [2; 4; 6]. *)
+Example ex29_run_doubleList :
+  eval (App doubleList list123) =
+  Some (ConsV (NumV 2) (ConsV (NumV 4) (ConsV (NumV 6) NilV))).
+Proof. Admitted.
+
+(* ★★ The [sumList] from the lecture sums [1 + 2 + 3 = 6]. *)
+Example ex30_run_sumList :
+  eval (App sumList list123) = Some (NumV 6).
+Proof. Admitted.
+
+(** * PART 7: INDUCTIONS *)
+
+(**
+The next two exercises ask you to prove properties of the TADS
+infrastructure by induction.
+ *)
+
+(* ★★ [Ty_eqb] is reflexive for every [Ty].
+   Induct on [t].  For [TArr], [TProd], [TSum]: [rewrite] both IHs then
+   [reflexivity].  For [TList]: [rewrite] the single IH then [reflexivity]. *)
+Lemma ex31_Ty_eqb_refl : forall t, Ty_eqb t t = true.
+Proof. Admitted.
+
+(* ★★★ A special case of [evalM_mono]: if the fuel is [S k] and the term
+   is [Pair e1 e2], and [evalM (S k) env (Pair e1 e2) = Some v], then
+   [evalM (S (S k)) env (Pair e1 e2) = Some v].
+
+   Hint: use [evalM_mono] with [f1 := S k], [f2 := S (S k)], [Hle :=
+   le_S _ _ (le_refl _)] (or [lia]) and the given hypothesis. *)
+Lemma ex32_mono_pair : forall k env e1 e2 v,
+  evalM (S k) env (Pair e1 e2) = Some v ->
+  evalM (S (S k)) env (Pair e1 e2) = Some v.
 Proof. Admitted.

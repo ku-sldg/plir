@@ -1,164 +1,204 @@
 (**
-Programming Languages in Rocq - Data Structures Solutions
+Programming Languages in Rocq - TADS Solutions
 Complete solutions to plih_ds_exercises.v
 
 Do not read this file until you have made a genuine attempt at each
 exercise.
  *)
 
+From Stdlib Require Import String.
+From Stdlib Require Import Lia.
 Require Import plih_rocq_ds_shared.
 Require Import plih_ds_lecture.
 
-(** * PART 1: RUNNING THE FUNCTIONS *)
+Local Open Scope string_scope.
 
-Example ex1_car : car (Cons 7 (Cons 3 Nil)) = Some 7.
+(** * PART 1: RUNNING THE TYPE CHECKER *)
+
+Example ex1_ty_num : typecheck (Num 42) = Some TNum.
 Proof. reflexivity. Qed.
 
-Example ex2_car_nil : car Nil = None.
+Example ex2_ty_pair :
+  typecheck (Pair (Num 5) (Boolean true)) = Some (TProd TNum TBool).
 Proof. reflexivity. Qed.
 
-Example ex3_length : length (Cons 1 (Cons 2 (Cons 3 Nil))) = 3.
+Example ex3_ty_fst :
+  typecheck (Fst (Pair (Num 1) (Boolean false))) = Some TNum.
 Proof. reflexivity. Qed.
 
-Example ex4_append :
-  append (Cons 1 (Cons 2 Nil)) (Cons 3 (Cons 4 Nil)) =
-  Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil))).
+Example ex4_ty_nil_bool :
+  typecheck (Nil TBool) = Some (TList TBool).
 Proof. reflexivity. Qed.
 
-Example ex5_reverse :
-  reverse (Cons 1 (Cons 2 (Cons 3 Nil))) = Cons 3 (Cons 2 (Cons 1 Nil)).
+Example ex5_ty_cons :
+  typecheck (Cons (Num 3) (Cons (Num 4) (Nil TNum))) = Some (TList TNum).
 Proof. reflexivity. Qed.
 
-Example ex6_map_succ :
-  map S (Cons 0 (Cons 1 (Cons 2 Nil))) = Cons 1 (Cons 2 (Cons 3 Nil)).
+Example ex6_ty_isnil :
+  typecheck (IsNil (Nil TNum)) = Some TBool.
 Proof. reflexivity. Qed.
 
-Example ex7_sum :
-  foldr Nat.add 0 (Cons 1 (Cons 2 (Cons 3 Nil))) = 6.
+Example ex7_ty_inl :
+  typecheck (InL (TSum TNum TBool) (Num 7)) = Some (TSum TNum TBool).
 Proof. reflexivity. Qed.
 
-Example ex8_filter_even :
-  filter Nat.even (Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))) = Cons 2 (Cons 4 Nil).
+(** * PART 2: RUNNING THE EVALUATOR *)
+
+Example ex8_eval_pair :
+  eval (Pair (Num 10) (Num 20)) = Some (PairV (NumV 10) (NumV 20)).
 Proof. reflexivity. Qed.
 
-(** * PART 2: INTLIST LEMMAS *)
+Example ex9_eval_fst :
+  eval (Fst (Pair (Num 3) (Boolean true))) = Some (NumV 3).
+Proof. reflexivity. Qed.
 
-Lemma ex9_map_length : forall f xs, length (map f xs) = length xs.
+Example ex10_eval_snd :
+  eval (Snd (Pair (Boolean false) (Num 99))) = Some (NumV 99).
+Proof. reflexivity. Qed.
+
+Example ex11_eval_isnil_cons :
+  eval (IsNil (Cons (Num 1) (Nil TNum))) = Some (BoolV false).
+Proof. reflexivity. Qed.
+
+Example ex12_eval_car :
+  eval (Car (Cons (Num 5) (Cons (Num 6) (Nil TNum)))) = Some (NumV 5).
+Proof. reflexivity. Qed.
+
+Example ex13_eval_cdr :
+  eval (Cdr (Cons (Num 1) (Cons (Num 2) (Nil TNum)))) =
+  Some (ConsV (NumV 2) NilV).
+Proof. reflexivity. Qed.
+
+Example ex14_eval_inl :
+  eval (InL (TSum TNum TBool) (Num 42)) = Some (InLV (NumV 42)).
+Proof. reflexivity. Qed.
+
+Example ex15_eval_inr :
+  eval (InR (TSum TNum TBool) (Boolean true)) = Some (InRV (BoolV true)).
+Proof. reflexivity. Qed.
+
+(** * PART 3: TYPING JUDGEMENTS *)
+
+Example ex16_ty_snd :
+  typecheck (Snd (Pair (Boolean true) (Num 8))) = Some TNum.
+Proof. reflexivity. Qed.
+
+Example ex17_ty_car_bool :
+  typecheck (Car (Cons (Boolean true) (Nil TBool))) = Some TBool.
+Proof. reflexivity. Qed.
+
+Example ex18_ill_car_num :
+  typecheck (Car (Num 5)) = None.
+Proof. reflexivity. Qed.
+
+Example ex19_ill_cons_mismatch :
+  typecheck (Cons (Boolean true) (Nil TNum)) = None.
+Proof. reflexivity. Qed.
+
+Example ex20_ty_scase :
+  typecheck
+    (SCase (InL (TSum TNum TBool) (Num 5))
+           "n" (Id "n")
+           "b" (Num 0))
+  = Some TNum.
+Proof. reflexivity. Qed.
+
+Example ex21_ill_scase_mismatch :
+  typecheck
+    (SCase (InL (TSum TNum TBool) (Num 5))
+           "n" (Id "n")
+           "b" (Boolean false))
+  = None.
+Proof. reflexivity. Qed.
+
+(** * PART 4: PRODUCTS *)
+
+Definition tripleFirst : TADS :=
+  Lambda "p" (TProd (TProd TNum TNum) TNum)
+    (Fst (Fst (Id "p"))).
+
+Example ex22_ty_tripleFirst :
+  typecheck tripleFirst = Some (TArr (TProd (TProd TNum TNum) TNum) TNum).
+Proof. reflexivity. Qed.
+
+Example ex23_run_tripleFirst :
+  eval (App tripleFirst (Pair (Pair (Num 7) (Num 8)) (Num 9)))
+  = Some (NumV 7).
+Proof. reflexivity. Qed.
+
+Example ex24_ty_swap :
+  typecheck
+    (Lambda "p" (TProd TNum TBool)
+       (Pair (Snd (Id "p")) (Fst (Id "p"))))
+  = Some (TArr (TProd TNum TBool) (TProd TBool TNum)).
+Proof. reflexivity. Qed.
+
+(** * PART 5: SUMS *)
+
+Definition safeHead : TADS :=
+  Lambda "xs" (TList TNum)
+    (If (IsNil (Id "xs"))
+        (InR (TSum TNum TBool) (Boolean true))
+        (InL (TSum TNum TBool) (Car (Id "xs")))).
+
+Example ex25_ty_safeHead :
+  typecheck safeHead = Some (TArr (TList TNum) (TSum TNum TBool)).
+Proof. reflexivity. Qed.
+
+Example ex26_run_safeHead_cons :
+  eval (App safeHead (Cons (Num 42) (Nil TNum)))
+  = Some (InLV (NumV 42)).
+Proof. reflexivity. Qed.
+
+Example ex27_run_safeHead_nil :
+  eval (App safeHead (Nil TNum))
+  = Some (InRV (BoolV true)).
+Proof. reflexivity. Qed.
+
+(** * PART 6: LISTS *)
+
+Definition doubleGen : TADS :=
+  Lambda "g" (TArr (TList TNum) (TList TNum))
+    (Lambda "xs" (TList TNum)
+      (If (IsNil (Id "xs"))
+          (Nil TNum)
+          (Cons (Mult (Car (Id "xs")) (Num 2))
+                (App (Id "g") (Cdr (Id "xs")))))).
+
+Definition doubleList : TADS := Fix doubleGen.
+
+Example ex28_ty_doubleList :
+  typecheck doubleList = Some (TArr (TList TNum) (TList TNum)).
+Proof. reflexivity. Qed.
+
+Example ex29_run_doubleList :
+  eval (App doubleList list123) =
+  Some (ConsV (NumV 2) (ConsV (NumV 4) (ConsV (NumV 6) NilV))).
+Proof. reflexivity. Qed.
+
+Example ex30_run_sumList :
+  eval (App sumList list123) = Some (NumV 6).
+Proof. reflexivity. Qed.
+
+(** * PART 7: INDUCTIONS *)
+
+Lemma ex31_Ty_eqb_refl : forall t, Ty_eqb t t = true.
 Proof.
-  intros f xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
+  intros t.
+  induction t as [| | d IHd r IHr | a1 IH1 b1 IH2 | a1 IH1 b1 IH2 | t IH];
+    simpl; try reflexivity.
+  - rewrite IHd, IHr. reflexivity.
+  - rewrite IH1, IH2. reflexivity.
+  - rewrite IH1, IH2. reflexivity.
+  - rewrite IH. reflexivity.
 Qed.
 
-Lemma ex10_filter_le : forall p xs, length (filter p xs) <= length xs.
+Lemma ex32_mono_pair : forall k env e1 e2 v,
+  evalM (S k) env (Pair e1 e2) = Some v ->
+  evalM (S (S k)) env (Pair e1 e2) = Some v.
 Proof.
-  intros p xs. induction xs as [| n tl IH].
-  - simpl. lia.
-  - simpl. destruct (p n); simpl; lia.
+  intros k env e1 e2 v H.
+  apply (evalM_mono (S k) (S (S k)) env (Pair e1 e2) v).
+  - lia.
+  - exact H.
 Qed.
-
-Lemma ex11_reverse_append : forall xs ys,
-  reverse (append xs ys) = append (reverse ys) (reverse xs).
-Proof.
-  intros xs ys. induction xs as [| n tl IH].
-  - simpl. rewrite append_nil_r. reflexivity.
-  - simpl. rewrite IH. rewrite <- append_assoc. reflexivity.
-Qed.
-
-Lemma ex12_reverse_involutive : forall xs, reverse (reverse xs) = xs.
-Proof.
-  intros xs. induction xs as [| n tl IH].
-  - reflexivity.
-  - simpl. rewrite ex11_reverse_append. simpl. rewrite IH. reflexivity.
-Qed.
-
-(** * PART 3: POLYMORPHIC LISTS *)
-
-Example ex13_pcar : pcar (PCons 42 PNil) = Some 42.
-Proof. reflexivity. Qed.
-
-Example ex14_plength_bool :
-  plength (PCons true (PCons false PNil)) = 2.
-Proof. reflexivity. Qed.
-
-Lemma ex15_pmap_length : forall {A B} (f : A -> B) xs,
-  plength (pmap f xs) = plength xs.
-Proof.
-  intros A B f xs. induction xs as [| a tl IH].
-  - reflexivity.
-  - simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma ex16_foldl_commutes : forall {B} (f : B -> nat -> B) acc xs,
-  foldl f acc xs = pfoldl f acc (intToP xs).
-Proof.
-  intros B f acc xs. revert acc.
-  induction xs as [| n tl IH].
-  - reflexivity.
-  - intros acc. simpl. rewrite IH. reflexivity.
-Qed.
-
-(** * PART 4: PRODUCT TYPES *)
-
-Example ex17_fst : fst (42, true) = 42.
-Proof. reflexivity. Qed.
-
-Example ex18_snd : snd (42, true) = true.
-Proof. reflexivity. Qed.
-
-Example ex19_swap : swap (true, 5) = (5, true).
-Proof. reflexivity. Qed.
-
-Lemma ex20_prod_eta : forall {A B} (p : A * B), p = (fst p, snd p).
-Proof. intros A B [a b]. reflexivity. Qed.
-
-(** * PART 5: SUM TYPES AND RECORDS *)
-
-Example ex21_inl : sumToNat (inl 7) = 7.
-Proof. reflexivity. Qed.
-
-Example ex22_inr : sumToNat (inr false) = 0.
-Proof. reflexivity. Qed.
-
-Example ex23_pcar_record : pcar (PCons 99 PNil) = Some 99.
-Proof. reflexivity. Qed.
-
-Example ex24_field : point35.(py) = 5.
-Proof. reflexivity. Qed.
-
-Example ex25_translate : translate point35 origin = point35.
-Proof. reflexivity. Qed.
-
-Lemma ex26_point_eta : forall p : Point,
-  p = {| px := p.(px); py := p.(py) |}.
-Proof. intros [n m]. reflexivity. Qed.
-
-(** * PART 6: ALGEBRA OF TYPES *)
-
-Example ex27_circle : shapeToAlg (Circle 5) = inl 5.
-Proof. reflexivity. Qed.
-
-Example ex28_rect : shapeToAlg (Rectangle 3 4) = inr (3, 4).
-Proof. reflexivity. Qed.
-
-Inductive Color : Type := Red | Green | Blue.
-
-Definition colorToAlg (c : Color) : unit + (unit + unit) :=
-  match c with
-  | Red   => inl tt
-  | Green => inr (inl tt)
-  | Blue  => inr (inr tt)
-  end.
-
-Definition algToColor (x : unit + (unit + unit)) : Color :=
-  match x with
-  | inl _       => Red
-  | inr (inl _) => Green
-  | inr (inr _) => Blue
-  end.
-
-Lemma ex29_algToColor_colorToAlg : forall s, algToColor (colorToAlg s) = s.
-Proof. intros [| |]; reflexivity. Qed.
-
-Lemma ex30_colorToAlg_algToColor : forall x, colorToAlg (algToColor x) = x.
-Proof. intros [[] | [[] | []]]; reflexivity. Qed.
