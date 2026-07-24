@@ -29,14 +29,42 @@ Inductive AE : Type :=
 | Minus : AE -> AE -> AE.
 
 (**
-This is an abstract syntax tree (AST). We will implement concrete syntax and a
-parser later in this lesson.
+** Inductive Types
+
+This is an abstract syntax tree (AST) implemented using an inductive datatype.
+We will implement concrete syntax and a parser later in this lesson.  The
+inductive datatype defines constructors for every element of the type.  In this
+case [AE] is the new type and [Num], [Plus], and [Minus] construct elements of
+the type.  [Num] take a single parameter of type [nat] and constructs a value
+like [(Num 3)].  [Num] is not a function in the sense that it does not evaluate
+to a simpler form.  [Plus] and [Minus] are also constructors for [AE] whose
+arguments are also of type [AE].  That makes them recursive and allows
+construting arbitrarily large [AE]s.  [Num] constructs leaves while [Plus] and
+[Minus] construct internal nodes.
+
+Things to remember:
+
+  - All ements of [AE] are condstructed with [Num], [Plus], and [Minus].
+  - While [AE] is infinite, every element of [AE] is finite.
+  - The pieces of an [AE] value are smaller than the value.
+<<
+Inductive Bool : Type :=
+| True : Bool
+| False : Bool.
+>>
+
+<<
+Inductive NatTree : Type :=
+| Leaf : nat -> NatTree
+| Node : NatTree -> NatTree -> NatTree.
+>>
+
 *)
 
 (**
 ** From an English expression to abstract syntax
 
-How do we turn an ordinary arithmetic expression, written the way you would
+We will use [Inductive] types to define abstract syntax.  How do we turn an ordinary arithmetic expression, written the way you would
 say it out loud, into an [AE] value? We translate it recursively, working
 from the _outside in_:
 
@@ -70,7 +98,7 @@ we write later; here we simply build the trees by hand.)
 *)
 
 (**
-Examples of AE terms (these are VALUES of type AE):
+Examples of expressions written as AE terms (these are values of type [AE]):
  *)
 
 Definition ae_example_1 : AE := Num 5. (* 5 *)
@@ -81,7 +109,7 @@ Definition ae_example_4 : AE := Plus (Num 1) (Plus (Num 2) (Num 3)). (* 1+(2+3) 
 (**
 ** How [Definition] works
 
-[Definition] introduces a new named constant. Every definition above follows
+[Definition] introduces a new named constant. Every definition follows
 the same three-part shape:
 
     Definition name : type := value.
@@ -133,10 +161,10 @@ Fixpoint eval (e : AE) : nat :=
   end.
 
 (**
-The [match] is the heart of [eval]: it inspects [e], asks _which constructor_
-built it, and runs the corresponding branch.  There is one branch per
-constructor of [AE], and each pattern to the left of [=>] names the arguments
-that constructor carried, so the expression on the right can use them:
+The [match] expression is the heart of [eval]: it inspects [e], asks _which
+constructor_ built it, and runs the corresponding branch.  There is one branch
+per constructor of [AE], and each pattern to the left of [=>] names the
+arguments that constructor carried, so the expression on the right can use them:
 
   - [Num x => x] - a numeric literal already _is_ its value, so [eval] hands
     back the [x] it holds;
@@ -155,14 +183,32 @@ of the language - reading them top to bottom is reading the semantics of AE.
 *)
 
 (**
-Let's test eval on our examples
+Let's test eval on our examples:
 *)
 
 Example test_eval_1 : eval (Num 5) = 5.
-Proof. reflexivity. Qed.
+Proof. simpl. reflexivity. Qed.
 
 Example test_eval_2 : eval (Plus (Num 3) (Num 4)) = 7.
-Proof. reflexivity. Qed.
+Proof. simpl. reflexivity. Qed.
+
+(**
+Each [Example] is a named claim or property that Rocq checks for us - a
+_machine-checked test_.  [test_eval_1] states [eval (Num 5) = 5]: evaluating
+[Num 5] gives [5].  The period ends the statement and opens a _goal_ we now have
+to prove.
+
+[Proof] enters proof mode where we use tactics to create a proof.  [simpl] is
+our first tactic. [simpl] attempts to simplify the proof goal.  In the case of
+[test_eval_1] it simplifies [(Num 5)] to [5] using the definition of [eval].
+The result is [(Num 5) = 5] reduces to [5 = 5].
+
+[reflexivity] is our second proof tactic.  It discharges any goal of the form [X
+= X].  Calling [reflexivity] after [simpl] discharges the goal [5=5].  Because
+therea are no goals left, the proof is done.
+
+[Qed] closes the proof and tells Rocq the [Example] is true.  Quick, Eat Donuts.
+*)
 
 Example test_eval_3 : eval (Minus (Num 10) (Num 2)) = 8.
 Proof. reflexivity. Qed.
@@ -171,25 +217,26 @@ Example test_eval_4 : eval (Plus (Num 1) (Plus (Num 2) (Num 3))) = 6.
 Proof. reflexivity. Qed.
 
 (**
-Each [Example] is a named claim that Rocq checks for us - a _machine-checked
-test_.  [test_eval_1] states [eval (Num 5) = 5]: evaluating [Num 5] gives [5].
-The period ends the statement and opens a _goal_ we now have to prove.
+[reflexivity] automatically calls [simpl] as a part of its work allowing you to
+skip [simpl] altogether.  In [test_eval_3] [reflexivity] reduces both sides of
+the equality - here computing [eval] - and succeeds immediately if they become
+the same term. Then [Qed] closes and records the proof just like before.  If the
+two sides do not match, [reflexivity] fails and the goal stays open waiting for
+a different tactic.
 
-[Proof] enters proof mode, and [reflexivity] is our first tactic.  It reduces
-both sides of the equality - here computing [eval] - and succeeds if they
-become the _same_ term; then [Qed] closes and records the proof.  If the two
-sides do not match, [reflexivity] fails and the goal stays open for a
-different tactic.
+Why call [simpl] if we don't need to?  When [reflexivity] fails, it can be
+useful to see what's going on.  Calling [simpl] will cause Rock to _show its
+work_ giving you debugging information.
 
-Every command ends in a period: that is what tells Rocq to run it.
+Finally, every command ends in a dot telling Rocq to run it.
 *)
 
 (** * SECTION 3: SIMPLE PROPERTIES *)
 
 (**
-Now we begin proving properties about eval.
-This is what differentiates Rocq from Haskell: we can prove
-that our interpreter has certain desirable properties.
+Now we begin proving properties about eval.  This is what differentiates Rocq
+from Haskell: we can prove that our interpreter has certain desirable
+properties.  This is why we use Rocq!
  *)
 
 (** ** PROPERTY 1: Evaluation is deterministic
@@ -227,11 +274,15 @@ built), and [lia] (discharge linear-arithmetic goals) - each introduced where
 it first appears.
 *)
 
-(** This is too trivial! Let's prove something more interesting. *)
+(**
+This is too trivial to justify all this work Let's prove something more
+interesting.
+*)
 
 (** ** PROPERTY 2: Eval distributes over Plus
 
-This is obvious from the definition, but it's good practice.
+This is obvious from the definition, but it's good practice to prove it.  Rocq
+will certainly not let you skip it if you need it later.
  *)
 
 Lemma eval_plus : forall e1 e2,
@@ -255,7 +306,7 @@ Lemma plus_commutative : forall e1 e2,
 Proof.
   intro e1.
   intro e2.
-  (* Unfold the definition of eval *)
+  (* Simplify and unfold the definition of eval *)
   simpl.
   (* Now we have: eval e1 + eval e2 = eval e2 + eval e1 *)
   (* This is Nat.add_comm *)
@@ -265,20 +316,23 @@ Qed.
 
 (**
 [simpl] simplifies the goal by _computing_: it unfolds definitions like [eval]
-and reduces whatever it can.  Before [simpl] the goal is
-[eval (Plus e1 e2) = eval (Plus e2 e1)]; [simpl] runs [eval]'s [Plus] branch on
-each side to leave [eval e1 + eval e2 = eval e2 + eval e1].  It does not finish
-the proof - it just exposes the underlying [+] so an arithmetic lemma can
-apply.  (Relatives: [cbn] is a more controllable version, [compute] reduces
-fully, and [unfold f] expands one definition by name.)
+and reduces whatever it can.  Before [simpl] the goal is [eval (Plus e1 e2) =
+eval (Plus e2 e1)]; [simpl] runs [eval]'s [Plus] branch on each side to leave
+[eval e1 + eval e2 = eval e2 + eval e1].  It does not finish the proof - it just
+exposes the underlying [+] so an arithmetic lemma can apply.  (Relatives: [cbn]
+is a more controllable version, [compute] reduces fully, and [unfold f] expands
+one definition by name.)
 
-[rewrite] then uses an equation to replace equals by equals in the goal.  Given
-a lemma [L : a = b], [rewrite L] finds [a] and rewrites it to [b].  Here
-[rewrite Nat.add_comm] (with [Nat.add_comm : forall a b, a + b = b + a]) turns
-the left-hand [eval e1 + eval e2] into [eval e2 + eval e1], leaving both sides
-identical, so [reflexivity] closes the goal.  Variants: [rewrite <- L] rewrites
-right-to-left ([b] to [a]), and [rewrite L in H] rewrites inside a hypothesis
-instead of the goal.
+[rewrite] uses an equation Rocq already knows to replace equals by equals in the
+goal.  Given a lemma [L : a = b], [rewrite L] finds [a] and rewrites it to [b]
+in the current goal.  Here [rewrite Nat.add_comm] (with [Nat.add_comm : forall a
+b, a + b = b + a]) turns the left-hand [eval e1 + eval e2] into [eval e2 + eval
+e1], leaving both sides identical, [reflexivity] then closes the goal.  We call
+this process _rewriting_ and it is foundational to theorem proving.  Later we
+will do rewriting automatically to make proofs less tedious.
+  
+Variants: [rewrite <- L] rewrites right-to-left ([b] to [a]), and [rewrite L in
+H] rewrites inside a hypothesis instead of the goal.
 *)
 
 (** ** PROPERTY 4: Plus is associative on AE *)
@@ -297,7 +351,7 @@ Qed.
 
 (**
 [symmetry] swaps the two sides of an equality goal: it turns [a = b] into
-[b = a].  It proves nothing on its own - it just _reorients_ the goal so a
+[b = a].  It proves nothing on its own - it just flips the goal so a
 lemma lines up.  Here the goal after [simpl] is
 [(eval e1 + eval e2) + eval e3 = eval e1 + (eval e2 + eval e3)], but the
 library states associativity the other way round
@@ -306,7 +360,11 @@ the goal so it matches [Nat.add_assoc] exactly, and then [apply Nat.add_assoc]
 finishes.
 *)
 
-(** ** PROPERTY 5: Minus is not commutative (obviously) *)
+(**
+** PROPERTY 5: Minus is not commutative (obviously).  All our proofs thus
+far have been positive.  Here we will disprove a property by finding a _witness_
+that makes the Lemma false.
+*)
 
 Lemma minus_not_commutative : exists e1 e2,
   eval (Minus e1 e2) <> eval (Minus e2 e1).
@@ -347,8 +405,8 @@ that, choosing the witness [n := eval e].
 
 (** ** PROPERTY 6: Every AE evaluates to some natural number
 
-This is TRIVIAL because eval always produces a nat, but it's good to state
-explicitly.  Once again [exists] plays a central role.
+This property is trivial because eval always produces a [nat], but it's good to
+state explicitly.  Once again [exists] plays a central role.
  *)
 
 Lemma eval_produces_nat : forall e,
