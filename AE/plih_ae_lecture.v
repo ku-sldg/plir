@@ -31,22 +31,19 @@ Inductive AE : Type :=
 (**
 ** Inductive Types
 
-This is an abstract syntax tree (AST) implemented using an inductive datatype.
-We will implement concrete syntax and a parser later in this lesson.  The
-inductive datatype defines constructors for every element of the type.  In this
-case [AE] is the new type and [Num], [Plus], and [Minus] construct elements of
-the type.  [Num] take a single parameter of type [nat] and constructs a value
-like [(Num 3)].  [Num] is not a function in the sense that it does not evaluate
-to a simpler form.  [Plus] and [Minus] are also constructors for [AE] whose
-arguments are also of type [AE].  That makes them recursive and allows
-construting arbitrarily large [AE]s.  [Num] constructs leaves while [Plus] and
-[Minus] construct internal nodes.
+[AE] defines an abstract syntax tree (AST) implemented using an inductive
+datatype.  [AE] names the new type and [Type] indicates what we're defining.  The body of the datatype defines constructors for every element of the
+type.  In this case [Num], [Plus], and [Minus] construct elements of the type
+[AE].  [Num] takes a single parameter of type [nat] and constructs a value.
+[Num] is not a function in the sense that it does not evaluate to a simpler
+form.  [Plus] and [Minus] are also constructors for [AE] whose arguments are
+also of type [AE].  That makes them recursive and allows construting arbitrarily
+large [AE]s.  Viewed as a tree, [Num] constructs leaves while [Plus] and [Minus]
+construct nodes.  We will implement concrete syntax and a parser that generates
+[AE] later in this lesson.
 
-Things to remember:
+Examples:
 
-  - All ements of [AE] are condstructed with [Num], [Plus], and [Minus].
-  - While [AE] is infinite, every element of [AE] is finite.
-  - The pieces of an [AE] value are smaller than the value.
 <<
 Inductive Bool : Type :=
 | True : Bool
@@ -59,6 +56,14 @@ Inductive NatTree : Type :=
 | Node : NatTree -> NatTree -> NatTree.
 >>
 
+Interesting things to consider:
+
+- All ements of [AE] are constructed with [Num], [Plus], and [Minus].  There is
+  no other way to construct a value of type [AE].
+- While [AE] is infinite, every element of [AE] is finite.  No matter how big an
+  [AE] value gets, it can always be used to construct something bigger.
+- The pieces of an [AE] value are smaller than the value making the type
+  inductive.  We will start using induction as a proof technique shortly.
 *)
 
 (**
@@ -93,8 +98,8 @@ the grouping. Writing [(1 + 2) + 3] instead would make the second [+] the
 outermost operation and yield a different tree,
 [Plus (Plus (Num 1) (Num 2)) (Num 3)]. Abstract syntax is unambiguous for
 exactly this reason - there is nothing left to parenthesize. (Turning the
-English text back _into_ a tree, precedence and all, is the job of the parser
-we write later; here we simply build the trees by hand.)
+English text back into a tree, precedence and all, is the job of the parser
+we write later; here we build the trees by hand.)
 *)
 
 (**
@@ -116,7 +121,7 @@ the same three-part shape:
 
 read as "let [name], of type [type], stand for [value]." Each part has a job:
 
-  - [name] is the fresh identifier you are introducing. After this command it
+  - [name] is the fresh identifier being introduced. After this command it
     is available everywhere below as a permanent, global binding.
   - [: type] is a type ascription. Rocq checks that [value] really does have
     this type and rejects the definition otherwise, so the annotation doubles
@@ -135,22 +140,20 @@ reduces by first replacing [ae_example_2] with [Plus (Num 3) (Num 4)]. A
 [Definition] is therefore not a copy or a runtime variable; it is a name for a
 term that Rocq can always see inside.
 
-Note that [Definition] cannot be used to define recursive constructions: the
+Note that [Definition] cannot be used to define recursive constructions.
 [value] may not refer to [name] itself, because the name is not yet in scope
 while its own defining term is being checked. Self-reference needs the
-structural-recursion machinery of [Fixpoint] - which is exactly why [eval]
+structural-recursion machinery of [Fixpoint] which is exactly why [eval]
 below is a [Fixpoint] and not a [Definition].
 *)
 
 (** * SECTION 2: SEMANTICS - Defining Evaluation *)
 
 (**
-Now we define what these expressions mean by writing an interpreter.
-
-The [eval] function maps an AE to a natural number (its value).
-
-Rocq requires that [eval] be total (terminates on all inputs).
-This is enforced requiring structural recursion on the AE argument.
+Now we define what these expressions mean by writing an interpreter, [eval].
+The interpreter will take every value from [AE] and map it to a [nat] in Rocq.  
+Rocq requires that all functions be _total_ implying [eval] terminates on all
+inputs. This is enforced requiring structural recursion on the AE argument.
 *)
 
 Fixpoint eval (e : AE) : nat :=
@@ -176,10 +179,31 @@ arguments that constructor carried, so the expression on the right can use them:
 
 Two properties make this a good definition.  It is _exhaustive_ - every
 constructor of [AE] has a branch, which Rocq checks - so [eval] yields a value
-for _every_ expression.  And it is _structurally recursive_: the recursive
+for every expression.  And it is _structurally recursive_: the recursive
 calls [eval x] and [eval y] are on strict subterms of [e], which is exactly
-why Rocq accepts the [Fixpoint] as total.  The three branches are the meaning
-of the language - reading them top to bottom is reading the semantics of AE.
+why Rocq accepts the [Fixpoint] as total.
+
+[eval] is two things in one.  First, it is an _interpreter_ for [AE].  One can
+call [eval] like any traditional function.  In Rocq we use [Compute] to evaluate
+expressions:
+*)
+
+Compute (Plus (Num 2) (Num 3)).
+
+(**
+produces
+
+<<
+  = Plus (Num 2) (Num 3)
+     : AE
+>>
+
+giving us both a value and a type.
+
+Second, the three branches are the meaning
+of the language - reading them top to bottom is reading the semantics of [AE].
+Because Rocq has well-defined semantics we are defining [AE] by transforming
+[AE] values into Rocq.
 *)
 
 (**
@@ -275,7 +299,7 @@ it first appears.
 *)
 
 (**
-This is too trivial to justify all this work Let's prove something more
+This is too trivial to justify all this work. Let's prove something more
 interesting.
 *)
 
@@ -361,9 +385,10 @@ finishes.
 *)
 
 (**
-** PROPERTY 5: Minus is not commutative (obviously).  All our proofs thus
-far have been positive.  Here we will disprove a property by finding a _witness_
-that makes the Lemma false.
+** PROPERTY 5: Minus is not commutative (obviously).
+
+All our proofs thus far have been positive.  Here we will disprove a property by
+finding a _witness_ that makes the Lemma false.
 *)
 
 Lemma minus_not_commutative : exists e1 e2,
@@ -394,7 +419,9 @@ then [exists (Num 3)] pick the two witnesses, reducing the goal to
 [5 - 3 <> 3 - 5], i.e. [2 <> 0].  (The rest finishes it: [<>] is
 [_ = _ -> False], so [intro H] assumes the equality, [simpl in H] reduces it to
 [2 = 0], and [discriminate] closes the goal because [2] and [0] are different
-constructors of [nat] and can never be equal.)
+constructors of [nat] and can never be equal.  Generally, [discriminate]
+discharges a goal when the context contains an equality between
+two structurally different values creating a contradiction.
 
 Note the neat opposition with [forall]/[intro]: to prove a [forall] you [intro]
 an _arbitrary_ element; to prove an [exists] you [exists] a _specific_ one you
@@ -405,8 +432,8 @@ that, choosing the witness [n := eval e].
 
 (** ** PROPERTY 6: Every AE evaluates to some natural number
 
-This property is trivial because eval always produces a [nat], but it's good to
-state explicitly.  Once again [exists] plays a central role.
+This property is trivial because [eval] always produces a [nat], but it's good
+to state explicitly.  Once again [exists] plays a central role.
  *)
 
 Lemma eval_produces_nat : forall e,
@@ -422,11 +449,11 @@ Qed.
 (** * SECTION 4: INDUCTION OVER AE *)
 
 (**
-The real power of formal verification shows up with _induction_.  The [Example]
-tests above each check _one_ concrete expression; induction lets us prove a
-property of _every_ AE at once, in finitely many cases.
+The power of formal verification shows up using _induction_.  The [Example]
+tests above each check _one_ concrete expression. Induction lets us prove a
+property of _every_ AE at once, with finitely many cases.
 
-The key is that [AE] is an _inductively defined_ type: every value is built by
+The key is that [AE] is an _inductively defined_ type. Every value is constructed by
 finitely many applications of its constructors, from a base case ([Num n]) and
 combinations of smaller expressions ([Plus e1 e2], [Minus e1 e2]).  Structural
 induction is the proof principle that comes with such a definition - to show a
@@ -438,9 +465,9 @@ property [P] holds for _all_ [e : AE] it suffices to show:
 
 Those assumptions about the parts are the _induction hypotheses_.  Since any AE
 is assembled from smaller AEs down to [Num] leaves, covering the base and
-inductive cases covers every expression there is.
+inductive cases covers every expression.
 
-This is the proof-level mirror of _recursion_.  [eval] _computes_ on an
+This is the proof-level mirror of _recursion_.  [eval] computes on an
 expression by calling itself on the subexpressions ([eval x], [eval y]);
 induction _reasons_ about an expression by assuming the property of those same
 subexpressions.  Definition recurses on the structure; proof inducts on the
@@ -481,7 +508,7 @@ Proof.
 Qed.
 
 (**
-A note on [induction], the bullets [-], and [lia] - all first used here.
+A note on [induction], the bullets [-], and [lia] are all first used here.
 
 [induction e as [n | e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2]] applies the structural
 induction principle for [AE].  It replaces the single goal with _one subgoal
@@ -553,8 +580,9 @@ Fixpoint count_ops (e : AE) : nat :=
   | Minus x y => 1 + count_ops x + count_ops y
   end.
 
-(* * Once again we use simple `Example` theorems that serve as the verification
-  equivalent of test cases. *)
+(**
+Once again we use simple `Example` theorems that serve as the verification
+equivalent of test cases. *)
 
 Example count_ops_test_1 : count_ops (Num 5) = 0.
 Proof. reflexivity. Qed.
@@ -569,22 +597,27 @@ Proof. reflexivity. Qed.
 (** * SECTION 6: EQUIVALENCE OF EXPRESSIONS *)
 
 (**
-[ae_equiv] captures _semantic_ equivalence: two expressions are equivalent when
-they [eval] to the same number.  It is deliberately coarser than syntactic
-equality [=] on [AE], which would ask the two trees to be _identical_.  For
+[ae_equiv] captures _semantic_ or _program_ equivalence: two expressions are
+equivalent when they [eval] to the same number.  It is deliberately distinct
+from _syntactic_ equality [=] on [AE] where two trees are _identical_.  For
 instance [Plus (Num 1) (Num 2)] and [Plus (Num 2) (Num 1)] are different trees
 (so not [=]) yet both evaluate to [3], so they _are_ [ae_equiv].
 
+[ae_equiv] is an important property for verifying programs, languages and tools.
+For example, we care very much that an optimization is correct.  Specifically,
+that an optimized program is equivalent to the original program.  We also care
+when two implementations of the same language interpreter are equivalent.
+
 Note the result type is [Prop], not [bool]: [ae_equiv e1 e2] is the
 _proposition_ [eval e1 = eval e2] - a claim we prove, not a value we compute.
+More on this later when we discuss reflection.
  *)
 
 Definition ae_equiv (e1 e2 : AE) : Prop := eval e1 = eval e2.
 
 (**
-Calling [ae_equiv] an "equivalence" is a promise we should keep.  A relation is
-an _equivalence relation_ exactly when it has three properties, and the next
-three lemmas establish each in turn:
+Calling [ae_equiv] an "equivalence" is a promise we should keep.  By definition
+a relation is an _equivalence relation_ when it has three properties:
 
   - _reflexive_ - every expression is equivalent to itself ([ae_equiv e e]);
   - _symmetric_ - if [e1] is equivalent to [e2] then [e2] is equivalent to [e1]
@@ -596,7 +629,9 @@ Together these let us reason about [ae_equiv] the way we reason about [=], and
 they partition [AE] into classes of expressions that all compute the same
 value.  Each proof is short because, once [ae_equiv] is unfolded to
 [eval _ = eval _], it reduces to the matching fact about equality of [nat] -
-reflexivity, [symmetry], and [transitivity] respectively.
+[reflexivity], [symmetry], and [transitivity] respectively.
+
+Reflexivity is up first:
  *)
 
 Lemma ae_equiv_refl : forall e,
@@ -606,6 +641,10 @@ Proof.
   unfold ae_equiv.
   reflexivity.
 Qed.
+
+(** 
+Now symmetric.  Note the use of Rocq's [symmetry] tactic:
+*)
 
 Lemma ae_equiv_sym : forall e1 e2,
   ae_equiv e1 e2 -> ae_equiv e2 e1.
@@ -617,6 +656,11 @@ Proof.
   symmetry.
   exact H.
 Qed.
+
+(** 
+Finally transitive.  Note the use of Rocq's [transitivity] tactic and generation
+of two subgoals:
+*)
 
 Lemma ae_equiv_trans : forall e1 e2 e3,
   ae_equiv e1 e2 -> ae_equiv e2 e3 -> ae_equiv e1 e3.
@@ -657,13 +701,23 @@ closes it.  In [ae_equiv_trans], [transitivity (eval e2)] leaves two goals,
 [exact H23].  (Contrast [apply L], which matches a lemma's _conclusion_ to the
 goal and leaves its premises as new goals; [exact] demands a complete, exact
 match with nothing left over.)
- *)
+
+Each lemma is solved by refering to a corresponding Rocq theorem -
+[reflexivity], [symmetry] and [transitivity]. Because [eval] transforms an [AE]
+into a Rocq [nat], Rocq can take advantage of facts it already has about [nat].
+In this case they are built-in tactics, but we will soon see such facts captured
+in Rocq's context as libraries and assumptions.
+
+The three lemma's together define [ae_equiv] to be an equivalence relation.  Now
+have both a definition of program equivalence and a theorem useful for proving equivalence.
+*)
 
 (** * SECTION 7: PROVING INEQUALITIES *)
 
 (**
-Sometimes we need to prove that one expression evaluates to
-more or less than another.
+Most of our proofs so far have dealt with equivalence.  
+Sometimes we need to prove inequalities.  Specifically, that one expression
+evaluates to more or less than another.
  *)
 
 Lemma plus_increases_value : forall e1 e2,
@@ -737,7 +791,7 @@ Proof.
 Qed.
 
 (**
-Two small things to notice in that proof.
+Two things to notice in this proof.
 
 [rewrite <- IHe1] uses an equation _backwards_.  A plain [rewrite H] with
 [H : a = b] turns [a] into [b]; the [<-] arrow goes the other way, turning [b]
@@ -748,7 +802,9 @@ direction - so [rewrite <- IHe1] is what fits.
 The proof also _nests_: after the outer [induction] we case further with
 [destruct], and each deeper split gets a deeper bullet delimiter - [-] at the
 top level, then [--], then [---].  The delimiters keep the sub-cases separate,
-exactly as the single [-] bullets did earlier, just stacked.  (Rocq also
+exactly as the single [-] bullets did earlier, just stacked.  These bullets are
+increadibly useful for keeping track of where you are in a proof.  They provide
+structure that a long list of tactics alone does not have.  (Rocq also
 accepts the cycling [- + *] style for the same purpose; repeated dashes are
 simply another convention.)
  *)
@@ -966,7 +1022,7 @@ In this lecture, we:
 #</li>#
 #<li>#Proved correctness of optimizations#</li>#
 #<li>#Proved correctness of decision procedures#</li>#
-#<li>#Added CONCRETE SYNTAX with a notation-based parser, so that [<{ 1 + (2 + 3) }>] elaborates to the abstract AE tree#</li>#
+#<li>#Added concrete syntax with a notation-based parser, so that [<{ 1 + (2 + 3) }>] elaborates to the abstract AE tree#</li>#
 #</ol>#
 
 Key insight: By formalizing our language and interpreter in Rocq,
