@@ -320,8 +320,6 @@ Qed.
 
 (** ** PROPERTY 3: Plus is commutative on AE
 
-[eval (Plus e1 e2) = eval (Plus e2 e1)]
-
 Why? Because addition of natural numbers is commutative.
  *)
 
@@ -812,11 +810,31 @@ simply another convention.)
 (** * SECTION 9: REFLECTION / DECISION PROCEDURES *)
 
 (**
-Sometimes we want to decide properties computationally
-and then verify the decision.
+A property is _decidable_ if there exists an algorithm that always terminates
+and correctly answers yes or no for every input.  In Rocq, decidability takes
+the form of a [bool]-valued function paired with a proof — the _reflection
+lemma_ — that connects the boolean result to the corresponding [Prop].  The
+function is called a _decision procedure_; the lemma is called a _reflection_
+because it mirrors the computational answer back into the world of propositions.
+
+Both halves are necessary.  A [bool]-valued function alone makes no logical
+claim — it just computes.  A function that always returns [false] is perfectly
+well-typed, but it decides nothing correctly.  The proof is what _guarantees_
+the function is correct: without it, there is no assurance the [true]/[false]
+output corresponds to whether the property actually holds.  Together they are
+useful: run the function (fast, computational), then invoke the reflection lemma
+to convert the result into a proof that Rocq's proof system can use.
+
+This is necessary because [bool] and [Prop] live in different worlds.  [bool]
+is computational — a value you can compute and branch on.  [Prop] is logical —
+a statement you prove.  They do not automatically talk to each other, and the
+reflection lemma is the bridge.
  *)
 
-(* Decide if two AE expressions are syntactically identical *)
+(** As an example, let's examine comparison of AE values.  First, we'll write a
+program that decides if two AE expressions are syntactically identical.  There
+is no magic here.  We're just writing a recursive function that compares AE
+values in the traditional fashion: *)
 
 Fixpoint ae_eq_dec (e1 e2 : AE) : bool :=
   match e1,e2 with
@@ -825,10 +843,17 @@ Fixpoint ae_eq_dec (e1 e2 : AE) : bool :=
   | Minus x1 y1, Minus x2 y2 => andb (ae_eq_dec x1 x2) (ae_eq_dec y1 y2)
   | _,_ => false
   end.
-                       
-(** Prove that the decision procedure is correct *)
 
-Search andb.
+(**
+The Rocq type checker ensures that [match] covers every possible case, so
+[ae_eq_dec] produces a [bool] for every pair of [AE] values.
+*)
+
+(**
+The decision procedure is the first half.  Now we prove it correct — the
+reflection lemma — establishing that [ae_eq_dec e1 e2 = true] exactly when
+[e1 = e2]:
+*)
          
 Lemma ae_eq_dec_correct : forall e1 e2,
   ae_eq_dec e1 e2 = true <-> e1 = e2.
@@ -863,7 +888,25 @@ Proof.
 Qed.
 
 (**
-A few tactics in that proof.
+[e1 = e2] is of type [Prop] and is the mathematical definition of what
+equality of [e1] and [e2] means. That definition comes from the inductive type
+definition. [ae_eq_dec] is our equality function from above.  All it does is
+calculate a [bool] value that may or may not be the correct result.  One could
+easily change the function definition to return [true] for [(Num 0)] and [(Num
+1)].  Of course it would be wrong, but Rocq doesn't know that.
+
+The reflection theorem requires us to prove that when [ae_eq_dec] returns
+[true], it should be possible to prove [e1 = e2].  [=] and [<->] operate on
+propositions.  [ae_eq_dec e1 e2] returns [true] or [false].  [ae_eq_dec e1 e2 =
+true] returns a proposition [True] or [False].  [e1 = e2] is also a proof that
+returns [True] or [False]. [<->] is [True] when the two proofs on either side
+exist.  Specifically, every time [ae_eq_dec e1 e2 = true] can be proven, so can
+[e1 = e2] and vice versa.  The reflection theorem allows us to move back and
+forth between the world of calculations and the world of proofs.
+*)
+
+(**
+A few new tactics in that proof.
 
 Two are familiar: [apply] (explained in the note after [ae_equiv_trans]) and
 [discriminate] (in the note after [minus_not_commutative]) - reappearing here

@@ -48,11 +48,15 @@ Inductive ABE : Type :=
 | Equal      : ABE -> ABE -> ABE
 | IfThenElse : ABE -> ABE -> ABE -> ABE.
 
-(* Examples *)
+(** Examples *)
 
 Definition abe_example_1 : ABE := BTrue.
 Definition abe_example_2 : ABE := And BTrue BFalse.
 Definition abe_example_3 : ABE := LessThan (Num 3) (Num 5).
+
+(** Once again we will add concrete syntax and a parser at the end of the
+chapter.
+*)
 
 (** * SECTION 2: SEMANTICS - EVALUATION WITH MULTIPLE TYPES *)
 
@@ -80,15 +84,16 @@ a small tagged union, defined in plih_rocq_abe_shared.v and re-exported here:
 >>
 
 A [Value] is either [NumV n] (a [nat] tagged as a value) or [BoolV b] (a
-[bool]).  The constructor _is_ the tag recording which kind it is; you recover
+[bool]).  The constructor is the tag recording which kind it is; you recover
 the underlying [nat] or [bool] by pattern-matching on it.  [NumV] and [BoolV]
 are exactly what let [eval] return a number in one case and a boolean in
-another while keeping a single return type - since [nat] and [bool] are
-themselves different types, neither alone could serve.
+another while keeping a single return type. Since [nat] and [bool] are
+themselves different types, neither alone could serve without some kind of
+kludgy magic values.
  *)
 
 (**
-_The [option] type_ models "a value, or nothing" - success or failure.  It is
+The [option] type models "a value, or nothing" - success or failure.  It is
 the standard-library type constructor
 <<
     Inductive option (A : Type) : Type :=
@@ -97,10 +102,10 @@ the standard-library type constructor
 >>
 
 so [option A] is either [Some a] (an [A] is present) or [None] (absent).  This
-is how Rocq writes a _partial_ function: rather than raising an exception, a
+is how Rocq writes a _partial_ function. Rather than raising an exception, a
 function that might have no answer returns an [option], and the caller
-pattern-matches on [Some] / [None].  The [A] is a parameter, so [option] works
-for any type - [option nat], [option bool], and here [option Value].
+pattern-matches on [Some] / [None].  The type [A] is a parameter, so [option]
+works for any type - [option nat], [option bool], and here [option Value].
 
 Putting the two together, [eval : ABE -> option Value] stacks them: [option]
 wraps _success-or-failure_ around a [Value], which in turn wraps
@@ -176,7 +181,9 @@ error hiding in the untaken branch never surfaces - see [conditional_is_lazy]
 in Section 9.
  *)
 
-(* Test cases *)
+(**
+A few test cases demonstrate the approach:
+*)
 
 Example test_eval_1 : eval BTrue = Some (BoolV true).
 Proof. reflexivity. Qed.
@@ -196,11 +203,11 @@ Example test_eval_error :
   eval (Plus BTrue (Num 3)) = None.
 Proof. reflexivity. Qed.
 
-(** * SECTION 3: CLASSIFYING EXPRESSIONS *)
+(** * SECTION 3: INDUCTIVE PREDICATES *)
 
 (**
 Some expressions are guaranteed to produce a number, some a boolean.  Each such
-class is a _set_ of expressions, and we define these sets with _inductive
+class is a set of expressions, and we define these sets with _inductive
 predicates_.
 
 An inductive predicate does not compute a value the way a [Fixpoint] does - it
