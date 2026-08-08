@@ -270,7 +270,11 @@ Proof. reflexivity. Qed.
 
 (**
 [size] counts the nodes of an expression.  It is the measure that
-makes our interpreter terminate (see Section 5).
+makes our interpreter terminate (see Section 5).  Every subterm of a term is
+smaller than the term.  Thus, every recursive call to an evaluator or type
+checker operates on a smaller structure.  This is the basis for terminating
+recursion and structural induction.  Rocq actually checks this fact every time
+you create a [Fixpoint] function.
  *)
 
 Fixpoint size (e : BAE) : nat :=
@@ -286,10 +290,20 @@ Lemma size_pos : forall e, 1 <= size e.
 Proof. induction e; simpl; lia. Qed.
 
 (**
-_The key invariant._  Substituting a _number_ for an identifier does not change
-the size of a term: it only replaces [Id] leaves (size 1) by [Num] leaves
-(size 1).  This is exactly what lets evaluation recurse "through" a
-substitution without shrinking structurally.
+The interpreter (Section 5) handles [Bind i v b] by evaluating [v] to a
+number [n] and then evaluating [subst i (Num n) b].  That second step is
+the problem: [subst i (Num n) b] is a freshly constructed term, not a
+subterm of the original expression.  Rocq's structural-recursion checker
+cannot see that it is "smaller", so a plain [Fixpoint eval] would be
+rejected.  The solution is to recurse on a fuel counter instead - but
+only if we know the fuel is always sufficient.
+
+[size_subst_num] is what makes that work.  Substituting a number for an
+identifier does not change the size of the term: every [Id] leaf (size 1)
+is replaced by a [Num] leaf (also size 1), and every other node is
+unchanged.  Therefore [size (subst i (Num n) b) = size b], and starting
+the interpreter with fuel [= size e] is always enough - the substituted
+body never needs more fuel than the original body.
  *)
 
 Lemma size_subst_num : forall e i n,
@@ -309,14 +323,32 @@ Qed.
 (** * SECTION 5: SEMANTICS - A SUBSTITUTION INTERPRETER (WITH FUEL) *)
 
 (**
-We now write the interpreter.  The natural definition is
+BAE extends AE with two new constructors: [Id] and [Bind].  The AE cases
+([Num], [Plus], [Minus]) evaluate exactly as before - a number returns
+itself, and binary operators evaluate both operands and combine the results.
+[Id] has no value on its own and returns [None].  The interesting case is
+[Bind].
 
-  eval (Bind i v b) = eval v >>= fun n => eval (subst i (Num n) b)
+When the interpreter reaches [Bind i v b] it:
+#<ol>#
+#<li>#evaluates the bound expression [v] to obtain a number [n];#</li>#
+#<li>#substitutes [n] for every free occurrence of [i] in the body [b],
+     producing a new term [subst i (Num n) b]; and#</li>#
+#<li>#evaluates that new term.#</li>#
+#</ol>#
 
-but there is a catch that a termination checker forces into the open: [subst i
-(Num n) b] is a _brand-new_ term, not a structural subterm of [Bind i v b].
-Rocq cannot see that the recursion shrinks, so a plain [Fixpoint] on the
-expression is _rejected_.
+The natural Rocq definition of this case is:
+[[
+  eval (Bind i v b) =
+    match eval v with
+    | Some n => eval (subst i (Num n) b)
+    | None   => None
+    end
+]]
+but there is a catch that the termination checker forces into the open:
+[subst i (Num n) b] is a _brand-new_ term, not a structural subterm of
+[Bind i v b].  Rocq cannot see that the recursion shrinks, so a plain
+[Fixpoint] on the expression is _rejected_.
 
 The fix is to recurse on a decreasing _fuel_ counter instead.  Because
 substituting a number preserves [size] (Section 4), starting with fuel
@@ -352,7 +384,12 @@ Fixpoint evalF (fuel : nat) (e : BAE) : option nat :=
       end
   end.
 
-(* The interpreter: run [evalF] with just enough fuel. *)
+(**
+The interpreter [eval] now becomes running [evalF] with just enough fuel.
+[evalF] uses one fuel unit for eacn node.  This "just enough" is the number of
+nodes in the abstract syntax term being evaluated.  Our [size] function gives us
+exactly that.  [eval] now becomes:
+*)
 Definition eval (e : BAE) : option nat := evalF (size e) e.
 
 (**
@@ -380,22 +417,43 @@ Proof.
 Qed.
 
 (**
-Three proof-engineering tactics appear for the first time in this fuel proof.
+Three proof-engineering patterns appear for the first time in this proof.
+Each is triggered by a specific situation:
 
-  - [pose proof (size_pos e)] adds a _copy_ of an already-proved fact to the
-    context (here [1 <= size e]) so that [lia] can then use it.  It is how you
-    hand a specific lemma instance to automation.
-  - [rewrite (IH h l) by lia] rewrites with the induction hypothesis at chosen
-    arguments, and the [by lia] clause immediately discharges the side condition
-    the rewrite raises (that [size l <= h]).  Any [rewrite ... by tac] works
-    this way: do the rewrite, then run [tac] on the leftover obligations.
-  - [destruct (evalF h v) as [n |] eqn:Ev] case-splits a subexpression's result
-    _and_ records the case in a hypothesis [Ev : evalF h v = ...].  The [eqn:]
-    annotation is what saves that equation for later rewriting - without it the
-    information would be lost.
+_[pose proof (size_pos e)]._  Trigger: [lia] cannot close an arithmetic goal
+because it is missing a bound it has no way to derive on its own.  In the
+[f1 = 0] base case the context contains [H1 : size e <= 0], which looks
+contradictory - but [lia] only knows what is explicitly in the context.
+It does not know [size e >= 1] unless told.  [pose proof (size_pos e)] adds
+that fact as a new hypothesis, after which [lia] can combine [1 <= size e]
+with [size e <= 0] and close the goal.  The pattern is: when [lia] fails,
+ask what arithmetic fact it is missing, prove it separately with [pose proof],
+and let [lia] finish.
+
+_[rewrite (IH h l) by lia]._  Trigger: you want to rewrite with an induction
+hypothesis that has arithmetic preconditions, and those preconditions are
+not yet in the context as hypotheses.  The IH here says (roughly)
+[size e <= g -> size e <= h -> evalF g e = evalF h e].  Applying it at [l]
+requires discharging [size l <= g] and [size l <= h].  Instead of opening
+two new subgoals and closing them manually, [rewrite (IH h l) by lia] does
+both in one step: rewrite with the IH at specific arguments, and
+immediately run [lia] on every side condition the rewrite creates.  The
+pattern [rewrite ... by tac] generalises to any rewrite whose obligations
+are dischargeable by a single tactic.
+
+_[destruct (evalF h v) as [n |] eqn:Ev]._  Trigger: you need to case-split
+on a computed value, AND you will need to refer to the result of that
+computation in the goal or in a later rewrite.  A plain [destruct (evalF h v)]
+would split into [Some n] and [None] cases but discard the equation
+[evalF h v = Some n] (or [= None]) from the context.  Adding [eqn:Ev]
+records it as [Ev : evalF h v = Some n], which is then available when
+[rewrite (IH h (subst i (Num n) b))] needs to refer to the same value [n].
+Without [eqn:], the identity of [n] would be lost and the rewrite could not
+be stated.  The pattern applies whenever a [destruct] would otherwise
+discard information you need downstream.
  *)
 
-(* Running with any sufficient fuel agrees with [eval]. *)
+(** Running with any sufficient fuel agrees with [eval]. *)
 Lemma evalF_eval : forall f e,
   size e <= f -> evalF f e = eval e.
 Proof.
