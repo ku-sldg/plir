@@ -33,9 +33,13 @@ BAE ("Bind and Arithmetic Expressions") is AE plus two new forms:
   - [Id x]       : a use (an _instance_) of an identifier;
   - [Bind x v b] : bind [x] to the value of [v], then evaluate the body [b].
 
-Its concrete grammar (made real by the parser at the end of this file) is
+Its concrete syntax implemented by the parser at the end of this file is
 
   t ::= NUM | ID | t + t | t - t | bind ID = t in t
+ 
+The inductive type representing the BAE abstract syntax is defined in the
+canonical fashion by adding constructors for [Bind] and [Id].  Note the argument
+to [Id] is the name of the identifier being defined.
  *)
 
 Inductive BAE : Type :=
@@ -55,9 +59,15 @@ Binding terminology (from the chapter):
   - Bound instance:    a use of [x] inside the scope of its binding.
   - Free instance:     a use of [x] with no enclosing binding.
 
-Example: [bind x = 5 + 2 in x + x - 4] introduces [x] with value 7,
-usable only in [x + x - 4].
- *)
+Example:
+
+[[
+<{ bind x = 5 + 2 in
+     x + x - 4 }>
+]]
+introduces [x] with value [7], usable only in the scope of the [bind], [x + x -
+4].  Some examples using abstract syntax notations:
+*)
 
 Definition bae_example_1 : BAE :=
   Bind "x" (Plus (Num 5) (Num 2)) (Minus (Plus (Id "x") (Id "x")) (Num 4)).
@@ -71,8 +81,35 @@ Definition bae_free : BAE := Plus (Id "x") (Num 1).
 (** * SECTION 2: FREE IDENTIFIERS AND CLOSED TERMS *)
 
 (**
-[free_in x e] is [true] when [x] has a FREE instance in [e].  A
-[Bind y ...] shadows [x] in its body exactly when [x = y].
+An identifier occurrence is _free_ when it has no enclosing [Bind] that
+provides its value.  Free identifiers are the source of evaluation
+failure: [eval (Id x)] always returns [None] because there is no value to
+look up (see [eval_Id]).  Identifying which identifiers are free - and
+which are _bound_ by an enclosing [Bind] - is therefore the semantic
+heart of this chapter.
+
+[free_in x e] decides whether [x] has a free occurrence in [e] by
+structural recursion, with one case per constructor:
+
+  - [Num _]: a number literal contains no identifiers, so [x] is never
+    free in it.
+  - [Id y]: a bare identifier is exactly one potential free occurrence.
+    [x] is free here iff [x = y].
+  - [Plus l r], [Minus l r]: [x] is free iff it is free in [l] _or_ [r];
+    both subexpressions are in the same scope.
+  - [Bind y v b]: the crucial case.  The bound expression [v] is evaluated
+    _before_ [y] is introduced, so it lives in the outer scope - [x] may
+    be free in [v] regardless of what [y] is.  The body [b] is evaluated
+    _after_ [y] is bound.  If [x = y] then the new binding _shadows_ any
+    outer [x]: no occurrence of [x] inside [b] can escape to the outside.
+    Only when [x ≠ y] do we recurse into [b].
+
+The shadowing logic is the one non-obvious line:
+<<
+  Bind y v b => free_in x v || (if String.eqb x y then false else free_in x b)
+>>
+The left side of [||] always checks [v]; the right side is forced to
+[false] when [x = y] and checks [b] only when [x ≠ y].
  *)
 
 Fixpoint free_in (x : string) (e : BAE) : bool :=
@@ -84,8 +121,24 @@ Fixpoint free_in (x : string) (e : BAE) : bool :=
   | Bind y v b => free_in x v || (if String.eqb x y then false else free_in x b)
   end.
 
-(* A term is CLOSED when no identifier occurs free in it. *)
+(**
+A term is _closed_ when _no_ identifier occurs free in it: every [Id]
+leaf is covered by an enclosing [Bind].
+*)
 Definition closed (e : BAE) : Prop := forall x, free_in x e = false.
+
+(**
+Closed terms are the natural input domain for a complete interpreter.
+[eval] can return [None] for two reasons: a free identifier or an
+arithmetic failure.  A closed term eliminates the first cause entirely -
+if evaluation fails on a closed term, the failure is purely arithmetic.
+The examples from Section 1 are all closed (every [Id] is inside its
+[Bind]'s scope), which is why they evaluate successfully.
+
+The examples below show the key cases.  [bae_free] is [Plus (Id "x") (Num 1)]:
+[x] is free because there is no [Bind "x" ...] wrapping it.
+[bae_example_1] binds [x] at the top level, so [x] is not free anywhere in it.
+ *)
 
 Example free_in_example : free_in "x" bae_free = true.
 Proof. reflexivity. Qed.
@@ -93,17 +146,65 @@ Proof. reflexivity. Qed.
 Example bound_not_free : free_in "x" bae_example_1 = false.
 Proof. reflexivity. Qed.
 
+(**
+Two more cases worth seeing explicitly.
+
+In [Bind "x" (Id "x") (Num 0)], the bound expression [Id "x"] is
+evaluated in the _outer_ scope - the one where [x] is not yet defined.
+So [x] is still free here, even though [x] is the variable being bound.
+ *)
+
+Example free_in_bind_value :
+  free_in "x" (Bind "x" (Id "x") (Num 0)) = true.
+Proof. reflexivity. Qed.
+
+(**
+In [Bind "x" (Num 1) (Bind "x" (Num 2) (Id "x"))], the inner [Bind "x"]
+shadows the outer one inside its own body.  The only [Id "x"] is inside
+the inner scope, so [x] is not free in the whole expression.
+ *)
+
+Example shadowing_not_free :
+  free_in "x" (Bind "x" (Num 1) (Bind "x" (Num 2) (Id "x"))) = false.
+Proof. reflexivity. Qed.
+
 (** * SECTION 3: SUBSTITUTION *)
 
 (**
-[subst i v e] replaces every _free_ instance of [i] in [e] with the term [v]
-(the chapter writes this [ [i |-> v] e ]).
+Substitution is the _semantic action_ of a binding.  When the interpreter
+reaches [Bind i v b], it evaluates [v] to a number [n] and then needs to
+"hand [n] to [b]".  Substitution does this syntactically: it walks [b] and
+replaces every free occurrence of [i] with [Num n], producing a new term
+that no longer mentions [i].  The interpreter then evaluates that term.
 
-The only subtle case is [Bind i' v' b'].  We always substitute inside the bound
-value [v'] - it is evaluated in the _outer_ scope - but we substitute inside the
-body [b'] only when [i <> i']: a matching inner binding _shadows_ the outer [i],
-so the substitution must stop there.  The [Fixpoint] below reads exactly that
-way.
+[subst i v e] replaces every _free_ instance of identifier [i] in [e] with
+the term [v].  The standard notation for this operation is [ [i |-> v] e ]
+(read: "[i] maps to [v] in [e]").  Only free occurrences are replaced:
+bound ones are owned by an inner [Bind] and must not be disturbed.
+
+The implementation is a structural [Fixpoint] with one case per constructor:
+
+  - [Num x]: a number has no identifiers; return it unchanged.
+  - [Plus l r], [Minus l r]: recurse into both operands independently.
+    The scope is the same on both sides.
+  - [Id i']: the only place a free occurrence can live.  If [i = i'] this
+    is the occurrence we are replacing - return [v].  Otherwise return
+    [Id i'] untouched.
+  - [Bind i' v' b']: the subtle case, and the mirror image of [free_in]'s
+    [Bind] case.  The bound expression [v'] lives in the _outer_ scope, so
+    [i] may be free there - always recurse into [v'].  The body [b'] is a
+    different story: if [i = i'] then [b'] is under a new binding of [i],
+    which shadows the [i] we are substituting for.  Every free [i] in [b']
+    refers to the _inner_ [i'], not the outer one, so we must _not_ recurse
+    into [b'].  If [i ≠ i'] the inner binding does not shadow [i], and we
+    recurse into [b'] as usual.
+
+The two branches of the [Bind] case side by side:
+<<
+  if String.eqb i i'
+  then Bind i' (subst i v v') b'          (* shadow: skip body *)
+  else Bind i' (subst i v v') (subst i v b')  (* no shadow: recurse *)
+>>
  *)
 
 Fixpoint subst (i : string) (v : BAE) (e : BAE) : BAE :=
@@ -118,15 +219,51 @@ Fixpoint subst (i : string) (v : BAE) (e : BAE) : BAE :=
   | Id i'      => if String.eqb i i' then v else Id i'
   end.
 
+(**
+_Basic replacement._  Substituting [7] for [x] in [x + x - 4] replaces
+both free occurrences of [x] and leaves [4] alone.
+ *)
+
 Example subst_example :
   subst "x" (Num 7) (Minus (Plus (Id "x") (Id "x")) (Num 4))
   = Minus (Plus (Num 7) (Num 7)) (Num 4).
 Proof. reflexivity. Qed.
 
-(* Substituting for a variable that does not occur free is a no-op. *)
+(**
+_Shadowing stops the substitution at the body boundary._  In
+[bind x = 1 in x], the [Bind "x"] introduces a new [x] whose scope is
+the body [Id "x"].  The outer [subst "x" ...] substitutes into the bound
+expression [Num 1] (no [x] there, so nothing changes) but does _not_
+enter the body - the inner binding owns that [x].  The term is returned
+structurally identical.
+ *)
+
 Example subst_shadowed :
   subst "x" (Num 9) (Bind "x" (Num 1) (Id "x"))
   = Bind "x" (Num 1) (Id "x").
+Proof. reflexivity. Qed.
+
+(**
+_Shadowing applies to the body, not the value._  Even when the binder
+variable matches [i], the bound expression [v'] is in the outer scope and
+IS substituted into.  Here [x] appears free in the value [x + 1], so it
+is replaced by [3].  The body [Id "x"] is skipped because [i = i'].
+ *)
+
+Example subst_in_value :
+  subst "x" (Num 3) (Bind "x" (Plus (Id "x") (Num 1)) (Id "x"))
+  = Bind "x" (Plus (Num 3) (Num 1)) (Id "x").
+Proof. reflexivity. Qed.
+
+(**
+_A different binder does not stop the substitution._  Here the [Bind] uses
+[y], not [x], so it does not shadow [x].  The substitution passes straight
+through the binding and replaces the free [x] in the body.
+ *)
+
+Example subst_through_other_bind :
+  subst "x" (Num 5) (Bind "y" (Num 1) (Id "x"))
+  = Bind "y" (Num 1) (Num 5).
 Proof. reflexivity. Qed.
 
 (** * SECTION 4: SIZE AND A KEY SUBSTITUTION INVARIANT *)
