@@ -394,9 +394,9 @@ Conditionals present interesting design choices that make them different from
 other BAE expressions.  Their condition must always be a [bool] and we know how
 to check that.  However, two arms can be of any type.  The expression:
 
-<<<
+[[
 <{ if b then 3 else false }>
->>>
+]]
 
 can return either a number or a boolean.  We can easily find that [3] is numeric
 and [false] is boolean.  We can also determine if [b] is boolean.  However, that
@@ -413,13 +413,12 @@ evaluation.  [if] does not.  It evaluates only the chosen branch.  In our
 current interpreter this is not  problem because ABE has no side effects.  If we
 added a [print] statement that would change dramtically.
 
-<<<
+[[
 <{ if b then 3 else print "hi" }>
->>>
+]]
 
 would always print "hi" regardless of [b]'s value.  The behavior we want is only
 one branch evaluates based on the value of [b].
-
  *)
 
 Lemma if_true_evaluates_then : forall e1 e2,
