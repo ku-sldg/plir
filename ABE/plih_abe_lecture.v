@@ -206,15 +206,24 @@ Proof. reflexivity. Qed.
 (** * SECTION 3: INDUCTIVE PREDICATES *)
 
 (**
-Some expressions are guaranteed to produce a number, some a boolean.  Each such
-class is a set of expressions, and we define these sets with _inductive
+Some expressions are guaranteed to produce a number and some a boolean.  Each
+such class is a set of expressions, and we define these sets with _inductive
 predicates_.
 
 An inductive predicate does not compute a value the way a [Fixpoint] does - it
 _defines a set_.  Its cases are closure conditions on membership: [numeric_num]
 puts every [Num n] into the set; [numeric_plus] puts [Plus a b] in it _whenever_
-[a] and [b] are already in it; [numeric_minus] likewise.  The set that
-[is_numeric] names is the _least_ collection of [ABE] terms closed under these
+[a] and [b] are already in it; [numeric_minus] likewise.  Note that the type of
+each constructor is [Prop], a proposition.  Thus, each constructor defines one way to
+create a proof of the property defined by the inductive predidate.
+
+So, [numeric_num] says that [is_numeric] is true every value created using
+[Num].  [numeric_plus] says that if you provide a proof that [a] and [b]
+are both [is_numeric] then [(Plus a b)] is also [is_numeric].  This latter case
+is why an inductive type is the best way to create these structures.
+
+The set that
+[is_numeric] names is the least collection of [ABE] terms closed under these
 cases - the least fixedpoint of the cases - equivalently, the terms reachable by
 applying the cases finitely many times.  So [is_numeric : ABE -> Prop] picks out
 a subset of [ABE], with [is_numeric e] holding exactly when [e] lies in that
@@ -227,6 +236,16 @@ typing are commonly defined.  And because the set is a fixedpoint of its cases,
 it carries an induction principle: that is what lets us prove a property of
 _every_ member by [induction] on the membership evidence, as
 [numeric_never_fails] does below.
+
+Notice that [is_numeric] and [is_boolean] define a primitive type system: each
+one is an inductively-defined set of expressions guaranteed to produce a value
+of a particular shape.  A formal type relation [⊢ e : T] - appearing in later
+chapters - is exactly this idea scaled up: [T] names the set, and a typing
+derivation is a proof of membership.  The guarantee here ([numeric_never_fails],
+[boolean_never_fails]) is the same guarantee a type system provides. Membership
+in the type implies evaluation succeeds with the right kind of value.  Types do
+not add a new concept; they give a name to a class and let the checker enforce
+membership _statically_ - before running the program.
  *)
 
 (** An expression is "numeric" if it is built only from number operations. *)
@@ -245,6 +264,9 @@ Inductive is_boolean : ABE -> Prop :=
 | boolean_not   : forall a, is_boolean a -> is_boolean (Not a)
 | boolean_lt    : forall a b, is_numeric a -> is_numeric b -> is_boolean (LessThan a b)
 | boolean_eq    : forall a b, is_numeric a -> is_numeric b -> is_boolean (Equal a b).
+
+(** 
+[is_numeric]*)
 
 (** Numeric expressions always evaluate successfully to a number. *)
 Lemma numeric_never_fails : forall e,
@@ -320,13 +342,84 @@ the same pattern, and in its comparison cases even calls [numeric_never_fails]
 to discharge the numeric premises.
  *)
 
+(**
+The two predicates together do not cover every [ABE] expression.  [Plus (Num 1)
+BTrue] is ill-typed because it mixes a numeric operand with a boolean one.
+Neither [is_numeric] nor [is_boolean] is provable for it, because no rule
+applies - [BTrue] disqualifies it from [is_numeric], and [Plus] disqualifies it
+from [is_boolean].
+
+Proving this requires a new tactic: [inversion].  Where [induction H] steps
+_forward_ along the constructors that could have built [H], [inversion H] steps
+_backward_: it asks "which constructor could have produced this hypothesis?" and
+generates one subgoal per matching constructor, each with that constructor's
+premises added to the context.  If _no_ constructor matches, the hypothesis is
+impossible and the goal closes immediately.
+
+Applied here: [inversion H] where [H : is_numeric (Plus (Num 1) BTrue)] checks
+which rule could have built [is_numeric (Plus ...)].  Only [numeric_plus]
+matches, so Rocq introduces its two premises - [is_numeric (Num 1)] and
+[is_numeric BTrue] - and a second [inversion] on [is_numeric BTrue] finds no
+matching rule, closing the goal.  For [is_boolean (Plus (Num 1) BTrue)] no
+rule matches at all, so the first [inversion] closes the goal outright.  We will
+talk much more about [inversion] later, but for now it is sufficient to know
+that in this proof it discharges a goal by finding a contradiction in its assumptions.
+ *)
+
+Example ill_typed : ABE := Plus (Num 1) BTrue.
+
+Lemma ill_typed_not_numeric : ~ is_numeric ill_typed.
+Proof.
+  unfold ill_typed. intros H. inversion H. inversion H3.
+Qed.
+
+Lemma ill_typed_not_boolean : ~ is_boolean ill_typed.
+Proof.
+  unfold ill_typed. intros H. inversion H.
+Qed.
+
+(**
+We can now predict the set or type that an expression belongs to as well as
+learn when it belongs to neither.  When an expression belongs to neither set,
+the expression will cause the interpreter to crash.  Its value cannot be a
+nummber nor a boolean.  There are no other values to choose from.  Because we
+can predict this before execution, we have an effective static analysis tool for
+throwing out bad programs.  Our first primitive _type checker_.
+*)
+
 (** * SECTION 4: WORKING WITH CONDITIONALS *)
 
 (**
-Conditionals are interesting because:
-- The condition must be boolean.
-- The branches can return anything.
-- We only evaluate ONE branch.
+Conditionals present interesting design choices that make them different from
+other BAE expressions.  Their condition must always be a [bool] and we know how
+to check that.  However, two arms can be of any type.  The expression:
+
+<<<
+<{ if b then 3 else false }>
+>>>
+
+can return either a number or a boolean.  We can easily find that [3] is numeric
+and [false] is boolean.  We can also determine if [b] is boolean.  However, that
+is not enough to determine whether [if] returns a number or a boolean.  We need
+the _value_ of [b] to determine that.  The only way to get that value is
+evaluate [b] before we evaluate the [if] expression.  This is a problem - we do
+not want to evaluated expressions to determine if other expressions are good or
+bad.  Thus, we cannot determine what kind of value this expression returns
+before execution.
+
+The other interesting problem is we only evaluate one branch based again on the
+_value_ of [b].  All other expressions evaluate all their subexpressions during
+evaluation.  [if] does not.  It evaluates only the chosen branch.  In our
+current interpreter this is not  problem because ABE has no side effects.  If we
+added a [print] statement that would change dramtically.
+
+<<<
+<{ if b then 3 else print "hi" }>
+>>>
+
+would always print "hi" regardless of [b]'s value.  The behavior we want is only
+one branch evaluates based on the value of [b].
+
  *)
 
 Lemma if_true_evaluates_then : forall e1 e2,
@@ -344,6 +437,7 @@ Qed.
 (* If the condition is a boolean and both branches are the same constant,
    the result is that constant.  We need to know the condition is a
    boolean - otherwise the conditional would itself be a type error. *)
+
 Lemma if_branches_equal : forall cond b,
   eval cond = Some (BoolV b) ->
   eval (IfThenElse cond (Num 5) (Num 5)) = Some (NumV 5).
@@ -355,9 +449,11 @@ Qed.
 (** * SECTION 5: TYPE CONSISTENCY *)
 
 (**
-An important property: a numeric expression, if it evaluates,
-evaluates to a number.  This is a stepping stone toward formal
-type checking.
+An important property related to types is when a numeric expression evaluates it
+should evaluate to a number.  This is a step toward formal type checking and a
+property called _type preservation_.  The more general statement will be that if
+an expression of any type evaluares it should evaluated to a value of that same
+type.
  *)
 
 Lemma numeric_produces_numbers : forall e,
@@ -390,10 +486,10 @@ Two expressions are equivalent when they evaluate to the same result.  Because
 [eval] returns an [option Value], "same result" now covers both "both succeed
 with the same value" _and_ "both fail with [None]".
 
-As in AE, [abe_equiv] is an _equivalence relation_: the next three lemmas prove
-it _reflexive_, _symmetric_, and _transitive_, each reducing (after [unfold]) to
-the corresponding fact about equality.  De Morgan's law then shows a genuine
-boolean-algebra equivalence.
+As in AE, [abe_equiv] is an _equivalence relation_. The following three lemmas
+prove it _reflexive_, _symmetric_, and _transitive_, each reducing (after
+[unfold]) to
+the corresponding fact about equality.
  *)
 
 Definition abe_equiv (e1 e2 : ABE) : Prop := eval e1 = eval e2.
@@ -418,8 +514,10 @@ Proof.
   transitivity (eval e2); [ exact H12 | exact H23 ].
 Qed.
 
-(* De Morgan's law holds for our boolean expressions - including the
-   error cases, where both sides fail in exactly the same situations. *)
+(**
+De Morgan's law holds for our boolean expressions - including error cases, where
+both sides fail in exactly the same situations.
+*)
 Lemma de_morgan : forall e1 e2,
   abe_equiv (Not (And e1 e2))
             (Or (Not e1) (Not e2)).
@@ -432,7 +530,8 @@ Proof.
 Qed.
 
 (**
-That proof of De Morgan's law uses three case-analysis tools worth naming.
+That proof of De Morgan's law uses three case-analysis tools worth some
+discussion.
 
 [abe_equiv] unfolds exactly as [ae_equiv] did in AE, so [reflexivity],
 [symmetry], and [transitivity] apply to the underlying [eval _ = eval _].
@@ -440,16 +539,19 @@ That proof of De Morgan's law uses three case-analysis tools worth naming.
 [transitivity (eval e2); [ exact H12 | exact H23 ]] - the [; [ g1 | g2 ]] form
 runs a _different_ tactic on each subgoal the [;] produced.)
 
-  - [cbn] simplifies much like [simpl] but is gentler and more predictable;
-    here it exposes the nested [match]es inside [eval] without over-reducing.
+  - [cbn] (call-by-name) simplifies much like [simpl] but is not as aggressive;
+    here it exposes the nested [match]es inside [eval] without over-reducing.  
+    Try using simpl instead to see the diffrences.
   - [destruct (eval e1) as [ [n1|b1] | ]] case-splits the _result_ of an
     expression.  Its type is [option Value], so the outer [[ _ | ]] splits
     [Some] from [None] and the inner [[n1|b1]] splits a [Some]'s [Value] into
     [NumV n1] / [BoolV b1] - all in one nested pattern.  Splitting both operands
     leaves nine combinations to consider.
-  - [try reflexivity] attempts [reflexivity] and _quietly does nothing_ if it
-    fails.  Eight of the nine combinations close immediately; [try] disposes of
-    them and leaves only the genuine bool/bool case, finished by
+  - [try reflexivity] attempts [reflexivity] and does nothing if it
+    fails.  Just a call to [reflexivity] halts the proof when it fails where 
+    [try reflexivity] does just what the name says - tries the tactic and moves 
+    on if it fails.  Eight of the nine combinations close immediately; [try] 
+    disposes of them and leaves only the genuine bool/bool case, finished by
     [destruct b1; destruct b2; reflexivity].
 
 Note that [;] and [try] are not tactics but _tacticals_ - operators that take
@@ -514,8 +616,8 @@ Qed.
 
 (**
 Comparisons take two numbers and produce a boolean.  Concrete comparisons
-compute, so they close by [reflexivity]; comparing a variable [n] with itself
-needs one small rewrite with [Nat.eqb_refl].
+compute, so their proofs typically end using [reflexivity]. Comparing a variable
+[n] with itself needs one small rewrite with [Nat.eqb_refl].
  *)
 
 Lemma less_than_3_5 :

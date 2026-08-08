@@ -16,8 +16,10 @@ ABE is more involved than AE because it introduces:
 (** * PART 1: KEY DIFFERENCES FROM AE *)
 
 (**
-AE was simple: every expression evaluated to a nat.
-ABE is more realistic: multiple types plus error handling.
+AE was simple: every expression evaluated to a nat.  Every program expressed in
+AE terminates without crashing (thanks to Rocq's subtraction definition).
+ABE is slightly more realistic.  We will work with multiple types by adding
+Booleans to AE.  Doing that requires us to do soem error handling as wellplus.
 
 Conceptual shifts:
 #<ol>#
