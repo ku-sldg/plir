@@ -200,11 +200,11 @@ The implementation is a structural [Fixpoint] with one case per constructor:
     recurse into [b'] as usual.
 
 The two branches of the [Bind] case side by side:
-<<
+[[
   if String.eqb i i'
   then Bind i' (subst i v v') b'          (* shadow: skip body *)
   else Bind i' (subst i v v') (subst i v b')  (* no shadow: recurse *)
->>
+]]
  *)
 
 Fixpoint subst (i : string) (v : BAE) (e : BAE) : BAE :=
