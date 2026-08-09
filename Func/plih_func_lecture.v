@@ -37,7 +37,7 @@ new forms:
   - [Lambda x b] : an anonymous function of parameter [x], body [b]
   - [App f a]    : apply function [f] to argument [a]
 
-Its concrete grammar (made real by the parser at the end of this file) is
+Its concrete syntax (made real by the parser at the end of this file) is
 
 <<
   t ::= NUM | ID | t + t | t - t
@@ -59,16 +59,25 @@ Inductive FBAE : Type :=
 (**
 Two observations about the new constructors that matter straight away.
 
-_[Lambda] is a value_, on the same footing as [Num].  Just as [Num 5] is
-already the number 5 with nothing left to compute, [Lambda "x" (Id "x")] is
-already a function with nothing left to compute - evaluation returns it as-is.
+_[Lambda] is a value._  Just as [Num 5] is
+the number 5 with nothing left to compute, [Lambda "x" (Id "x")] is
+a function with nothing left to compute - evaluation returns it as-is.
 This is a departure from the earlier chapters, where every expression eventually
 reduced to a number.  FBAE has two kinds of values: numbers and functions.
 
-_Naming a function uses [Bind]_, exactly as naming a number does.  There is no
-special declaration form.  [Bind "f" (Lambda "x" (Plus (Id "x") (Num 1))) body]
-introduces [f] as the increment function for the duration of [body], just as
-[Bind "n" (Num 5) body] introduces [n] as [5].  The language treats functions
+_Naming a function uses [Bind],_ exactly as naming a number does.  There is no
+special declaration form.  The bind:
+
+[[bind f = lambda x in x + 1
+  in body]]
+
+introduces [f] as the increment function for the duration of [body], just as:
+
+[[
+bind n =  5 in body
+]]
+
+introduces [n] as [5].  The language treats functions
 and numbers uniformly as values that can be bound, passed, and returned.
  *)
 
@@ -80,17 +89,23 @@ Definition incFun : FBAE := Lambda "x" (Plus (Id "x") (Num 1)).
 
 (**
 [idFun] and [incFun] are _Rocq_ names, not FBAE names.  A Rocq [Definition]
-lives in the metatheory: it is a shorthand we the implementors use so we do not
-have to write out the full tree every time.  The FBAE evaluator has no knowledge
-of [idFun]; inside the language the function is anonymous.  By contrast, a _FBAE
-name_ is introduced by [Bind] and lives inside the language: [Bind "inc" incFun
-(App (Id "inc") (Num 3))] makes ["inc"] available as a name within FBAE for the
+lives in the metatheory: it is a shorthand implementors use so we do not have to
+write out the full tree every time.  The FBAE evaluator has no knowledge of
+[idFun]; inside the language the function is anonymous.  By contrast, an _FBAE
+name_ is introduced by [Bind] and lives inside the language:
+
+[[
+bind inc = incFun in
+  (inc 3)
+]]
+
+makes ["inc"] available as a name within FBAE for the
 duration of the body.  A Rocq [Definition] is erased before evaluation begins; a
 [Bind] is evaluated and its result placed in the environment at runtime.
  *)
 
 (**
-[App f a] is _function application_: [f] is the function expression and [a] is
+[App f a] is _function application:_ [f] is the function expression and [a] is
 the argument expression.  Evaluation runs [f] to obtain a function, runs [a] to
 obtain a value, and then runs the function's body with its parameter bound to
 that value - the same substitution-or-environment story as [Bind], but driven by
@@ -104,7 +119,7 @@ Definition apply_id : FBAE := App idFun (Num 7).
 (** * SECTION 2: FREE IDENTIFIERS, SIZE, AND SUBSTITUTION *)
 
 (**
-As in BAE, [free_in] tracks free instances; now _both_ [Bind] and
+As in BAE, [free_in] tracks free instances. _Both_ [Bind] and
 [Lambda] are binders because both introduce new identifiers and define their
 scopes and both shadow their bound name in their body.  Note that both [Lambda]
 and [Bind] introduce only one new identifier each.
@@ -138,7 +153,7 @@ Fixpoint size (e : FBAE) : nat :=
 (**
 Substitution [(subst i v e)] replaces every _free_ instance of [i] in [e] with
 [v].  Bound occurrences must not be replaced: a [Lambda "i" b] or
-[Bind "i" _ b] introduces a _new_, distinct [i] scoped to its body - replacing
+[Bind "i" _ b] introduces a _new_ distinct [i] scoped to its body - replacing
 it would corrupt that inner binding rather than instantiate the outer one.  Both
 binders therefore stop the substitution when their parameter name matches [i].
  *)
@@ -158,10 +173,10 @@ Fixpoint subst (i : string) (v : FBAE) (e : FBAE) : FBAE :=
   end.
 
 (**
-_Crucial difference from BAE._  In the IDs chapter we only ever
+_Crucial difference from BAE_.  In the IDs chapter we only ever
 substituted a _number_, so [size (subst i (Num n) e) = size e] and
 [size e] was always enough fuel.  Now we substitute whole _values_ -
-including functions - so a substitution can make a term _grow_.
+including functions - so a substitution can make a term _grow._
  *)
 Example subst_grows :
   size (subst "x" incFun (Plus (Id "x") (Id "x")))
@@ -175,19 +190,19 @@ The values of FBAE are numbers and functions.  The substitution
 interpreter returns an FBAE term that is one of these: [Num x] for a
 number, or [Lambda i b] for a function (functions are _values_, not
 stuck).
-<<
+[[
   evalS (Num x)      = Some (Num x)
   evalS (Lambda i b) = Some (Lambda i b)
   evalS (App f a)    = do { Lambda i b <- evalS f ;
                              a'         <- evalS a ;
                              evalS (subst i a' b) }   (* beta-reduction *)
   evalS (Id _)       = None
->>
+]]
 
 Because [App] and [Bind] recurse on freshly-built [subst ...] terms -
 and because those terms can be _larger_ than the original (Section 2) -
 this is neither structurally recursive nor bounded by [size].  In fact
-the language can _diverge_, so no measure could work.  We drive the
+the language can _diverge,_ so no measure could work.  We drive the
 interpreter with an explicit _fuel_ counter; running out of fuel
 yields [None].
  *)
@@ -289,8 +304,10 @@ Fixpoint evalM (fuel : nat) (env : Env FBAEVal) (e : FBAE) : option FBAEVal :=
       end
   end.
 
-(* A convenience wrapper with fuel large enough for the small examples
-   in this file.  There is no "right" default: a program may need more. *)
+(**
+A convenience wrapper with fuel large enough for the small examples
+   in this file.  There is no "right" default: a program may need more.
+   *)
 Definition eval (e : FBAE) : option FBAEVal := evalM 100 nil e.
 
 (** * SECTION 5: RUNNING THE INTERPRETERS
