@@ -88,7 +88,7 @@ Ask Claude:
 #<li>#After Claude gives you a proof, ask it to explain the proof in plain
      English: why does extending the environment with [(x, n)] have the same
      effect as substituting [Num n] for [x], and why does [subst_not_free]
-     then finish the job?"#</li>#
+     then finish the job?#</li>#
 #</ol>#
 
 Reflect: This lemma is sometimes called "the irrelevance lemma."  Ask Claude:
@@ -120,7 +120,7 @@ Ask Claude:
      separately for [Num], [Plus], [Minus], [Id], and [Bind], would those five
      proofs together constitute a proof of [forall e, evalEnv e = eval e]?
      What Rocq tactic packages these cases into a single inductive proof?"
-     (Expected answer: [induction e].)"#</li>#
+     (Expected answer: [induction e].)#</li>#
 #</ol>#
 
 Reflect: Ask Claude why the [Bind] case of the full agreement theorem is much

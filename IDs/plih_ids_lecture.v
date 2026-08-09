@@ -220,7 +220,7 @@ Fixpoint subst (i : string) (v : BAE) (e : BAE) : BAE :=
   end.
 
 (**
-_Basic replacement._  Substituting [7] for [x] in [x + x - 4] replaces
+_Basic replacement_.  Substituting [7] for [x] in [x + x - 4] replaces
 both free occurrences of [x] and leaves [4] alone.
  *)
 
