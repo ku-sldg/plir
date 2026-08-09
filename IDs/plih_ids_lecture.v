@@ -230,7 +230,7 @@ Example subst_example :
 Proof. reflexivity. Qed.
 
 (**
-_Shadowing stops the substitution at the body boundary._  In
+_Shadowing stops the substitution at the body boundary_.  In
 [bind x = 1 in x], the [Bind "x"] introduces a new [x] whose scope is
 the body [Id "x"].  The outer [subst "x" ...] substitutes into the bound
 expression [Num 1] (no [x] there, so nothing changes) but does _not_
@@ -244,7 +244,7 @@ Example subst_shadowed :
 Proof. reflexivity. Qed.
 
 (**
-_Shadowing applies to the body, not the value._  Even when the binder
+_Shadowing applies to the body, not the value_.  Even when the binder
 variable matches [i], the bound expression [v'] is in the outer scope and
 IS substituted into.  Here [x] appears free in the value [x + 1], so it
 is replaced by [3].  The body [Id "x"] is skipped because [i = i'].
@@ -256,7 +256,7 @@ Example subst_in_value :
 Proof. reflexivity. Qed.
 
 (**
-_A different binder does not stop the substitution._  Here the [Bind] uses
+_A different binder does not stop the substitution_.  Here the [Bind] uses
 [y], not [x], so it does not shadow [x].  The substitution passes straight
 through the binding and replaces the free [x] in the body.
  *)
@@ -393,7 +393,7 @@ exactly that.  [eval] now becomes:
 Definition eval (e : BAE) : option nat := evalF (size e) e.
 
 (**
-_Fuel monotonicity._  Any two fuel amounts that are both large enough (at least
+_Fuel monotonicity_.  Any two fuel amounts that are both large enough (at least
 [size e]) compute the same answer.  This is what makes [eval] well defined
 regardless of the exact fuel we picked.
  *)
@@ -420,7 +420,7 @@ Qed.
 Three proof-engineering patterns appear for the first time in this proof.
 Each is triggered by a specific situation:
 
-_[pose proof (size_pos e)]._  Trigger: [lia] cannot close an arithmetic goal
+_[pose proof (size_pos e)]_.  Trigger: [lia] cannot close an arithmetic goal
 because it is missing a bound it has no way to derive on its own.  In the
 [f1 = 0] base case the context contains [H1 : size e <= 0], which looks
 contradictory - but [lia] only knows what is explicitly in the context.
@@ -430,7 +430,7 @@ with [size e <= 0] and close the goal.  The pattern is: when [lia] fails,
 ask what arithmetic fact it is missing, prove it separately with [pose proof],
 and let [lia] finish.
 
-_[rewrite (IH h l) by lia]._  Trigger: you want to rewrite with an induction
+_[rewrite (IH h l) by lia]_.  Trigger: you want to rewrite with an induction
 hypothesis that has arithmetic preconditions, and those preconditions are
 not yet in the context as hypotheses.  The IH here says (roughly)
 [size e <= g -> size e <= h -> evalF g e = evalF h e].  Applying it at [l]
@@ -441,7 +441,7 @@ immediately run [lia] on every side condition the rewrite creates.  The
 pattern [rewrite ... by tac] generalises to any rewrite whose obligations
 are dischargeable by a single tactic.
 
-_[destruct (evalF h v) as [n |] eqn:Ev]._  Trigger: you need to case-split
+_[destruct (evalF h v) as [n |] eqn:Ev]_.  Trigger: you need to case-split
 on a computed value, AND you will need to refer to the result of that
 computation in the goal or in a later rewrite.  A plain [destruct (evalF h v)]
 would split into [Some n] and [None] cases but discard the equation
