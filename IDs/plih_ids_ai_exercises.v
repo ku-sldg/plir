@@ -149,9 +149,9 @@ Reflect: [rename x y e] replaces free [x]s with [Id y].  This is called
 _alpha-renaming_.  Ask Claude: when is alpha-renaming _safe_?  What property
 must [y] satisfy relative to [e] so that
 
-<<
+[[
   Bind x v e   and   Bind y v (rename x y e)
->>
+]]
 
 are semantically equivalent?  (Hint: think about whether [y] might already
 occur free in [e].)

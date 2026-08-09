@@ -461,17 +461,30 @@ Proof.
 Qed.
 
 (**
-_Clean equations._  With monotonicity in hand we can prove the "obvious"
+With monotonicity in hand we can prove the "obvious"
 recursive equations for [eval], hiding the fuel entirely.  These are the lemmas
 we actually use to reason about [eval].
  *)
 
+(** 
+Number values always evaluate correctly to their associated values. [Some]
+indicates a good result and [n] is the number value.
+*)
 Lemma eval_Num : forall n, eval (Num n) = Some n.
 Proof. intro n. reflexivity. Qed.
 
+(**
+Identifiers always evaluated to [None] indicating an error.  Why is this?
+Remember that Ids are substituted for when evaluating their associated [bind].
+If the interpreter hits an [Id] it means that it has not been replaced and thus
+has no binding instance.  Thus, it is free and undefined.
+*)
 Lemma eval_Id : forall x, eval (Id x) = None.
 Proof. intro x. reflexivity. Qed.
 
+(**
+[Plus] always evaluates correctly if it gets good values from evaluating its arguments.
+*)
 Lemma eval_Plus : forall l r,
   eval (Plus l r) =
   match eval l, eval r with
@@ -485,6 +498,9 @@ Proof.
   reflexivity.
 Qed.
 
+(**
+[Minus] is just like plus.
+*)
 Lemma eval_Minus : forall l r,
   eval (Minus l r) =
   match eval l, eval r with
@@ -498,6 +514,10 @@ Proof.
   reflexivity.
 Qed.
 
+(**
+If the value obtained when evaluating a [bind] is good, [bind] performs the
+appropriate substitution.  If not, [bind] returns [None] indicating an error.
+*)
 Lemma eval_Bind : forall i v b,
   eval (Bind i v b) =
   match eval v with
@@ -542,7 +562,8 @@ Proof. reflexivity. Qed.
 
 (**
 Substituting for an identifier that does not occur free leaves the
-term unchanged.  This is the syntactic heart of "shadowing".
+term unchanged.  This is the syntactic heart of "shadowing" that we will see
+again when evironments are introduced.
  *)
 Lemma subst_not_free : forall e i v,
   free_in i e = false -> subst i v e = e.
@@ -572,7 +593,10 @@ transforms a hypothesis instead.  And [rewrite IHl by assumption] uses
 already in context".
  *)
 
-(* Substituting into a closed term does nothing. *)
+(**
+Substituting into a closed term does nothing. If there are no free variables
+there is nothing to replace.
+*)
 Lemma subst_closed : forall e i v,
   closed e -> subst i v e = e.
 Proof.
@@ -581,7 +605,7 @@ Qed.
 
 (**
 How substitution changes the free variables.  Replacing [x] by a
-NUMBER (which has no free variables of its own) removes [x] from the
+number that cannot have free variables of its own) removes [x] from the
 free set and leaves every other identifier exactly as it was.
  *)
 Lemma free_in_subst_num : forall e x n z,
@@ -609,7 +633,7 @@ Qed.
 
 (**
 If [x] is the ONLY identifier that might occur free in [e], then
-substituting a number for [x] yields a CLOSED term.  This is the
+substituting a number for [x] yields a closed term.  This is the
 "last variable gets bound" step behind the progress theorem for
 closed programs (an exercise/challenge).
  *)
@@ -626,14 +650,16 @@ Qed.
 (** * SECTION 8: PROPERTIES OF EVALUATION *)
 
 (**
-Evaluation is deterministic - [eval] is a function, so this is
-immediate, but it is worth stating.
+Evaluation is deterministic.  Because [eval] is a function, this is
+immediate because Rocq requires it.  Still, it is worth stating.
  *)
 Lemma eval_deterministic : forall e r1 r2,
   eval e = r1 -> eval e = r2 -> r1 = r2.
 Proof. intros e r1 r2 H1 H2. rewrite <- H1, <- H2. reflexivity. Qed.
 
-(* A number always evaluates to itself. *)
+(**
+A number always evaluates to itself.
+*)
 Lemma eval_num_value : forall n, eval (Num n) = Some n.
 Proof. exact eval_Num. Qed.
 
@@ -665,8 +691,8 @@ Qed.
 
 (**
 Two BAE terms are equivalent when they evaluate to the same result
-(including both failing).  As with AE this is an equivalence
-relation.
+This may include both failing.  As with AE this is an equivalence
+relation and we'll prove it.
  *)
 
 Definition bae_equiv (e1 e2 : BAE) : Prop := eval e1 = eval e2.
@@ -685,8 +711,9 @@ Proof.
   transitivity (eval e2); assumption.
 Qed.
 
-(* A worked equivalence: renaming a bound variable that is used
-   consistently does not change the meaning. *)
+(** An example equivalence theorem - Renaming a bound variable that is used
+consistently does not change the meaning.
+*)
 Example alpha_example :
   bae_equiv (Bind "x" (Num 3) (Plus (Id "x") (Num 1)))
             (Bind "y" (Num 3) (Plus (Id "y") (Num 1))).
