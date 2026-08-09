@@ -5,11 +5,11 @@ This lecture covers:
 #<ol>#
 #<li>#Extending BAE with [Lambda] and [App]: first-class functions.#</li>#
 #<li>#A substitution interpreter [evalS] - and why, now that we can substitute whole functions, [size] no longer bounds the fuel: the language can _diverge_ (the classic [omega] term).#</li>#
-#<li>#_Values_ and _closures_: an environment interpreter [evalM] that captures the definition-time environment in a closure.#</li>#
-#<li>#_Fuel monotonicity_ - the well-definedness result that replaces the "size is enough fuel" theorem of the earlier chapters.#</li>#
-#<li>#_Static_ vs _dynamic_ scoping, made precise with a third interpreter [evalDyn] and a term on which the two disagree.#</li>#
+#<li>#Values and closures: an environment interpreter [evalM] that captures the definition-time environment in a closure.#</li>#
+#<li>#Fuel monotonicity - the well-definedness result that replaces the "size is enough fuel" theorem of the earlier chapters.#</li>#
+#<li>#Static vs dynamic scoping, made precise with a third interpreter [evalDyn] and a term on which the two disagree.#</li>#
 #<li>#Currying, and strict-vs-lazy binding (a call-by-name [evalL]).#</li>#
-#<li>#_Elaboration_: desugaring [Bind] into [App]/[Lambda], with a machine-checked proof that it preserves meaning.#</li>#
+#<li>#Elaboration: desugaring [Bind] into [App]/[Lambda], with a machine-checked proof that it preserves meaning.#</li>#
 #<li>#A teaser toward recursion: fixpoint combinators are definable from [Lambda]/[App], but productive recursion needs a conditional FBAE lacks - delivered in the Untyped Recursion chapter (Rec/).#</li>#
 #</ol>#
 
@@ -59,13 +59,13 @@ Inductive FBAE : Type :=
 (**
 Two observations about the new constructors that matter straight away.
 
-_[Lambda] is a value._  Just as [Num 5] is
+_[Lambda] is a value_.  Just as [Num 5] is
 the number 5 with nothing left to compute, [Lambda "x" (Id "x")] is
 a function with nothing left to compute - evaluation returns it as-is.
 This is a departure from the earlier chapters, where every expression eventually
 reduced to a number.  FBAE has two kinds of values: numbers and functions.
 
-_Naming a function uses [Bind],_ exactly as naming a number does.  There is no
+_Naming a function uses [Bind]_, exactly as naming a number does.  There is no
 special declaration form.  The bind:
 
 [[bind f = lambda x in x + 1
@@ -105,7 +105,7 @@ duration of the body.  A Rocq [Definition] is erased before evaluation begins; a
  *)
 
 (**
-[App f a] is _function application:_ [f] is the function expression and [a] is
+[App f a] is _function application_: [f] is the function expression and [a] is
 the argument expression.  Evaluation runs [f] to obtain a function, runs [a] to
 obtain a value, and then runs the function's body with its parameter bound to
 that value - the same substitution-or-environment story as [Bind], but driven by
@@ -176,7 +176,7 @@ Fixpoint subst (i : string) (v : FBAE) (e : FBAE) : FBAE :=
 _Crucial difference from BAE_.  In the IDs chapter we only ever
 substituted a _number_, so [size (subst i (Num n) e) = size e] and
 [size e] was always enough fuel.  Now we substitute whole _values_ -
-including functions - so a substitution can make a term _grow._
+including functions - so a substitution can make a term _grow_.
  *)
 Example subst_grows :
   size (subst "x" incFun (Plus (Id "x") (Id "x")))
@@ -202,7 +202,7 @@ stuck).
 Because [App] and [Bind] recurse on freshly-built [subst ...] terms -
 and because those terms can be _larger_ than the original (Section 2) -
 this is neither structurally recursive nor bounded by [size].  In fact
-the language can _diverge,_ so no measure could work.  We drive the
+the language can _diverge_ so no measure could work.  We drive the
 interpreter with an explicit _fuel_ counter; running out of fuel
 yields [None].
  *)
@@ -464,10 +464,12 @@ Fixpoint evalDyn (fuel : nat) (env : Env DVal) (e : FBAE) : option DVal :=
 (**
 The classic witness:
 
+[[
   bind n = 1 in
-  bind f = (lambda x in x + n) in
-  bind n = 2 in
-    f 3
+    bind f = (lambda x in x + n) in
+      bind n = 2 in
+        f 3
+]]
 
 _Static_ scoping: [f] captured [n = 1], so [f 3 = 3 + 1 = 4].
 _Dynamic_ scoping: [f 3] uses the current [n = 2], so [f 3 = 3 + 2 = 5].
@@ -525,7 +527,13 @@ Proof. reflexivity. Qed.
 [Bind] is not really primitive.  Once we have first-class functions,
 a local binding is just the application of an anonymous function:
 
-  bind i = v in b     "is sugar for"     app (lambda i in b) v
+[[
+  bind i = v in b
+]]
+is syntax for
+[[
+  app (lambda i in b) v
+]]
 
 _Elaboration_ (a.k.a. _desugaring_) makes that precise as a
 source-to-source translation into a [Bind]-free sublanguage, and -
@@ -593,7 +601,7 @@ Example elab_bind_fun :
 Proof. reflexivity. Qed.
 
 (**
-_Preservation of meaning._  We want elaboration to leave a program's
+_Preservation of meaning_.  We want elaboration to leave a program's
 value unchanged.  There is one wrinkle: values embed terms.  A
 [ClosureV] carries its function body and captured environment, and
 elaboration rewrites bodies - so the closure a program returns is the
@@ -891,7 +899,7 @@ Fixpoint evalL (fuel : nat) (env : Env LThunk) (e : FBAE) : option LVal :=
   end.
 
 (**
-_The disagreement._  On [unusedDiverge], the strict [eval] forces the
+_The disagreement_.  On [unusedDiverge], the strict [eval] forces the
 divergent [omega] before ever reaching the body and loops; the lazy
 [evalL] binds [z] to a thunk it never forces, so it returns [5].  This
 is the strict/lazy analogue of the 4-vs-5 [scopeTest].
