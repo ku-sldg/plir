@@ -38,11 +38,11 @@ from the shared library, specialised to numbers:
   lookup x env   = the first binding of x, or None
 
 Consider:
-<<
+[[
 bind x = 4 in
   bind y = 5 in
     x + y - 4
->> 
+]] 
 
 Rather than rewriting the
 body twice, we push [(x,4)] then [(y,5)] onto the environment and consult it
@@ -81,7 +81,9 @@ Fixpoint evalE (env : Env nat) (e : BAE) : option nat :=
   | Id x => lookup x env
   end.
 
-(* The top-level interpreter starts from the empty environment. *)
+(**
+ The top-level interpreter starts from the empty environment. *)
+
 Definition evalEnv (e : BAE) : option nat := evalE nil e.
 
 (** * SECTION 3: TESTING THE INTERPRETER *)

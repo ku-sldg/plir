@@ -6,8 +6,8 @@ This lecture covers:
 #<li>#Extending AE with identifiers (Id) and local bindings (Bind)#</li>#
 #<li>#Substitution as the meaning of a binding#</li>#
 #<li>#Free and bound identifiers; closed terms#</li>#
-#<li>#Writing a SUBSTITUTION-BASED interpreter in Rocq - and the
-surprise that it is NOT structurally recursive, so we drive it
+#<li>#Writing a _substitution-based_ interpreter in Rocq - and the
+surprise that it is _not_ structurally recursive, so we drive it
 with a fuel argument#</li>#
 #<li>#Proving properties about substitution and evaluation#</li>#
 #</ol>#
@@ -39,7 +39,7 @@ Its concrete syntax implemented by the parser at the end of this file is
  
 The inductive type representing the BAE abstract syntax is defined in the
 canonical fashion by adding constructors for [Bind] and [Id].  Note the argument
-to [Id] is the name of the identifier being defined.
+to [Id] is the name of the identifier being referenced.
  *)
 
 Inductive BAE : Type :=
@@ -386,7 +386,7 @@ Fixpoint evalF (fuel : nat) (e : BAE) : option nat :=
 
 (**
 The interpreter [eval] now becomes running [evalF] with just enough fuel.
-[evalF] uses one fuel unit for eacn node.  This "just enough" is the number of
+[evalF] uses one fuel unit for each node.  This "just enough" is the number of
 nodes in the abstract syntax term being evaluated.  Our [size] function gives us
 exactly that.  [eval] now becomes:
 *)
@@ -474,7 +474,7 @@ Lemma eval_Num : forall n, eval (Num n) = Some n.
 Proof. intro n. reflexivity. Qed.
 
 (**
-Identifiers always evaluated to [None] indicating an error.  Why is this?
+Identifiers always evaluate to [None] indicating an error.  Why is this?
 Remember that Ids are substituted for when evaluating their associated [bind].
 If the interpreter hits an [Id] it means that it has not been replaced and thus
 has no binding instance.  Thus, it is free and undefined.
@@ -499,7 +499,7 @@ Proof.
 Qed.
 
 (**
-[Minus] is just like plus.
+[Minus] is just like [Plus].
 *)
 Lemma eval_Minus : forall l r,
   eval (Minus l r) =
@@ -515,8 +515,8 @@ Proof.
 Qed.
 
 (**
-If the value obtained when evaluating a [bind] is good, [bind] performs the
-appropriate substitution.  If not, [bind] returns [None] indicating an error.
+If the value obtained when evaluating a [Bind] is good, [Bind] performs the
+appropriate substitution.  If not, [Bind] returns [None] indicating an error.
 *)
 Lemma eval_Bind : forall i v b,
   eval (Bind i v b) =
@@ -563,7 +563,7 @@ Proof. reflexivity. Qed.
 (**
 Substituting for an identifier that does not occur free leaves the
 term unchanged.  This is the syntactic heart of "shadowing" that we will see
-again when evironments are introduced.
+again.
  *)
 Lemma subst_not_free : forall e i v,
   free_in i e = false -> subst i v e = e.
@@ -605,7 +605,7 @@ Qed.
 
 (**
 How substitution changes the free variables.  Replacing [x] by a
-number that cannot have free variables of its own) removes [x] from the
+number that cannot have free variables of its own removes [x] from the
 free set and leaves every other identifier exactly as it was.
  *)
 Lemma free_in_subst_num : forall e x n z,
@@ -632,7 +632,7 @@ Proof.
 Qed.
 
 (**
-If [x] is the ONLY identifier that might occur free in [e], then
+If [x] is the _only_ identifier that might occur free in [e], then
 substituting a number for [x] yields a closed term.  This is the
 "last variable gets bound" step behind the progress theorem for
 closed programs (an exercise/challenge).
@@ -690,9 +690,9 @@ Qed.
 (** * SECTION 9: EXPRESSION EQUIVALENCE *)
 
 (**
-Two BAE terms are equivalent when they evaluate to the same result
-This may include both failing.  As with AE this is an equivalence
-relation and we'll prove it.
+Two BAE terms are equivalent when they evaluate to the same result.
+This may include both failing and evaluating to [None].  As with AE, this is an
+equivalence relation and we'll prove it.
  *)
 
 Definition bae_equiv (e1 e2 : BAE) : Prop := eval e1 = eval e2.
