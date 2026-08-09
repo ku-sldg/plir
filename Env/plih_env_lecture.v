@@ -42,11 +42,10 @@ Consider:
 bind x = 4 in
   bind y = 5 in
     x + y - 4
-]] 
+]]
 
-Rather than rewriting the
-body twice, we push [(x,4)] then [(y,5)] onto the environment and consult it
-when we reach [Id x] and [Id y].
+Rather than rewriting the body twice, we push [(x,4)] then [(y,5)] onto the
+environment and consult it when we reach [Id x] and [Id y].
  *)
 
 (** * SECTION 2: THE ENVIRONMENT INTERPRETER *)
@@ -55,9 +54,9 @@ when we reach [Id x] and [Id y].
 Unlike the substitution interpreter, this one is structurally recursive:
 every recursive call is on a subterm ([v] or [b]), and the environment is just
 an extra parameter carried along.  [Bind] evaluates the bound expression and
-then the body in the _extended_ environment; [Id] is simply a [lookup].  So
-Rocq accepts it as a plain [Fixpoint] - no fuel required this time.  This is a
-major advantage of using an environment over simply substituting.
+then the body in the _extended_ environment; evaluating [Id] is simply a
+[lookup].  So Rocq accepts it as a plain [Fixpoint] - no fuel required this
+time.  This is a major advantage of using an environment over simply substituting.
  *)
 
 Fixpoint evalE (env : Env nat) (e : BAE) : option nat :=
@@ -82,7 +81,11 @@ Fixpoint evalE (env : Env nat) (e : BAE) : option nat :=
   end.
 
 (**
- The top-level interpreter starts from the empty environment. *)
+The top-level interpreter typically starts from the empty environment.  We could
+define an initial environment with a set of pre-defined identifiers for common
+constants like [pi].  This initial environment is called a _prelude_ and would
+replace [nil] in the call to [evalE].
+ *)
 
 Definition evalEnv (e : BAE) : option nat := evalE nil e.
 
@@ -163,7 +166,7 @@ Qed.
 [contradiction] (used just above) closes a goal when the context already holds
 an impossibility: here [subst] has collapsed the hypotheses so that they assert
 both [x <> i] and [x = i], and [contradiction] spots the clash and finishes.
- *)
+*)
 
 (** * SECTION 5: ENVIRONMENTS DEFER SUBSTITUTION *)
 
@@ -210,7 +213,7 @@ Qed.
 (** * SECTION 6: AGREEMENT OF THE TWO INTERPRETERS *)
 
 (**
-Now we prove the headline result: the environment interpreter
+Now we prove the most important result: the environment interpreter
 [evalE nil] computes exactly the same answers as the substitution
 interpreter [eval] from the previous chapter.
 
@@ -273,15 +276,15 @@ The [evalE] analogues of the IDs "clean equations": a number ignores the
 environment, an identifier is a lookup, and binding a literal just pushes it.
  *)
 
-(* A number ignores the environment. *)
+(** A number ignores the environment. *)
 Lemma evalE_num : forall env n, evalE env (Num n) = Some n.
 Proof. reflexivity. Qed.
 
-(* An identifier is just a lookup. *)
+(** An identifier is just a lookup. *)
 Lemma evalE_id : forall env x, evalE env (Id x) = lookup x env.
 Proof. reflexivity. Qed.
 
-(* Binding a literal pushes it onto the environment. *)
+(** Binding a literal pushes it onto the environment. *)
 Lemma evalE_bind_num : forall env x n b,
   evalE env (Bind x (Num n) b) = evalE (extend x n env) b.
 Proof. reflexivity. Qed.
@@ -322,7 +325,7 @@ Proof. reflexivity. Qed.
 
 (**
 And because the two interpreters _agree_ (Section 6), a concrete program
-has the same meaning under either one.  Choose the best interpreter as 
+has the same meaning under either one.  Choose the best interpreter as
 dictated by a task.
  *)
 Example agree_concrete :
@@ -352,7 +355,7 @@ identifiers).
 
 (**
 Almost every tactic here is reused from AE / ABE / IDs.  Two show up in a new
-form worth naming:
+form worth mentioning:
 
 #<ul>#
 #<li>#[contradiction] - close any goal when the context already contains contradictory hypotheses (for instance [x <> i] together with [x = i]).#</li>#
