@@ -726,15 +726,15 @@ Section 1 gave the concrete grammar of BAE informally:
 
   t ::= NUM | ID | t + t | t - t | bind ID = t in t
 
-We can now make that grammar REAL, exactly as in AE and ABE, so that
+We can now make that grammar real, exactly as in AE and ABE, so that
 
   <{ bind "x" = 5 + 2 in "x" + "x" - 4 }>
 
 elaborates directly into the abstract tree.  Following Software
-Foundations' Imp, the parser is built from Rocq NOTATIONS alone, and a
-concrete term is DEFINITIONALLY EQUAL to the abstract tree it denotes.
+Foundations' Imp, the parser is built from Rocq Notations alone, and a
+concrete term is _definitionally equal_ to the abstract tree it denotes.
 
-The new wrinkle here is IDENTIFIERS.  BAE has two leaf coercions
+The new wrinkle here is identifiers.  BAE has two leaf coercions
 instead of one: a bare numeral is a [Num], and a bare STRING is an
 [Id].  So inside the brackets [3] means [Num 3] and ["x"] means
 [Id "x"].
