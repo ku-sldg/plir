@@ -13,8 +13,6 @@ fixes that and delivers real recursion:
 #<li>#_Productive_ examples that actually terminate: summation and factorial, computed by Z under [evalM] and by Y under [evalL].#</li>#
 #</ol>#
 
-This mirrors the "Untyped Recursion" unit of PLIH:
-  https://ku-sldg.github.io/plih//funs/7-Untyped-Recursion.html
  *)
 
 From Stdlib Require Import String.
@@ -367,7 +365,7 @@ Definition Zc : FBAEC :=
 
 (**
 A recursive generator takes its own recursive call as parameter [g].
-Summation, sum z = z + (z-1) + ... + 0, matching the PLIH chapter:
+Summation, sum z = z + (z-1) + ... + 0:
 
   sumGen = lambda g in lambda z in
              if iszero z then z else z + g (z - 1)
