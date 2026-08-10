@@ -586,11 +586,11 @@ Proof.
   - reflexivity.                   (* Id     *)
 Qed.
 
-(* On the running example, elaboration eliminates [Bind] ... *)
+(** On the running example, elaboration eliminates [Bind] ... *)
 Example elab_scopeTest_bindFree : bindFree (elab scopeTest) = true.
 Proof. reflexivity. Qed.
 
-(* ... and preserves the answer - keeping its _static_ reading (4, not 5),
+(** ... and preserves the answer - keeping its _static_ reading (4, not 5),
    because [App]/[Lambda]/closures are themselves statically scoped. *)
 Example elab_scopeTest_eval : eval (elab scopeTest) = eval scopeTest.
 Proof. reflexivity. Qed.
@@ -624,7 +624,7 @@ Fixpoint elabV (v : FBAEVal) : FBAEVal :=
             end) e)
   end.
 
-(* The same pointwise elaboration, as a standalone environment operation
+(** The same pointwise elaboration, as a standalone environment operation
    we can state lemmas about.  [elabV_clos] bridges the two. *)
 Fixpoint elabEnv (env : Env FBAEVal) : Env FBAEVal :=
   match env with
@@ -658,7 +658,7 @@ equation to eliminate one variable throughout the goal.  Together they
 are the standard way to "unwrap" a constructor equation.
  *)
 
-(* One-step unfolding of [evalM] on an [App], stated as a rewrite so we
+(** One-step unfolding of [evalM] on an [App], stated as a rewrite so we
    never have to [simpl] (which would over-eagerly unfold the argument
    and body evaluations along with it). *)
 Lemma evalM_App : forall k env f a,
@@ -673,7 +673,7 @@ Lemma evalM_App : forall k env f a,
     end.
 Proof. reflexivity. Qed.
 
-(* Applying a value that is already known to be a closure. *)
+(** Applying a value that is already known to be a closure. *)
 Lemma evalM_app_closure : forall k env f a i body cenv av rv,
   evalM k env f = Some (ClosureV i body cenv) ->
   evalM k env a = Some av ->
@@ -692,7 +692,7 @@ reduced by one step; [cbv iota] fires exactly that step without
 unfolding any other definitions.
  *)
 
-(* Applying a literal [lambda] - the shape elaboration produces from a
+(** Applying a literal [lambda] - the shape elaboration produces from a
    [Bind].  The [lambda] evaluates in one step, so [k] must be positive;
    [Ha] guarantees it (evaluation under zero fuel is [None]). *)
 Lemma evalM_app_lambda : forall k env i body arg av rv,
@@ -790,7 +790,7 @@ Proof.
 Qed.
 
 (**
-Two more patterns debut in [elab_preserves].
+Two more proof patterns debut in [elab_preserves].
 
   - [assert (L : P) by tac] - add [L : P] to the context as a local
     hypothesis, proved immediately by [tac].  Here it introduces the
@@ -804,7 +804,7 @@ Two more patterns debut in [elab_preserves].
  *)
 
 (**
-So [Bind] earns no expressive power: it is definable sugar over
+So [Bind] adds no expressive power: it is definable sugar over
 [App]/[Lambda], and [elab_preserves] certifies the desugaring.  A
 real compiler front-end elaborates a large surface syntax down to a
 small core exactly this way - here we have the whole story, proof
@@ -821,7 +821,7 @@ that reduces to itself forever.
 Definition selfApp : FBAE := Lambda "x" (App (Id "x") (Id "x")).
 Definition omega : FBAE := App selfApp selfApp.
 
-(* No matter how much fuel we supply, [omega] never returns - it just
+(** No matter how much fuel we supply, [omega] never returns - it just
    exhausts the fuel.  This is why no [size] measure can bound the
    interpreter: divergent programs exist. *)
 Example omega_diverges_100 : eval omega = None.
@@ -850,7 +850,7 @@ environment of thunks, so [LThunk] is a nested inductive (through
 Inductive LThunk : Type :=
 | Thk : FBAE -> list (string * LThunk) -> LThunk.
 
-(* Lazy values: numbers and closures, closures capturing a thunk-env. *)
+(** Lazy values: numbers and closures, closures capturing a thunk-env. *)
 Inductive LVal : Type :=
 | LNumV : nat -> LVal
 | LCloV : string -> FBAE -> list (string * LThunk) -> LVal.
@@ -912,12 +912,12 @@ Proof. reflexivity. Qed.
 Example lazy_unusedDiverge : evalL 100 nil unusedDiverge = Some (LNumV 5).
 Proof. reflexivity. Qed.
 
-(* Laziness only _defers_ - it does not discard.  If the body actually
+(** Laziness only _defers_ - it does not discard.  If the body actually
    _uses_ the bound name, forcing its thunk still diverges. *)
 Example lazy_usedDiverge : evalL 100 nil (Bind "z" omega (Id "z")) = None.
 Proof. reflexivity. Qed.
 
-(* And on terminating programs the lazy interpreter agrees with the
+(** And on terminating programs the lazy interpreter agrees with the
    strict one: forcing an argument that is genuinely needed. *)
 Example lazy_inc : evalL 100 nil (App incFun (Num 4)) = Some (LNumV 5).
 Proof. reflexivity. Qed.

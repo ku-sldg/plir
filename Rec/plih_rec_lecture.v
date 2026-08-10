@@ -8,9 +8,9 @@ fixes that and delivers real recursion:
 #<ol>#
 #<li>#FBAEC = FBAE + Booleans + [If]: the missing _conditional_.#</li>#
 #<li>#A _strict_ (call-by-value) closure interpreter [evalM], and a _lazy_ (call-by-name) interpreter [evalL] - both fuel-driven, as in Func.#</li>#
-#<li>#_Fuel monotonicity_ for the strict interpreter (the well-definedness metatheorem, carried over from Func with the new cases).#</li>#
+#<li>#Fuel monotonicity for the strict interpreter (the well-definedness metatheorem, carried over from Func with the new cases).#</li>#
 #<li>#Recursion with _no new construct_: the Y and Z fixpoint combinators as ordinary FBAEC terms.  Y needs _lazy_ evaluation; Z eta-guards the self-application so it also works under _strict_ evaluation.#</li>#
-#<li>#_Productive_ examples that actually terminate: summation and factorial, computed by Z under [evalM] and by Y under [evalL].#</li>#
+#<li>#Productive examples that actually terminate: summation and factorial, computed by Z under [evalM] and by Y under [evalL].#</li>#
 #</ol>#
 
  *)
@@ -123,7 +123,7 @@ Fixpoint evalM (fuel : nat) (env : Env RVal) (e : FBAEC) : option RVal :=
       end
   end.
 
-(* A convenience wrapper with fuel generous enough for the recursive
+(** A convenience wrapper with fuel generous enough for the recursive
    examples below.  As always there is no universally "right" default. *)
 Definition eval (e : FBAEC) : option RVal := evalM 1000 nil e.
 
@@ -214,7 +214,7 @@ Proof. reflexivity. Qed.
 Example ev_iszero_f : eval (IsZero (Num 5)) = Some (BoolV false).
 Proof. reflexivity. Qed.
 
-(* [If] takes only the selected branch: the untaken branch is never run,
+(** [If] takes only the selected branch: the untaken branch is never run,
    even when it would be nonsense (here, adding a Boolean to a number). *)
 Example ev_if_lazy_branch :
   eval (If (IsZero (Num 0)) (Num 1) (Plus (Boolean true) (Num 2)))
@@ -296,7 +296,7 @@ Proof. reflexivity. Qed.
 _Recursion_ is [omega] made useful: self-application _parameterised_ by the
 function to iterate.
 
-_The fixpoint property._  A _fixpoint combinator_ [fix] is a closed FBAEC term
+_The fixpoint property_.  A _fixpoint combinator_ [fix] is a closed FBAEC term
 satisfying
 
 <<
@@ -308,15 +308,15 @@ back.  This is recursion.  Write a _generator_ - a function that takes its own
 recursive call as its first argument instead of naming itself - and [fix] ties
 the knot.  For example, the factorial generator
 
-<<
+[[
   factGen = lambda g in lambda z in if iszero z then 1 else z * g (z - 1)
->>
+]]
 
 never mentions itself; [g] stands for the recursive call.  [fix factGen] is
 the factorial function, because [fix factGen = factGen (fix factGen)], so [g]
 is always instantiated with another copy of the whole recursion.
 
-_Why Y works._  Let [w = lambda x in f (x x)] and trace [Y f]:
+_Why Y works_.  Let [w = lambda x in f (x x)] and trace [Y f]:
 
 <<
   Y f  -->  (lambda x in f (x x)) w
@@ -327,15 +327,15 @@ _Why Y works._  Let [w = lambda x in f (x x)] and trace [Y f]:
 Each unfolding produces [f] applied to the same self-application, which is
 [f (Y f)].  The fixpoint property holds.
 
-_Why Y diverges under strict evaluation._  Call-by-value must evaluate the
+_Why Y diverges under strict evaluation_.  Call-by-value must evaluate the
 argument of every application before the call.  [w w] reduces immediately to
 [f (w w)], which requires evaluating [w w] again - an infinite loop before
 [f] can test its base case and stop.
 
 The Y combinator:
-<<
+[[
   Y = lambda f in (lambda x in f (x x)) (lambda x in f (x x))
->>
+]]
  *)
 Definition Yc : FBAEC :=
   Lambda "f"
@@ -349,10 +349,10 @@ strict evaluation does not force [x x] immediately.  Only when that closure is
 eventually called with an argument does [x x v] reduce - by which point [f]'s
 base-case test may already have stopped the recursion.
 
-<<
+[[
   Z = lambda f in (lambda x in f (lambda v in x x v))
                   (lambda x in f (lambda v in x x v))
->>
+]]
  *)
 Definition Zc : FBAEC :=
   Lambda "f"
@@ -366,9 +366,10 @@ Definition Zc : FBAEC :=
 (**
 A recursive generator takes its own recursive call as parameter [g].
 Summation, sum z = z + (z-1) + ... + 0:
-
+[[
   sumGen = lambda g in lambda z in
              if iszero z then z else z + g (z - 1)
+]]
  *)
 Definition sumGen : FBAEC :=
   Lambda "g"
@@ -405,9 +406,10 @@ Proof. reflexivity. Qed.
 
 (**
 The canonical example: factorial, fact z = z * (z-1) * ... * 1.
-
+[[
   factGen = lambda g in lambda z in
               if iszero z then 1 else z * g (z - 1)
+]]
  *)
 Definition factGen : FBAEC :=
   Lambda "g"
